@@ -5,10 +5,10 @@ WATCHLIST uses The Movie Database (TMDB) for catalogue metadata. The app sends r
 ## Configure locally
 
 1. Create or sign in to a TMDB account and request an API key for your application.
-2. In Xcode, open the generated WATCHLIST project.
-3. Select the WATCHLIST target and its Info settings.
-4. Add a string key named `TMDBAccessToken` with your API Read Access Token as its value.
-5. Keep the token out of source control, screenshots and public build logs.
+2. Set the environment variable `TMDB_ACCESS_TOKEN` to your API Read Access Token before building.
+3. Generate and build the project in an environment that inherits that variable (for example, export it in the shell before running XcodeGen/xcodebuild).
+4. XcodeGen maps the variable to the generated Info.plist key `TMDBAccessToken`.
+5. Keep the token out of source control, screenshots and public build logs. Do not add it to a committed workflow file.
 
 The repository intentionally contains no working token. A missing token is reported as a configuration error rather than silently making an unauthenticated request.
 
