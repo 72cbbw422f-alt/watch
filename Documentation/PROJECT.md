@@ -85,4 +85,4 @@ Prefer protocol-backed repositories so UI and tests do not depend directly on ne
 - M5: streaming availability, polish and release candidate.
 
 ## Current status
-Repository initialized with README and product/design documentation. No app implementation has been added yet.
+Repository contains product/design documentation, XcodeGen project configuration, SwiftUI app entry point, five-tab navigation shell, shared color tokens and an initial cinematic home screen. TMDB integration, persistence, tests and CI build verification remain to be implemented.
