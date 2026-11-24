@@ -22,6 +22,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.niklas.watchlist
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        INFOPLIST_KEY_TMDBAccessToken: "$(TMDB_ACCESS_TOKEN)"
   WATCHLISTTests:
     type: bundle.unit-test
     platform: iOS
