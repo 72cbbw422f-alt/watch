@@ -1,9 +1,27 @@
 import SwiftUI
 
 enum WatchlistColor {
-    static let background = Color(red: 8 / 255, green: 9 / 255, blue: 11 / 255)
-    static let surface = Color(red: 23 / 255, green: 26 / 255, blue: 32 / 255)
-    static let elevated = Color(red: 32 / 255, green: 36 / 255, blue: 44 / 255)
-    static let accent = Color(red: 198 / 255, green: 243 / 255, blue: 106 / 255)
-    static let secondaryText = Color(red: 165 / 255, green: 169 / 255, blue: 178 / 255)
+    static let background = Color(hex: 0x08090B)
+    static let backgroundElevated = Color(hex: 0x111318)
+    static let surface = Color(hex: 0x171A20)
+    static let surfaceElevated = Color(hex: 0x20242C)
+    static let accent = Color(hex: 0xC6F36A)
+    static let accentPressed = Color(hex: 0xA8D94A)
+    static let primaryText = Color(hex: 0xF5F5F2)
+    static let secondaryText = Color(hex: 0xA5A9B2)
+    static let mutedText = Color(hex: 0x737985)
+    static let warmHighlight = Color(hex: 0xD8C39A)
+    static let hairline = Color.white.opacity(0.09)
+}
+
+extension Color {
+    init(hex: UInt32) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255,
+            opacity: 1
+        )
+    }
 }
