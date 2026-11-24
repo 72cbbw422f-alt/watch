@@ -3,30 +3,40 @@ import SwiftUI
 struct AppRootView: View {
     var body: some View {
         TabView {
-            HomeView()
-                .tabItem {
-                    Label("Hem", systemImage: "sparkles")
-                }
+            NavigationStack {
+                HomeView()
+            }
+            .tabItem {
+                Label("Hem", systemImage: "sparkles")
+            }
 
-            SimpleFeatureView(title: "Upptäck", subtitle: "Hitta nästa film- eller serieupplevelse.", symbol: "safari")
-                .tabItem {
-                    Label("Upptäck", systemImage: "safari")
-                }
+            NavigationStack {
+                SimpleFeatureView(title: "Upptäck", subtitle: "Hitta nästa film- eller serieupplevelse.", symbol: "safari")
+            }
+            .tabItem {
+                Label("Upptäck", systemImage: "safari")
+            }
 
-            SimpleFeatureView(title: "Bibliotek", subtitle: "Allt du vill se och allt du redan sett.", symbol: "square.grid.2x2")
-                .tabItem {
-                    Label("Bibliotek", systemImage: "square.grid.2x2")
-                }
+            NavigationStack {
+                SimpleFeatureView(title: "Bibliotek", subtitle: "Allt du vill se och allt du redan sett.", symbol: "square.grid.2x2")
+            }
+            .tabItem {
+                Label("Bibliotek", systemImage: "square.grid.2x2")
+            }
 
-            SimpleFeatureView(title: "Kalender", subtitle: "Premiärer och nya avsnitt samlade på ett ställe.", symbol: "calendar")
-                .tabItem {
-                    Label("Kalender", systemImage: "calendar")
-                }
+            NavigationStack {
+                SimpleFeatureView(title: "Kalender", subtitle: "Premiärer och nya avsnitt samlade på ett ställe.", symbol: "calendar")
+            }
+            .tabItem {
+                Label("Kalender", systemImage: "calendar")
+            }
 
-            SimpleFeatureView(title: "Profil", subtitle: "Dina inställningar och preferenser.", symbol: "person.crop.circle")
-                .tabItem {
-                    Label("Profil", systemImage: "person.crop.circle")
-                }
+            NavigationStack {
+                SimpleFeatureView(title: "Profil", subtitle: "Dina inställningar och preferenser.", symbol: "person.crop.circle")
+            }
+            .tabItem {
+                Label("Profil", systemImage: "person.crop.circle")
+            }
         }
         .tint(WatchlistColor.accent)
     }
@@ -46,7 +56,7 @@ struct SimpleFeatureView: View {
                     .foregroundStyle(WatchlistColor.accent)
                 Text(title)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(WatchlistColor.primaryText)
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(WatchlistColor.secondaryText)
@@ -54,5 +64,6 @@ struct SimpleFeatureView: View {
             }
             .padding(32)
         }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
