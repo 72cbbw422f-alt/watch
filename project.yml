@@ -22,3 +22,22 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.niklas.watchlist
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+  WATCHLISTTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: WATCHLIST
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.niklas.watchlist.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  WATCHLIST:
+    build:
+      targets:
+        WATCHLIST: all
+    test:
+      targets:
+        - WATCHLISTTests
