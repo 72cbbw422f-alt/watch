@@ -22,6 +22,3 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.niklas.watchlist
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-    scheme:
-      testTargets: []
