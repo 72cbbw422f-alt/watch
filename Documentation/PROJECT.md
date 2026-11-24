@@ -85,4 +85,4 @@ Prefer protocol-backed repositories so UI and tests do not depend directly on ne
 - M5: streaming availability, polish and release candidate.
 
 ## Current status
-Repository contains product/design documentation, XcodeGen project configuration, SwiftUI app entry point, five-tab navigation shell, shared color tokens and an initial cinematic home screen. TMDB integration, persistence, tests and CI build verification remain to be implemented.
+Repository contains product/design documentation, XcodeGen project configuration, SwiftUI app entry point, five-tab navigation shell, shared color tokens and a first Cinematic Premium home-screen prototype with featured hero, quick filters, continue-watching, discovery posters and premiere preview. These are presentation placeholders; TMDB integration and real user data are not connected yet. CI workflow is configured, but a successful build has not yet been confirmed. Next: validate the first CI build, then add domain models and TMDB networking.
