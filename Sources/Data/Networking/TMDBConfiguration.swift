@@ -2,7 +2,9 @@ import Foundation
 
 enum TMDBConfiguration {
     static var accessToken: String {
-        Bundle.main.object(forInfoDictionaryKey: "TMDBAccessToken") as? String ?? ""
+        let configuredValue = Bundle.main.object(forInfoDictionaryKey: "TMDBAccessToken") as? String ?? ""
+        // Xcode preserves unresolved build-setting references when no local token is configured.
+        return configuredValue.hasPrefix("$(") ? "" : configuredValue
     }
 
     static var isConfigured: Bool {
