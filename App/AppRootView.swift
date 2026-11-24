@@ -11,7 +11,7 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                SimpleFeatureView(title: "Upptäck", subtitle: "Hitta nästa film- eller serieupplevelse.", symbol: "safari")
+                DiscoverView()
             }
             .tabItem {
                 Label("Upptäck", systemImage: "safari")
