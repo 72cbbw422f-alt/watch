@@ -3,12 +3,35 @@ import Foundation
 struct TVSeriesDetails: Decodable, Sendable {
     let id: Int
     let seasons: [TVSeason]
+    let nextEpisodeToAir: TVNextEpisode?
+
+    enum CodingKeys: String, CodingKey {
+        case id, seasons
+        case nextEpisodeToAir = "next_episode_to_air"
+    }
 
     var regularSeasons: [TVSeason] {
         seasons
             .filter { $0.seasonNumber > 0 }
             .sorted { $0.seasonNumber < $1.seasonNumber }
     }
+}
+
+struct TVNextEpisode: Decodable, Sendable {
+    let id: Int
+    let name: String
+    let seasonNumber: Int
+    let episodeNumber: Int
+    let airDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case seasonNumber = "season_number"
+        case episodeNumber = "episode_number"
+        case airDate = "air_date"
+    }
+
+    var displayCode: String { String(format: "S%02d:E%02d", seasonNumber, episodeNumber) }
 }
 
 struct TVSeason: Decodable, Identifiable, Hashable, Sendable {
