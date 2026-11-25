@@ -28,7 +28,9 @@ struct MediaDetailView: View {
             }
             .ignoresSafeArea(edges: .top)
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.visible, for: .navigationBar)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
     }
 
