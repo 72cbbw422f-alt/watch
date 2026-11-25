@@ -6,6 +6,7 @@ struct MediaDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
+    @Query private var episodeProgressEntries: [EpisodeProgress]
     @State private var persistenceError: String?
     @State private var televisionSeasons: [TVSeason] = []
     @State private var episodesBySeason: [Int: [TVEpisode]] = [:]
@@ -295,7 +296,7 @@ struct MediaDetailView: View {
                         Text(season.displayName)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(WatchlistColor.primaryText)
-                        Text("\(season.episodeCount) avsnitt")
+                        Text(seasonProgressLabel(for: season))
                             .font(.system(size: 10))
                             .foregroundStyle(WatchlistColor.secondaryText)
                     }
@@ -364,8 +365,52 @@ struct MediaDetailView: View {
                 }
             }
             Spacer(minLength: 0)
+
+            Button {
+                toggleEpisodeProgress(episode)
+            } label: {
+                Image(systemName: isEpisodeWatched(episode) ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(isEpisodeWatched(episode) ? WatchlistColor.accent : WatchlistColor.mutedText)
+                    .frame(width: 34, height: 34)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isEpisodeWatched(episode) ? "Markera som ej sedd" : "Markera som sedd")
         }
         .padding(.vertical, 10)
+    }
+
+    private func seasonProgressLabel(for season: TVSeason) -> String {
+        let watched = episodeProgressEntries.filter {
+            $0.seriesID == item.id && $0.seasonNumber == season.seasonNumber && $0.isWatched
+        }.count
+        return watched == 0
+            ? "\(season.episodeCount) avsnitt"
+            : "\(season.episodeCount) avsnitt · \(watched) sedda"
+    }
+
+    private func isEpisodeWatched(_ episode: TVEpisode) -> Bool {
+        let id = EpisodeProgress.makeStableID(
+            seriesID: item.id,
+            seasonNumber: episode.seasonNumber,
+            episodeNumber: episode.episodeNumber
+        )
+        return episodeProgressEntries.first { $0.stableID == id }?.isWatched ?? false
+    }
+
+    private func toggleEpisodeProgress(_ episode: TVEpisode) {
+        let id = EpisodeProgress.makeStableID(
+            seriesID: item.id,
+            seasonNumber: episode.seasonNumber,
+            episodeNumber: episode.episodeNumber
+        )
+        if let progress = episodeProgressEntries.first(where: { $0.stableID == id }) {
+            progress.setWatched(!progress.isWatched)
+        } else {
+            modelContext.insert(EpisodeProgress(seriesID: item.id, episode: episode, isWatched: true))
+        }
+        saveChanges()
     }
 
     @MainActor
