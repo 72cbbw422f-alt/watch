@@ -181,6 +181,15 @@ private struct ProgressSeriesRow: View {
     let watchedCount: Int
 
     private var total: Int? { entry.episodeTotalCount }
+
+    private static var todayISODate: String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: .now)
+    }
     private var fraction: Double {
         guard let total, total > 0 else { return 0 }
         return min(Double(watchedCount) / Double(total), 1)
@@ -220,9 +229,9 @@ private struct ProgressSeriesRow: View {
                 if let nextCode = entry.nextEpisodeCode {
                     HStack(spacing: 5) {
                         Image(systemName: "play.fill").foregroundStyle(WatchlistColor.accent)
-                        Text("Nästa: \\(nextCode)").foregroundStyle(WatchlistColor.primaryText)
+                        Text("Nästa: \(nextCode)").foregroundStyle(WatchlistColor.primaryText)
                         if let date = entry.nextEpisodeAirDate, !date.isEmpty {
-                            Text("· \\(date)").foregroundStyle(WatchlistColor.mutedText)
+                            Text("· \(date)").foregroundStyle(WatchlistColor.mutedText)
                         }
                     }
                     .font(.system(size: 9, weight: .semibold))
