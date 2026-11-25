@@ -91,3 +91,7 @@ The repository now includes the SwiftUI app shell, Cinematic Premium home screen
 SwiftData persistence is now wired at the app root. `LibraryEntry` stores the user's saved catalogue metadata separately from the TMDB API, with three personal statuses: Want to watch, Watching and Watched. The detail screen can add a title to the library, change its status or remove it. The Library tab now lists saved titles, filters by status and links back to detail screens. Home trending posters open detail screens and the movie/series filters affect the displayed trending feed.
 
 Favorites are implemented: titles can be marked from the detail screen and filtered in the Library tab. The Library also shows live counts for watched titles, currently watching titles and favorites. The Home screen's currently-watching shelf is backed by saved library entries. Remaining work: improve persistence error feedback, build season/episode progress and the premiere calendar, and complete physical-device testing. CI build-for-testing has passed on the latest verified commits; no installable IPA or physical-device test is confirmed yet. TMDB token remains intentionally absent from source control; configure it using TMDB_SETUP.md.
+
+
+## Visual quality direction (2026-11-25)
+The visual system has been refined toward a mature premium editorial look: graphite surfaces, warm champagne/amber accent, restrained decoration, neutral information styling and stricter rules against placeholder-like or juvenile UI. See DESIGN.md for the professional finish checklist.
