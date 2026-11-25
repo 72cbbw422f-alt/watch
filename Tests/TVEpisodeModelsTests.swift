@@ -6,6 +6,13 @@ final class TVEpisodeModelsTests: XCTestCase {
         let json = """
         {
           "id": 1396,
+          "next_episode_to_air": {
+            "id": 62086,
+            "name": "Next episode",
+            "season_number": 1,
+            "episode_number": 2,
+            "air_date": "2008-01-27"
+          },
           "seasons": [
             {
               "id": 900,
@@ -36,6 +43,8 @@ final class TVEpisodeModelsTests: XCTestCase {
         XCTAssertEqual(details.regularSeasons.map(\.seasonNumber), [1])
         XCTAssertEqual(details.regularSeasons.first?.displayName, "Season 1")
         XCTAssertEqual(details.regularSeasons.first?.episodeCount, 7)
+        XCTAssertEqual(details.nextEpisodeToAir?.displayCode, "S01:E02")
+        XCTAssertEqual(details.nextEpisodeToAir?.airDate, "2008-01-27")
     }
 
     func testDecodesEpisodeAndBuildsSeasonEpisodeCode() throws {
