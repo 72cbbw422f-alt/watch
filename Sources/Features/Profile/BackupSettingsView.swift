@@ -163,9 +163,11 @@ struct BackupSettingsView: View {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    private func restoreImportedNotifications() {
+    private func restoreImportedNotifications(withIDs stableIDs: Set<String>) {
+        guard !stableIDs.isEmpty else { return }
         do {
             let reminders = try modelContext.fetch(FetchDescriptor<PremiereReminder>())
+                .filter { stableIDs.contains($0.stableID) }
             Task {
                 var scheduledCount = 0
                 for reminder in reminders {
