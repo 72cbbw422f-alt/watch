@@ -20,7 +20,7 @@ final class WatchlistImportTests: XCTestCase {
     func testPreviewCountsNewAndMatchingLibraryRecords() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
-            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
         let existing = LibraryEntry(item: item(id: 1, title: "Existing"))
@@ -44,7 +44,7 @@ final class WatchlistImportTests: XCTestCase {
     func testMergeAddsNewItemsWithoutOverwritingExistingItems() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
-            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
         let existing = LibraryEntry(item: item(id: 1, title: "My original title"))
@@ -74,7 +74,7 @@ final class WatchlistImportTests: XCTestCase {
     func testPreviewCountsLocalOnlyItemsAndMergePreservesThem() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
-            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
         context.insert(LibraryEntry(item: item(id: 10, title: "Only on this device")))
@@ -99,7 +99,7 @@ final class WatchlistImportTests: XCTestCase {
     func testRepeatedImportIsIdempotent() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
-            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
         let backup = WatchlistBackup(
@@ -120,7 +120,7 @@ final class WatchlistImportTests: XCTestCase {
     func testMergeRestoresEpisodeProgressHistoryListsAndReminders() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
-            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
 
