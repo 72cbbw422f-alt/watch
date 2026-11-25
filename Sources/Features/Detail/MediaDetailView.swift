@@ -11,6 +11,7 @@ struct MediaDetailView: View {
     @Query private var customListItems: [CustomListItem]
     @State private var persistenceError: String?
     @State private var televisionSeasons: [TVSeason] = []
+    @State private var nextEpisodeToAir: TVNextEpisode?
     @State private var episodesBySeason: [Int: [TVEpisode]] = [:]
     @State private var expandedSeason: Int?
     @State private var isLoadingSeasons = false
@@ -215,6 +216,9 @@ struct MediaDetailView: View {
                     let entry = LibraryEntry(item: item)
                     if item.kind == .television && !televisionSeasons.isEmpty {
                         entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+                        entry.nextEpisodeTitle = nextEpisodeToAir?.name
+                        entry.nextEpisodeCode = nextEpisodeToAir?.displayCode
+                        entry.nextEpisodeAirDate = nextEpisodeToAir?.airDate
                     }
                     modelContext.insert(entry)
                     saveChanges()
@@ -242,6 +246,9 @@ struct MediaDetailView: View {
                 let entry = LibraryEntry(item: item)
                 if item.kind == .television && !televisionSeasons.isEmpty {
                     entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+                    entry.nextEpisodeTitle = nextEpisodeToAir?.name
+                    entry.nextEpisodeCode = nextEpisodeToAir?.displayCode
+                    entry.nextEpisodeAirDate = nextEpisodeToAir?.airDate
                 }
                 entry.isFavorite = true
                 modelContext.insert(entry)
@@ -526,6 +533,7 @@ struct MediaDetailView: View {
         do {
             let details = try await tmdbClient.televisionDetails(id: item.id)
             televisionSeasons = details.regularSeasons
+            nextEpisodeToAir = details.nextEpisodeToAir
             if let entry = libraryEntry {
                 entry.episodeTotalCount = details.regularSeasons.reduce(0) { $0 + $1.episodeCount }
                 if let next = details.nextEpisodeToAir {
