@@ -1,9 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct PremiereCalendarView: View {
     @State private var events: [PremiereEvent] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var reminderError: String?
+    @Environment(\\.modelContext) private var modelContext
+    @Query private var savedReminders: [PremiereReminder]
     private let client = TMDBConfiguration.makeClient()
 
     private var groupedEvents: [(date: Date, events: [PremiereEvent])] {
@@ -38,8 +42,39 @@ struct PremiereCalendarView: View {
                         ForEach(groupedEvents, id: \.date) { group in
                             Section {
                                 ForEach(group.events) { event in
-                                    NavigationLink(value: event.item) {
-                                        PremiereCalendarRow(event: event)
+                                    HStack(spacing: 8) {
+                                        NavigationLink(value: event.item) {
+                                            PremiereCalendarRow(event: event)
+                                        }
+                                        .buttonStyle(.plain)
+                                        Menu {
+                                            if let saved = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
+                                                Button(role: .destructive) {
+                                                    removeReminder(saved)
+                                                } label: {
+                                                    Label("Ta bort påminnelse", systemImage: "bell.slash")
+                                                }
+                                            } else {
+                                                Section("Påminn mig") {
+                                                    Button("En vecka före") {
+                                                        Task { await addReminder(for: event, leadDays: 7) }
+                                                    }
+                                                    Button("Dagen före") {
+                                                        Task { await addReminder(for: event, leadDays: 1) }
+                                                    }
+                                                    Button("Samma dag") {
+                                                        Task { await addReminder(for: event, leadDays: 0) }
+                                                    }
+                                                }
+                                            }
+                                        } label: {
+                                            Image(systemName: savedReminders.contains(where: { $0.stableID == event.item.stableID }) ? "bell.badge.fill" : "bell")
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundStyle(WatchlistColor.accent)
+                                                .frame(width: 36, height: 44)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .accessibilityLabel("Påminnelse för \\(event.item.title)")
                                     }
                                     .listRowBackground(WatchlistColor.surface)
                                     .listRowSeparatorTint(WatchlistColor.hairline)
@@ -76,7 +111,7 @@ struct PremiereCalendarView: View {
             MediaDetailView(item: item)
         }
         .task { await loadEvents() }
-    }
+        .alert(\"Kunde inte skapa påminnelse\", isPresented: Binding(\n            get: { reminderError != nil },\n            set: { if !$0 { reminderError = nil } }\n        )) {\n            Button(\"OK\", role: .cancel) { reminderError = nil }\n        } message: {\n            Text(reminderError ?? \"Ett oväntat fel uppstod.\")\n        }\n    }
 
     @MainActor
     private func loadEvents() async {
@@ -107,6 +142,29 @@ struct PremiereCalendarView: View {
                 .sorted { first, second in first.date < second.date }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func addReminder(for event: PremiereEvent, leadDays: Int) async {
+        let reminder = PremiereReminder(item: event.item, premiereDate: event.date, leadDays: leadDays)
+        do {
+            try await PremiereNotificationService.schedule(reminder)
+            modelContext.insert(reminder)
+            try modelContext.save()
+        } catch {
+            PremiereNotificationService.cancel(reminder)
+            reminderError = error.localizedDescription
+        }
+    }
+
+    private func removeReminder(_ reminder: PremiereReminder) {
+        PremiereNotificationService.cancel(reminder)
+        modelContext.delete(reminder)
+        do {
+            try modelContext.save()
+        } catch {
+            reminderError = error.localizedDescription
         }
     }
 
