@@ -56,12 +56,21 @@ actor TMDBClient: MediaSearching {
         return response.results
     }
 
-    func onTheAirTelevision() async throws -> [MediaItem] {
+    func upcomingTelevisionPremieres(from date: Date = .now) async throws -> [MediaItem] {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+
         let response = try await fetch(
-            path: "/tv/on_the_air",
+            path: "/discover/tv",
             as: TMDBPagedMediaResponse.self,
             queryItems: [
                 URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "first_air_date.gte", value: formatter.string(from: date)),
+                URLQueryItem(name: "sort_by", value: "first_air_date.asc"),
+                URLQueryItem(name: "include_null_first_air_dates", value: "false"),
                 URLQueryItem(name: "page", value: "1")
             ]
         )
