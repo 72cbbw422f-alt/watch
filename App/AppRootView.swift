@@ -7,21 +7,21 @@ struct AppRootView: View {
                 HomeView()
             }
             .tabItem {
-                Label("Hem", systemImage: "sparkles")
+                Label("Hem", systemImage: "house.fill")
             }
 
             NavigationStack {
                 DiscoverView()
             }
             .tabItem {
-                Label("Upptäck", systemImage: "safari")
+                Label("Upptäck", systemImage: "sparkle.magnifyingglass")
             }
 
             NavigationStack {
                 SimpleFeatureView(title: "Bibliotek", subtitle: "Allt du vill se och allt du redan sett.", symbol: "square.grid.2x2")
             }
             .tabItem {
-                Label("Bibliotek", systemImage: "square.grid.2x2")
+                Label("Bibliotek", systemImage: "books.vertical.fill")
             }
 
             NavigationStack {
