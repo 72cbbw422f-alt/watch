@@ -213,6 +213,9 @@ struct MediaDetailView: View {
             } else {
                 Button {
                     let entry = LibraryEntry(item: item)
+                    if item.kind == .television && !televisionSeasons.isEmpty {
+                        entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+                    }
                     modelContext.insert(entry)
                     saveChanges()
                 } label: {
@@ -237,6 +240,9 @@ struct MediaDetailView: View {
                 entry.dateUpdated = .now
             } else {
                 let entry = LibraryEntry(item: item)
+                if item.kind == .television && !televisionSeasons.isEmpty {
+                    entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+                }
                 entry.isFavorite = true
                 modelContext.insert(entry)
             }
