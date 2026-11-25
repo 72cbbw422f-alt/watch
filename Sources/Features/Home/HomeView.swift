@@ -77,98 +77,48 @@ struct HomeView: View {
     }
 
     private var featured: some View {
-        ZStack(alignment: .bottomLeading) {
-            GeometryReader { proxy in
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            Color(hex: 0x4A3328),
-                            Color(hex: 0x211A17),
-                            Color(hex: 0x0E0D0C),
-                            Color(hex: 0x080808)
-                        ],
-                        startPoint: .topTrailing,
-                        endPoint: .bottomLeading
-                    )
+        VStack(alignment: .leading, spacing: 18) {
+            Rectangle()
+                .fill(WatchlistColor.hairline)
+                .frame(height: 1)
 
-                    Circle()
-                        .fill(Color(hex: 0xF47721).opacity(0.25))
-                        .frame(width: 210, height: 210)
-                        .blur(radius: 48)
-                        .offset(x: proxy.size.width * 0.30, y: -85)
+            VStack(alignment: .leading, spacing: 11) {
+                Text("ETT BIBLIOTEK FÖR BERÄTTELSER")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(1.7)
+                    .foregroundStyle(WatchlistColor.accent)
 
-                    Ellipse()
-                        .fill(Color(hex: 0x7B4A2D).opacity(0.20))
-                        .frame(width: 300, height: 130)
-                        .blur(radius: 36)
-                        .rotationEffect(.degrees(-22))
-                        .offset(x: 100, y: -8)
-
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 58, weight: .ultraLight))
-                                .foregroundStyle(.white.opacity(0.18))
-                                .padding(.top, 28)
-                                .padding(.trailing, 28)
-                        }
-                        Spacer()
-                    }
-                }
-            }
-
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0.05),
-                    .init(color: .black.opacity(0.22), location: 0.38),
-                    .init(color: .black.opacity(0.88), location: 1)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 7) {
-                    Circle().fill(WatchlistColor.accent).frame(width: 6, height: 6)
-                    Text("UTVALT FÖR DIG")
-                        .font(.system(size: 9, weight: .bold))
-                        .tracking(1.9)
-                        .foregroundStyle(WatchlistColor.accent)
-                }
-
-                Text("Stora berättelser.\nEn plats att samla dem.")
-                    .font(.system(size: 32, weight: .bold, design: .serif))
+                Text("Hitta något\nminnesvärt.")
+                    .font(.system(size: 36, weight: .regular, design: .serif))
                     .tracking(-0.8)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(WatchlistColor.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Hitta nästa film att älska eller serien du inte kan sluta följa.")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .lineSpacing(3)
-                    .frame(maxWidth: 285, alignment: .leading)
+                Text("Upptäck filmer och serier. Samla favoriterna och håll koll på vad du vill se härnäst.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Button(action: onExplore) {
-                    HStack(spacing: 9) {
-                        Text("Utforska")
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 11, weight: .bold))
+                    HStack(spacing: 8) {
+                        Text("Utforska biblioteket")
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(WatchlistColor.background)
-                    .padding(.horizontal, 17)
-                    .padding(.vertical, 12)
-                    .background(WatchlistColor.accent, in: Capsule())
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                    .padding(.top, 3)
                 }
-                .padding(.top, 4)
+                .buttonStyle(.plain)
             }
-            .padding(23)
+            .padding(.vertical, 8)
+
+            Rectangle()
+                .fill(WatchlistColor.hairline)
+                .frame(height: 1)
         }
-        .frame(height: 390)
-        .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 25, style: .continuous).stroke(.white.opacity(0.12), lineWidth: 1))
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
     }
 
     private var quickFilters: some View {
@@ -179,13 +129,13 @@ struct HomeView: View {
                 } label: {
                     Text(filter)
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(selectedFilter == filter ? WatchlistColor.background : WatchlistColor.secondaryText)
+                        .foregroundStyle(selectedFilter == filter ? WatchlistColor.primaryText : WatchlistColor.secondaryText)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                         .background {
-                            Capsule().fill(selectedFilter == filter ? WatchlistColor.accent : WatchlistColor.surface)
+                            Capsule().fill(selectedFilter == filter ? WatchlistColor.surfaceElevated : WatchlistColor.surface)
                         }
-                        .overlay(Capsule().stroke(selectedFilter == filter ? .clear : WatchlistColor.hairline, lineWidth: 1))
+                        .overlay(Capsule().stroke(selectedFilter == filter ? WatchlistColor.accent.opacity(0.45) : WatchlistColor.hairline, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
