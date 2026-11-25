@@ -103,3 +103,6 @@ Custom collections have now been added as local SwiftData models. Users can crea
 
 ## Progress dashboard (2026-11-25)
 A dedicated Progress tab now separates active, planned and completed TV series from the general library. It shows library counts, watched episode totals, poster-led series rows, search and status filters. Per-series progress percentages are displayed only after TMDB has supplied a known regular-season episode total on the title detail screen; otherwise the UI reports the known watched-episode count without inventing a denominator. The Progress tab reuses the existing local SwiftData library and episode progress. CI build verification pending; no physical-device validation completed.
+
+
+Episode progress now records an optional watchedAt timestamp whenever a user marks an episode watched. Unmarking clears that timestamp. The Progress dashboard can use the timestamp to show viewing recency; older records without it retain dateUpdated as a fallback. This timestamp represents the moment the user marked an episode watched, not an imported historical date. CI verification pending.
