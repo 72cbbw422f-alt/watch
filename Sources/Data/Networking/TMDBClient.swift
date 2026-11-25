@@ -43,6 +43,42 @@ actor TMDBClient: MediaSearching {
         try await search(query: query, kind: .television)
     }
 
+    func trendingThisWeek() async throws -> [MediaItem] {
+        guard !accessToken.isEmpty else { throw TMDBError.missingAccessToken }
+
+        var components = URLComponents(
+            url: baseURL.appending(path: "/trending/all/week"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "language", value: "sv-SE")
+        ]
+        guard let url = components?.url else { throw TMDBError.invalidResponse }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw TMDBError.httpStatus(httpResponse.statusCode)
+        }
+
+        do {
+            let payload = try JSONDecoder().decode(TMDBSearchResponse.self, from: data)
+            return payload.results.compactMap { result in
+                guard let kind = result.mediaKind else { return nil }
+                return result.asMediaItem(kind: kind)
+            }
+        } catch {
+            throw TMDBError.decodingFailed
+        }
+    }
+
     private func search(query: String, kind: MediaKind) async throws -> [MediaItem] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else { return [] }
@@ -108,6 +144,14 @@ private struct TMDBSearchResult: Decodable {
         case firstAirDate = "first_air_date"
         case voteAverage = "vote_average"
         case mediaType = "media_type"
+    }
+
+    var mediaKind: MediaKind? {
+        switch mediaType {
+        case "movie": .movie
+        case "tv": .television
+        default: nil
+        }
     }
 
     func asMediaItem(kind: MediaKind) -> MediaItem {
