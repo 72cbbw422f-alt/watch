@@ -13,12 +13,25 @@ struct LibraryView: View {
         }
     }
 
+    private var watchedCount: Int {
+        entries.filter { $0.status == .watched }.count
+    }
+
+    private var watchingCount: Int {
+        entries.filter { $0.status == .watching }.count
+    }
+
+    private var favoriteCount: Int {
+        entries.filter(\.isFavorite).count
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     header
+                    collectionStats
                     statusFilters
                     if filteredEntries.isEmpty {
                         emptyState
@@ -59,6 +72,36 @@ struct LibraryView: View {
                 .foregroundStyle(WatchlistColor.secondaryText)
         }
         .padding(.horizontal, 20)
+    }
+
+    
+    private var collectionStats: some View {
+        HStack(spacing: 9) {
+            statisticCard(value: watchedCount, label: "SEDDA", symbol: "checkmark.circle")
+            statisticCard(value: watchingCount, label: "PÅGÅR", symbol: "play.circle")
+            statisticCard(value: favoriteCount, label: "FAVORITER", symbol: "heart")
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private func statisticCard(value: Int, label: String, symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(WatchlistColor.accent)
+            Text("\(value)")
+                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .contentTransition(.numericText())
+            Text(label)
+                .font(.system(size: 8, weight: .bold))
+                .tracking(1)
+                .foregroundStyle(WatchlistColor.mutedText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(13)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
     }
 
     private var statusFilters: some View {
