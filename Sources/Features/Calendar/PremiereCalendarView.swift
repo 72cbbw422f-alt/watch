@@ -91,7 +91,7 @@ struct PremiereCalendarView: View {
 
         do {
             async let movies = client.upcomingMovies()
-            async let television = client.onTheAirTelevision()
+            async let television = client.upcomingTelevisionPremieres()
             let fetched = try await (movies, television)
             let today = Calendar.current.startOfDay(for: .now)
 
