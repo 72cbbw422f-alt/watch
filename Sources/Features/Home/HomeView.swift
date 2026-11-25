@@ -256,8 +256,8 @@ struct HomeView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 13) {
-                        ForEach(Array(trendingItems.prefix(12).enumerated()), id: \.element.id) { index, item in
-                            MediaPosterTile(item: item, rank: index + 1)
+                        ForEach(trendingItems.prefix(12)) { item in
+                            MediaPosterTile(item: item, rank: (trendingItems.firstIndex(of: item) ?? 0) + 1)
                         }
                     }
                     .padding(.horizontal, 20)
