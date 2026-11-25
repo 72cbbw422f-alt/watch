@@ -108,7 +108,7 @@ struct BackupSettingsView: View {
             Button("Avbryt", role: .cancel) { pendingImport = nil; importPreview = nil }
         } message: {
             if let importPreview {
-                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Historikhändelser: \(importPreview.newHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
+                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.existingLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Historikhändelser: \(importPreview.newHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
             }
         }
         .alert("Säkerhetskopiering", isPresented: Binding(
@@ -156,9 +156,33 @@ struct BackupSettingsView: View {
         guard let pendingImport else { return }
         do {
             let summary = try WatchlistImportService.merge(pendingImport, into: modelContext)
-            importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
             self.pendingImport = nil
             importPreview = nil
+            importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
+            restoreImportedNotifications()
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func restoreImportedNotifications() {
+        do {
+            let reminders = try modelContext.fetch(FetchDescriptor<PremiereReminder>())
+            Task {
+                var scheduledCount = 0
+                for reminder in reminders {
+                    do {
+                        if try await PremiereNotificationService.scheduleIfAuthorized(reminder) {
+                            scheduledCount += 1
+                        }
+                    } catch {
+                        // Keep the imported reminder record even if its date cannot be scheduled.
+                    }
+                }
+                if scheduledCount > 0 {
+                    importedSummary = (importedSummary ?? "Import klar.") + " \(scheduledCount) notiser schemalagda."
+                }
+            }
+        } catch {
+            errorMessage = "Importen sparades, men påminnelserna kunde inte läsas in."
+        }
     }
 }
