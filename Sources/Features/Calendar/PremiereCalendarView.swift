@@ -95,10 +95,16 @@ struct PremiereCalendarView: View {
             let fetched = try await (movies, television)
             let today = Calendar.current.startOfDay(for: .now)
 
-            events = (fetched.0.compactMap { PremiereEvent(item: $0) }
-                + fetched.1.compactMap { PremiereEvent(item: $0) })
-                .filter { $0.date >= today }
-                .sorted { $0.date < $1.date }
+            let movieEvents: [PremiereEvent] = fetched.0.compactMap { item in
+                PremiereEvent(item: item)
+            }
+            let televisionEvents: [PremiereEvent] = fetched.1.compactMap { item in
+                PremiereEvent(item: item)
+            }
+            let datedEvents = movieEvents + televisionEvents
+            events = datedEvents
+                .filter { event in event.date >= today }
+                .sorted { first, second in first.date < second.date }
         } catch {
             errorMessage = error.localizedDescription
         }
