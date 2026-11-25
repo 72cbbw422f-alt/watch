@@ -6,6 +6,7 @@ struct MediaDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
+    @State private var persistenceError: String?
 
     var body: some View {
         ZStack {
@@ -36,6 +37,14 @@ struct MediaDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
+        .alert("Kunde inte spara ändringen", isPresented: Binding(
+            get: { persistenceError != nil },
+            set: { if !$0 { persistenceError = nil } }
+        )) {
+            Button("OK", role: .cancel) { persistenceError = nil }
+        } message: {
+            Text(persistenceError ?? "Ett oväntat fel uppstod.")
+        }
     }
 
     private var artworkHeader: some View {
@@ -82,16 +91,6 @@ struct MediaDetailView: View {
                         .tracking(-0.7)
                         .foregroundStyle(WatchlistColor.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let year = item.releaseDate?.prefix(4), !year.isEmpty {
-                        Text(String(year))
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(WatchlistColor.secondaryText)
-                    }
-                    if item.voteAverage > 0 {
-                        Label(String(format: "%.1f / 10", item.voteAverage), systemImage: "star.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(WatchlistColor.accent)
-                    }
                 }
                 Spacer(minLength: 0)
             }
@@ -169,14 +168,14 @@ struct MediaDetailView: View {
                         ForEach(LibraryStatus.allCases) { status in
                             Button {
                                 entry.status = status
-                                try? modelContext.save()
+                                saveChanges()
                             } label: {
                                 Label(status.title, systemImage: status.symbol)
                             }
                         }
                         Button(role: .destructive) {
                             modelContext.delete(entry)
-                            try? modelContext.save()
+                            saveChanges()
                         } label: {
                             Label("Ta bort från bibliotek", systemImage: "trash")
                         }
@@ -193,7 +192,7 @@ struct MediaDetailView: View {
                 Button {
                     let entry = LibraryEntry(item: item)
                     modelContext.insert(entry)
-                    try? modelContext.save()
+                    saveChanges()
                 } label: {
                     Label("Lägg till i min lista", systemImage: "plus")
                         .font(.system(size: 13, weight: .bold))
@@ -219,7 +218,7 @@ struct MediaDetailView: View {
                 entry.isFavorite = true
                 modelContext.insert(entry)
             }
-            try? modelContext.save()
+            saveChanges()
         } label: {
             Label(
                 isFavorite ? "Ta bort från favoriter" : "Lägg till i favoriter",
@@ -235,25 +234,13 @@ struct MediaDetailView: View {
         .buttonStyle(.plain)
     }
 
-    private var titleBlock: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(item.title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(WatchlistColor.primaryText)
-            Text(item.kind == .movie ? "Film" : "TV-serie")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(WatchlistColor.secondaryText)
-        }
-        .padding(.horizontal, 20)
-    }
-
     private var metadata: some View {
         HStack(spacing: 10) {
             if let year = item.releaseDate?.prefix(4), !year.isEmpty {
-                metadataPill(String(year))
+                metadataText(String(year))
             }
             if item.voteAverage > 0 {
-                metadataPill("★  " + String(format: "%.1f", item.voteAverage))
+                metadataText("★  " + String(format: "%.1f", item.voteAverage))
             }
         }
         .padding(.horizontal, 20)
@@ -269,11 +256,19 @@ struct MediaDetailView: View {
         .padding(.horizontal, 20)
     }
 
-    private func metadataPill(_ value: String) -> some View {
+    private func metadataText(_ value: String) -> some View {
         Text(value)
-            .font(.system(size: 10, weight: .semibold))
+            .font(.system(size: 11, weight: .medium))
             .foregroundStyle(WatchlistColor.secondaryText)
-            .padding(.trailing, 5)
+    }
+
+    private func saveChanges() {
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            persistenceError = error.localizedDescription
+        }
     }
 
     private func sectionLabel(_ value: String) -> some View {
