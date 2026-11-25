@@ -98,6 +98,7 @@ private struct TMDBSearchResult: Decodable {
     let releaseDate: String?
     let firstAirDate: String?
     let voteAverage: Double?
+    let mediaType: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, name, overview
@@ -106,6 +107,7 @@ private struct TMDBSearchResult: Decodable {
         case releaseDate = "release_date"
         case firstAirDate = "first_air_date"
         case voteAverage = "vote_average"
+        case mediaType = "media_type"
     }
 
     func asMediaItem(kind: MediaKind) -> MediaItem {
