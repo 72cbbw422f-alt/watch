@@ -73,9 +73,19 @@ struct ProgressDashboardView: View {
                 .font(.system(size: 31, weight: .bold, design: .rounded))
                 .tracking(-0.8)
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text("\(seriesEntries.count) serier i biblioteket")
-                .font(.system(size: 12))
-                .foregroundStyle(WatchlistColor.secondaryText)
+            HStack {
+                Text("\(seriesEntries.count) serier i biblioteket")
+                    .font(.system(size: 12))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                Spacer()
+                NavigationLink {
+                    EpisodeHistoryView()
+                } label: {
+                    Label("Historik", systemImage: "clock.arrow.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.accent)
+                }
+            }
         }
         .padding(.horizontal, 20)
     }
