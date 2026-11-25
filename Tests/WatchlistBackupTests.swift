@@ -77,6 +77,25 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertTrue(restored.premiereReminders.isEmpty)
     }
 
+    func testOlderSchemaV1BackupWithoutMovieHistoryStillDecodes() throws {
+        let json = """
+        {
+          "schemaVersion": 1,
+          "exportedAt": "2026-11-25T00:00:00Z",
+          "library": [],
+          "episodeProgress": [],
+          "episodeHistory": [],
+          "customLists": [],
+          "customListItems": [],
+          "premiereReminders": []
+        }
+        """.data(using: .utf8)!
+
+        let backup = try WatchlistBackupService.decode(json)
+        XCTAssertEqual(backup.schemaVersion, 1)
+        XCTAssertTrue((backup.movieHistory ?? []).isEmpty)
+    }
+
     func testRejectsInvalidLibraryIdentity() throws {
         let json = """
         {
