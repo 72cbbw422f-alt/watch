@@ -57,21 +57,6 @@ struct HomeView: View {
             }
             .accessibilityLabel("Sök")
 
-            Button {} label: {
-                Image(systemName: "bell")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(WatchlistColor.primaryText)
-                    .frame(width: 42, height: 42)
-                    .background(.white.opacity(0.055), in: Circle())
-                    .overlay(alignment: .topTrailing) {
-                        Circle().fill(WatchlistColor.accent)
-                            .frame(width: 7, height: 7)
-                            .overlay(Circle().stroke(WatchlistColor.background, lineWidth: 2))
-                            .offset(x: -5, y: 5)
-                    }
-                    .overlay(Circle().stroke(WatchlistColor.hairline, lineWidth: 1))
-            }
-            .accessibilityLabel("Notiser")
         }
         .padding(.horizontal, 20)
     }
