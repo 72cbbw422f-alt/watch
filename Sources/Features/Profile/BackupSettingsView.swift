@@ -6,8 +6,13 @@ struct BackupSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var document: WatchlistBackupDocument?
     @State private var isExporting = false
+    @State private var isImporting = false
+    @State private var pendingImport: WatchlistBackup?
+    @State private var importPreview: WatchlistImportPreview?
+    @State private var isConfirmingImport = false
     @State private var errorMessage: String?
     @State private var exportedSummary: String?
+    @State private var importedSummary: String?
 
     var body: some View {
         ZStack {
@@ -22,7 +27,7 @@ struct BackupSettingsView: View {
                         Text("Dina uppgifter. Din kontroll.")
                             .font(.system(size: 25, weight: .bold, design: .rounded))
                             .foregroundStyle(WatchlistColor.primaryText)
-                        Text("Skapa en JSON-fil med ditt bibliotek och din personliga tittarhistorik.")
+                        Text("Säkerhetskopiera och flytta ditt bibliotek utan att förlora din personliga tittarhistorik.")
                             .font(.system(size: 13))
                             .foregroundStyle(WatchlistColor.secondaryText)
                     }
@@ -47,13 +52,25 @@ struct BackupSettingsView: View {
                     }
                     .buttonStyle(.plain)
 
+                    Button { isImporting = true } label: {
+                        Label("Importera säkerhetskopia", systemImage: "square.and.arrow.down")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
                     if let exportedSummary {
-                        Text(exportedSummary)
-                            .font(.system(size: 11))
-                            .foregroundStyle(WatchlistColor.secondaryText)
+                        Text(exportedSummary).font(.system(size: 11)).foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                    if let importedSummary {
+                        Text(importedSummary).font(.system(size: 11)).foregroundStyle(WatchlistColor.accent)
                     }
 
-                    Text("Format: JSON · Schema v1. Exporten innehåller även metadata från TMDB som behövs för att återskapa dina poster. Ingen information skickas till en server.")
+                    Text("Format: JSON · Schema v1. Importen visar en sammanfattning innan den genomförs. Befintliga lokala poster skrivs inte över eller tas bort.")
                         .font(.system(size: 10))
                         .foregroundStyle(WatchlistColor.mutedText)
                 }
@@ -69,13 +86,32 @@ struct BackupSettingsView: View {
             defaultFilename: "watchlist-backup"
         ) { result in
             switch result {
-            case .success:
-                exportedSummary = "Säkerhetskopian har exporterats."
-            case .failure(let error):
-                errorMessage = error.localizedDescription
+            case .success: exportedSummary = "Säkerhetskopian har exporterats."
+            case .failure(let error): errorMessage = error.localizedDescription
             }
         }
-        .alert("Kunde inte skapa säkerhetskopia", isPresented: Binding(
+        .fileImporter(
+            isPresented: $isImporting,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportSelection(result)
+        }
+        .confirmationDialog(
+            "Importera säkerhetskopia?",
+            isPresented: $isConfirmingImport,
+            titleVisibility: .visible
+        ) {
+            Button("Slå samman med mitt bibliotek", role: .destructive) {
+                performImport()
+            }
+            Button("Avbryt", role: .cancel) { pendingImport = nil; importPreview = nil }
+        } message: {
+            if let importPreview {
+                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Historikhändelser: \(importPreview.newHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
+            }
+        }
+        .alert("Säkerhetskopiering", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
@@ -87,12 +123,8 @@ struct BackupSettingsView: View {
 
     private func backupRow(_ title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(WatchlistColor.primaryText)
-            Text(detail)
-                .font(.system(size: 10))
-                .foregroundStyle(WatchlistColor.secondaryText)
+            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(WatchlistColor.primaryText)
+            Text(detail).font(.system(size: 10)).foregroundStyle(WatchlistColor.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -103,8 +135,30 @@ struct BackupSettingsView: View {
             document = WatchlistBackupDocument(data: try WatchlistBackupService.encode(backup))
             exportedSummary = nil
             isExporting = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func handleImportSelection(_ result: Result<[URL], Error>) {
+        do {
+            let urls = try result.get()
+            guard let url = urls.first else { return }
+            let hasAccess = url.startAccessingSecurityScopedResource()
+            defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
+            let backup = try WatchlistBackupService.decode(Data(contentsOf: url))
+            let preview = try WatchlistImportService.preview(backup, in: modelContext)
+            pendingImport = backup
+            importPreview = preview
+            isConfirmingImport = true
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func performImport() {
+        guard let pendingImport else { return }
+        do {
+            let summary = try WatchlistImportService.merge(pendingImport, into: modelContext)
+            importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
+            self.pendingImport = nil
+            importPreview = nil
+        } catch { errorMessage = error.localizedDescription }
     }
 }
