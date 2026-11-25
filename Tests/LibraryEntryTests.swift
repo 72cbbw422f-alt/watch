@@ -56,6 +56,29 @@ final class LibraryEntryTests: XCTestCase {
         XCTAssertEqual(entry.status, .watched)
     }
 
+    func testPersonalRatingAndNotesDefaultToEmptyState() {
+        let entry = LibraryEntry(item: makeItem())
+
+        XCTAssertNil(entry.personalRating)
+        XCTAssertEqual(entry.personalNotes, "")
+    }
+
+    func testPersonalRatingAndNotesPersistInMemoryStore() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: LibraryEntry.self, configurations: configuration)
+        let context = ModelContext(container)
+        let entry = LibraryEntry(item: makeItem())
+        entry.personalRating = 9
+        entry.personalNotes = "En film jag vill se igen."
+
+        context.insert(entry)
+        try context.save()
+
+        let saved = try context.fetch(FetchDescriptor<LibraryEntry>()).first
+        XCTAssertEqual(saved?.personalRating, 9)
+        XCTAssertEqual(saved?.personalNotes, "En film jag vill se igen.")
+    }
+
     func testEntryCanBeInsertedFetchedAndDeletedInMemory() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
