@@ -17,6 +17,9 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
+      - name: Install iOS Simulator runtime
+        run: xcodebuild -downloadPlatform iOS
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
