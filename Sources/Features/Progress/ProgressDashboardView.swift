@@ -232,6 +232,8 @@ private struct ProgressSeriesRow: View {
                         Text("Nästa: \(nextCode)").foregroundStyle(WatchlistColor.primaryText)
                         if let date = entry.nextEpisodeAirDate, !date.isEmpty {
                             Text("· \(date)").foregroundStyle(WatchlistColor.mutedText)
+                            Text(date <= Self.todayISODate ? "NYTT AVSNITT" : "IKAPP")
+                                .foregroundStyle(date <= Self.todayISODate ? WatchlistColor.accent : WatchlistColor.mutedText)
                         }
                     }
                     .font(.system(size: 9, weight: .semibold))
