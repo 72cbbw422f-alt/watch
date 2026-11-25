@@ -3,30 +3,32 @@
 ## Vision
 WATCHLIST is a premium, cinematic personal film and television companion. The interface must feel editorial, immersive and unmistakably native to iOS — never like a generic media catalogue or an admin dashboard.
 
-## Art direction: Cinematic Premium
+## Art direction: Obsidian / Amber
 - Immersive, edge-to-edge key art where it adds meaning.
 - Confident editorial typography with clear hierarchy.
-- Deep near-black foundations, layered graphite surfaces and restrained warm highlights.
-- A distinctive electric-lime accent for primary actions, progress and selected states; use sparingly.
+- Deep black foundations and carefully layered graphite surfaces.
+- Restrained warm orange as the signature accent for primary actions, selected states and meaningful progress.
 - Poster artwork is the hero. UI chrome must support it, not compete with it.
-- Rich but controlled depth: gradients, subtle blur, layered materials and soft separators.
+- Rich but controlled depth: subtle gradients, selective blur, layered materials and soft separators.
 - Motion should feel intentional, fluid and fast. Use transitions to connect a poster to its detail page, not decorative animation everywhere.
+- The overall impression should be cinematic, refined and confident — not gaming-like, overly neon or visually noisy.
 
 ## Color tokens
 Initial design tokens (refine after first device screenshots):
-- Background: #08090B
-- Background elevated: #111318
-- Surface: #171A20
-- Surface elevated: #20242C
-- Primary text: #F5F5F2
-- Secondary text: #A5A9B2
-- Muted text: #737985
-- Accent lime: #C6F36A
-- Accent pressed: #A8D94A
+- Background: #080808
+- Background elevated: #111111
+- Surface: #191919
+- Surface elevated: #242424
+- Primary text: #F4F1ED
+- Secondary text: #AAA6A1
+- Muted text: #77736F
+- Accent orange: #F47721
+- Accent pressed: #D96116
+- Accent glow: orange at low opacity, used only behind selected hero actions or key moments
 - Divider: white at 8–10% opacity
-- Warm premium highlight: #D8C39A (rare, metadata only)
+- Neutral highlight: #D0C8BE (rare, metadata only)
 
-Do not use lime as a large page background. Reserve it for meaningful actions, active states, progress and small highlights.
+Orange is an accent, not a page background. Reserve it for meaningful actions, active states, selected filters, progress and small highlights. Avoid coloring every icon or decorative element orange. Most interface surfaces remain black or graphite.
 
 ## Typography
 - Use the system SF family as the foundation.
