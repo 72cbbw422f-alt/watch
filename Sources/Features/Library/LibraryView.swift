@@ -76,32 +76,36 @@ struct LibraryView: View {
 
     
     private var collectionStats: some View {
-        HStack(spacing: 9) {
-            statisticCard(value: watchedCount, label: "SEDDA", symbol: "checkmark.circle")
-            statisticCard(value: watchingCount, label: "PÅGÅR", symbol: "play.circle")
-            statisticCard(value: favoriteCount, label: "FAVORITER", symbol: "heart")
+        HStack(alignment: .center, spacing: 0) {
+            statistic(value: watchedCount, label: "SEDDA")
+            statDivider
+            statistic(value: watchingCount, label: "PÅGÅR")
+            statDivider
+            statistic(value: favoriteCount, label: "FAVORITER")
         }
+        .padding(.vertical, 15)
+        .background(WatchlistColor.surface.opacity(0.72), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .padding(.horizontal, 18)
     }
 
-    private func statisticCard(value: Int, label: String, symbol: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(WatchlistColor.accent)
-            Text("\(value)")
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+    private var statDivider: some View {
+        Rectangle()
+            .fill(WatchlistColor.hairline)
+            .frame(width: 1, height: 34)
+    }
+
+    private func statistic(value: Int, label: String) -> some View {
+        VStack(alignment: .center, spacing: 4) {
+            Text("\\(value)")
+                .font(.system(size: 21, weight: .semibold, design: .rounded))
                 .foregroundStyle(WatchlistColor.primaryText)
                 .contentTransition(.numericText())
             Text(label)
                 .font(.system(size: 8, weight: .bold))
-                .tracking(1)
+                .tracking(0.8)
                 .foregroundStyle(WatchlistColor.mutedText)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(13)
-        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+        .frame(maxWidth: .infinity)
     }
 
     private var statusFilters: some View {
@@ -129,11 +133,11 @@ struct LibraryView: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(isSelected ? WatchlistColor.background : WatchlistColor.secondaryText)
+                .foregroundStyle(isSelected ? WatchlistColor.primaryText : WatchlistColor.secondaryText)
                 .padding(.horizontal, 15)
                 .padding(.vertical, 10)
-                .background(isSelected ? WatchlistColor.accent : WatchlistColor.surface, in: Capsule())
-                .overlay(Capsule().stroke(isSelected ? .clear : WatchlistColor.hairline, lineWidth: 1))
+                .background(isSelected ? WatchlistColor.surfaceElevated : Color.clear, in: Capsule())
+                .overlay(Capsule().stroke(isSelected ? WatchlistColor.accent.opacity(0.38) : WatchlistColor.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -191,9 +195,7 @@ private struct LibraryRow: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(WatchlistColor.mutedText)
         }
-        .padding(11)
-        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+        .padding(.vertical, 7)
     }
 
     @ViewBuilder
