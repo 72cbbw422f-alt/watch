@@ -110,3 +110,6 @@ Episode progress now records an optional watchedAt timestamp whenever a user mar
 
 ## Next episode metadata (2026-11-25)
 TV series detail decoding now reads TMDB's `next_episode_to_air` object. When a series detail page refreshes, the library snapshot stores the next episode title, season/episode code and air date. The Progress rows display the next episode and its published date when TMDB provides one. This uses the actual next-episode field, not the series `first_air_date`. CI verification pending.
+
+
+The Progress row now distinguishes a next-episode air date that is today/past (`NYTT AVSNITT`) from a future date (`IKAPP`). This label is based only on TMDB's `next_episode_to_air.air_date`; when TMDB provides no next episode, no availability state is inferred. It does not yet replace a full episode-release sync or push notification system.
