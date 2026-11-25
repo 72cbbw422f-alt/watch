@@ -29,6 +29,26 @@ final class EpisodeWatchEvent {
         sourceRawValue = source
     }
 
+    init(
+        id: UUID,
+        seriesID: Int,
+        episodeID: Int,
+        seasonNumber: Int,
+        episodeNumber: Int,
+        episodeTitle: String,
+        watchedAt: Date,
+        source: String
+    ) {
+        self.id = id
+        self.seriesID = seriesID
+        self.episodeID = episodeID
+        self.seasonNumber = seasonNumber
+        self.episodeNumber = episodeNumber
+        self.episodeTitle = episodeTitle
+        self.watchedAt = watchedAt
+        sourceRawValue = source
+    }
+
     var episodeStableID: String {
         EpisodeProgress.makeStableID(
             seriesID: seriesID,
