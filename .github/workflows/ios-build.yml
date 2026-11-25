@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -23,5 +23,5 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build app and unit test bundle
-        run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build-for-testing
+      - name: Run unit tests on iOS Simulator
+        run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
