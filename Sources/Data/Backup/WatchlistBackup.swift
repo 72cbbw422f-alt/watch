@@ -45,6 +45,18 @@ struct WatchlistBackup: Codable {
         guard customListItems.allSatisfy({ !$0.stableID.isEmpty && !$0.listID.isEmpty && !$0.mediaStableID.isEmpty }) else {
             throw WatchlistBackupError.invalidCustomListItem
         }
+        let listIDs = Set(customLists.map(\.id))
+        guard customListItems.allSatisfy({ listIDs.contains($0.listID) }) else {
+            throw WatchlistBackupError.invalidCustomListItem
+        }
+        guard Set(library.map(\.stableID)).count == library.count,
+              Set(episodeProgress.map(\.stableID)).count == episodeProgress.count,
+              Set(episodeHistory.map(\.id)).count == episodeHistory.count,
+              listIDs.count == customLists.count,
+              Set(customListItems.map(\.stableID)).count == customListItems.count,
+              Set(premiereReminders.map(\.stableID)).count == premiereReminders.count else {
+            throw WatchlistBackupError.duplicateIdentity
+        }
     }
 }
 
@@ -211,6 +223,7 @@ enum WatchlistBackupError: LocalizedError {
     case invalidLibraryRecord
     case invalidCustomList
     case invalidCustomListItem
+    case duplicateIdentity
 
     var errorDescription: String? {
         switch self {
