@@ -132,3 +132,8 @@ The Progress row now distinguishes a next-episode air date that is today/past (`
 ### Backup/import verification update (2026-11-25)
 
 The additive JSON import is now covered by CI runs #186 and #187: the import notification restore call receives only the reminder IDs present in the selected backup, local-only library entries remain untouched, and importing the same backup twice is idempotent. A full restoration integration test has been added for episode progress, append-only episode history, custom lists, list memberships and premiere reminders; its CI run is pending. Notification scheduling remains conditional on existing notification authorization and still requires physical-device verification. Generic JSON import is not a Seenr importer; a real Seenr export sample is required before implementing source-specific mapping.
+
+
+## Yearly viewing statistics (2026-11-25)
+
+A new annual overview is available from the Progress dashboard. It derives its figures from the append-only EpisodeWatchEvent history: total registered episode-view events, distinct episode identities, additional same-episode events within the selected year, month-by-month activity and the five most-viewed series by event count. Users can switch between years represented in their history. The screen explicitly explains that legacy watched-state records without history events are not counted; film viewing events are not yet part of the model. CI verification is pending, and statistics have not been validated on a physical iPhone.
