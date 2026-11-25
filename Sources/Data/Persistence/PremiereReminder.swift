@@ -23,6 +23,26 @@ final class PremiereReminder {
         dateCreated = .now
     }
 
+    init(
+        stableID: String,
+        tmdbID: Int,
+        mediaKind: String,
+        title: String,
+        premiereDate: Date,
+        leadDays: Int,
+        notificationID: String,
+        dateCreated: Date
+    ) {
+        self.stableID = stableID
+        self.tmdbID = tmdbID
+        self.mediaKind = mediaKind
+        self.title = title
+        self.premiereDate = premiereDate
+        self.leadDays = leadDays
+        self.notificationID = notificationID
+        self.dateCreated = dateCreated
+    }
+
     var leadDescription: String {
         switch leadDays {
         case 7: "En vecka före"
