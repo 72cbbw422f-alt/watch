@@ -195,7 +195,7 @@ actor TMDBClient: MediaSearching {
     }
 }
 
-private struct TMDBPagedMediaResponse: Decodable {
+private struct TMDBPagedMediaResponse: Decodable, Sendable {
     let results: [MediaItem]
 }
 
