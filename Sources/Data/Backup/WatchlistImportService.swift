@@ -7,6 +7,7 @@ struct WatchlistImportPreview {
     let existingLibraryItems: Int
     let newEpisodeStates: Int
     let newHistoryEvents: Int
+    let newMovieHistoryEvents: Int
     let newCustomLists: Int
     let newCustomListItems: Int
     let newReminders: Int
@@ -31,6 +32,8 @@ enum WatchlistImportService {
         let library = try context.fetch(FetchDescriptor<LibraryEntry>())
         let episodeStates = try context.fetch(FetchDescriptor<EpisodeProgress>())
         let history = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
+        let movieHistory = try context.fetch(FetchDescriptor<MovieWatchEvent>())
+        let movieHistory = try context.fetch(FetchDescriptor<MovieWatchEvent>())
         let lists = try context.fetch(FetchDescriptor<CustomList>())
         let listItems = try context.fetch(FetchDescriptor<CustomListItem>())
         let reminders = try context.fetch(FetchDescriptor<PremiereReminder>())
@@ -49,6 +52,7 @@ enum WatchlistImportService {
             existingLibraryItems: existingLibrary.subtracting(incomingLibrary).count,
             newEpisodeStates: backup.episodeProgress.filter { !existingState.contains($0.stableID) }.count,
             newHistoryEvents: backup.episodeHistory.filter { !existingHistory.contains($0.id) }.count,
+            newMovieHistoryEvents: (backup.movieHistory ?? []).filter { !existingMovieHistory.contains($0.id) }.count,
             newCustomLists: backup.customLists.filter { !existingLists.contains($0.id) }.count,
             newCustomListItems: backup.customListItems.filter { !existingListItems.contains($0.stableID) }.count,
             newReminders: backup.premiereReminders.filter { !existingReminders.contains($0.stableID) }.count
@@ -126,6 +130,17 @@ enum WatchlistImportService {
                 source: record.sourceRawValue
             )
             context.insert(event)
+        }
+
+        for record in (backup.movieHistory ?? []) where !movieHistoryIDs.contains(record.id) {
+            context.insert(MovieWatchEvent(
+                id: record.id,
+                tmdbID: record.tmdbID,
+                title: record.title,
+                posterPath: record.posterPath,
+                watchedAt: record.watchedAt,
+                source: record.sourceRawValue
+            ))
         }
 
         for record in backup.customLists where !listIDs.contains(record.id) {
