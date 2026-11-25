@@ -254,9 +254,9 @@ struct HomeView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 13) {
-                        ForEach(Array(visibleTrendingItems.prefix(12).enumerated()), id: \.element.stableID) { index, item in
+                        ForEach(visibleTrendingItems.prefix(12), id: \.stableID) { item in
                             NavigationLink(value: item) {
-                                MediaPosterTile(item: item, rank: index + 1)
+                                MediaPosterTile(item: item, rank: (visibleTrendingItems.firstIndex(of: item) ?? 0) + 1)
                             }
                             .buttonStyle(.plain)
                         }
