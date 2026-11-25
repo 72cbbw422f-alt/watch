@@ -4,10 +4,13 @@ import SwiftData
 struct LibraryView: View {
     @Query(sort: \LibraryEntry.dateAdded, order: .reverse) private var entries: [LibraryEntry]
     @State private var selectedStatus: LibraryStatus?
+    @State private var favoritesOnly = false
 
     private var filteredEntries: [LibraryEntry] {
-        guard let selectedStatus else { return entries }
-        return entries.filter { $0.status == selectedStatus }
+        entries.filter { entry in
+            (selectedStatus == nil || entry.status == selectedStatus)
+                && (!favoritesOnly || entry.isFavorite)
+        }
     }
 
     var body: some View {
@@ -65,9 +68,14 @@ struct LibraryView: View {
                     selectedStatus = nil
                 }
                 ForEach(LibraryStatus.allCases) { status in
-                    filterChip(status.title, isSelected: selectedStatus == status) {
+                    filterChip(status.title, isSelected: selectedStatus == status && !favoritesOnly) {
                         selectedStatus = status
+                        favoritesOnly = false
                     }
+                }
+                filterChip("Favoriter", isSelected: favoritesOnly) {
+                    favoritesOnly.toggle()
+                    if favoritesOnly { selectedStatus = nil }
                 }
             }
             .padding(.horizontal, 20)
@@ -92,11 +100,12 @@ struct LibraryView: View {
             Image(systemName: "books.vertical")
                 .font(.system(size: 35, weight: .light))
                 .foregroundStyle(WatchlistColor.accent)
-            Text(selectedStatus == nil ? "Ditt bibliotek börjar här" : "Inga titlar i den här kategorin")
+            Text(selectedStatus == nil && !favoritesOnly ? "Ditt bibliotek börjar här" : favoritesOnly ? "Inga favoriter ännu" : "Inga titlar i den här kategorin")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text(selectedStatus == nil
+            Text(selectedStatus == nil && !favoritesOnly
                  ? "Sök efter filmer och serier och lägg till dem i din personliga samling."
+                 : favoritesOnly ? "Tryck på hjärtat på en titel för att spara den som favorit."
                  : "När du ändrar status på en titel visas den här.")
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
