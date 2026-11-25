@@ -27,6 +27,21 @@ final class LibraryEntryTests: XCTestCase {
         XCTAssertFalse(entry.isFavorite)
         XCTAssertEqual(entry.title, "Fight Club")
         XCTAssertEqual(entry.tmdbID, 550)
+        XCTAssertNil(entry.episodeTotalCount)
+    }
+
+    func testKnownEpisodeTotalPersistsInMemoryStore() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: LibraryEntry.self, configurations: configuration)
+        let context = ModelContext(container)
+        let entry = LibraryEntry(item: makeItem(id: 1396, kind: .television))
+        entry.episodeTotalCount = 62
+
+        context.insert(entry)
+        try context.save()
+
+        let saved = try context.fetch(FetchDescriptor<LibraryEntry>()).first
+        XCTAssertEqual(saved?.episodeTotalCount, 62)
     }
 
     func testStatusMutationUpdatesRawValueAndTimestamp() {
