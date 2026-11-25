@@ -10,6 +10,8 @@ private struct WatchSeriesStat: Identifiable {
 struct WatchStatsView: View {
     @Query(sort: \EpisodeWatchEvent.watchedAt, order: .reverse)
     private var events: [EpisodeWatchEvent]
+    @Query(sort: \\MovieWatchEvent.watchedAt, order: .reverse)
+    private var movieEvents: [MovieWatchEvent]
     @Query private var entries: [LibraryEntry]
     @State private var selectedYear = Calendar.current.component(.year, from: .now)
 
@@ -24,17 +26,25 @@ struct WatchStatsView: View {
         events.filter { calendar.component(.year, from: $0.watchedAt) == selectedYear }
     }
 
+    private var yearMovieEvents: [MovieWatchEvent] {
+        movieEvents.filter { calendar.component(.year, from: $0.watchedAt) == selectedYear }
+    }
+
+    private var uniqueMovies: Int {
+        Set(yearMovieEvents.map(\\.tmdbID)).count
+    }
+
     private var uniqueEpisodes: Int {
         Set(yearEvents.map(\.episodeStableID)).count
     }
 
     private var rewatchEvents: Int {
-        max(yearEvents.count - uniqueEpisodes, 0)
+        max(yearEvents.count + yearMovieEvents.count - uniqueEpisodes - uniqueMovies, 0)
     }
 
     private var monthlyCounts: [Int] {
         (1...12).map { month in
-            yearEvents.filter { calendar.component(.month, from: $0.watchedAt) == month }.count
+            yearEvents.filter { calendar.component(.month, from: $0.watchedAt) == month }.count + yearMovieEvents.filter { calendar.component(.month, from: $0.watchedAt) == month }.count
         }
     }
 
@@ -46,6 +56,13 @@ struct WatchStatsView: View {
         }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
     }
 
+    private var topMovies: [(id: Int, title: String, count: Int)] {
+        let grouped = Dictionary(grouping: yearMovieEvents, by: \.tmdbID)
+        return grouped.map { id, values in
+            (id: id, title: values.first?.title ?? "Film", count: values.count)
+        }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
+    }
+
     private var maxMonthlyCount: Int { max(monthlyCounts.max() ?? 0, 1) }
 
     var body: some View {
@@ -54,13 +71,14 @@ struct WatchStatsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     header
-                    if events.isEmpty {
+                    if events.isEmpty && movieEvents.isEmpty {
                         emptyState
                     } else {
                         metrics
                         monthlySection
                         topSeriesSection
-                        Text("Statistiken bygger på registrerade avsnittshändelser. En händelse skapas när ett avsnitt markeras som sett eller när en omtittning registreras. Äldre progressmarkeringar utan historikhändelse räknas inte.")
+                        topMoviesSection
+                        Text("Statistiken bygger på registrerade filmvisningar och avsnittshändelser. Varje omtittning räknas som ett eget tillfälle. Äldre progressmarkeringar utan historikhändelse räknas inte.")
                             .font(.system(size: 10))
                             .foregroundStyle(WatchlistColor.mutedText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -109,11 +127,13 @@ struct WatchStatsView: View {
 
     private var metrics: some View {
         HStack(spacing: 0) {
-            metric(value: yearEvents.count, label: "TITTADE AVSNITT")
+            metric(value: yearEvents.count + yearMovieEvents.count, label: "TILLFÄLLEN")
             Rectangle().fill(WatchlistColor.hairline).frame(width: 1, height: 36)
             metric(value: uniqueEpisodes, label: "UNIKA AVSNITT")
             Rectangle().fill(WatchlistColor.hairline).frame(width: 1, height: 36)
-            metric(value: rewatchEvents, label: "EXTRA VISNINGAR")
+            metric(value: uniqueMovies, label: "UNIKA FILMER")
+            Rectangle().fill(WatchlistColor.hairline).frame(width: 1, height: 36)
+            metric(value: rewatchEvents, label: "OMTITTNINGAR")
         }
         .padding(.vertical, 16)
         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15))
@@ -205,6 +225,44 @@ struct WatchStatsView: View {
         }
     }
 
+    private var topMoviesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("MEST SEDDA FILMER")
+                .font(.system(size: 9, weight: .bold))
+                .tracking(1.4)
+                .foregroundStyle(WatchlistColor.secondaryText)
+            if topMovies.isEmpty {
+                Text("Inga registrerade filmvisningar under året.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(topMovies.enumerated()), id: \.element.id) { index, movie in
+                        HStack(spacing: 12) {
+                            Text(String(format: "%02d", index + 1))
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(WatchlistColor.accent)
+                            Text(movie.title)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(WatchlistColor.primaryText)
+                                .lineLimit(1)
+                            Spacer()
+                            Text("\(movie.count) gånger")
+                                .font(.system(size: 10))
+                                .foregroundStyle(WatchlistColor.secondaryText)
+                        }
+                        .padding(.vertical, 12)
+                        if movie.id != topMovies.last?.id {
+                            Rectangle().fill(WatchlistColor.hairline).frame(height: 1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15))
+            }
+        }
+    }
+
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "chart.bar.xaxis")
@@ -213,7 +271,7 @@ struct WatchStatsView: View {
             Text("Ingen statistik ännu")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text("När du registrerar tittade avsnitt byggs din årsöversikt upp här.")
+            Text("När du registrerar filmvisningar och tittade avsnitt byggs din årsöversikt upp här.")
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
                 .multilineTextAlignment(.center)
