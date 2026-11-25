@@ -147,6 +147,7 @@ final class WatchlistImportTests: XCTestCase {
             watchedAt: viewedAt,
             source: "manual"
         )
+        let movieEvent = MovieWatchEvent(tmdbID: 550, title: "Fight Club", watchedAt: viewedAt)
         let list = CustomList(id: "list-favorites", name: "Favoriter",
             createdAt: viewedAt, updatedAt: viewedAt)
         let movie = item(id: 550, title: "Fight Club")
@@ -165,6 +166,7 @@ final class WatchlistImportTests: XCTestCase {
             library: [],
             episodeProgress: [EpisodeProgressRecord(progress)],
             episodeHistory: [EpisodeHistoryRecord(event)],
+            movieHistory: [MovieHistoryRecord(movieEvent)],
             customLists: [CustomListRecord(list)],
             customListItems: [CustomListItemRecord(membership)],
             premiereReminders: [PremiereReminderRecord(reminder)]
@@ -174,12 +176,14 @@ final class WatchlistImportTests: XCTestCase {
 
         XCTAssertEqual(summary.newEpisodeStates, 1)
         XCTAssertEqual(summary.newHistoryEvents, 1)
+        XCTAssertEqual(summary.newMovieHistoryEvents, 1)
         XCTAssertEqual(summary.newCustomLists, 1)
         XCTAssertEqual(summary.newCustomListItems, 1)
         XCTAssertEqual(summary.newReminders, 1)
 
         let restoredProgress = try context.fetch(FetchDescriptor<EpisodeProgress>())
         let restoredHistory = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
+        let restoredMovieHistory = try context.fetch(FetchDescriptor<MovieWatchEvent>())
         let restoredLists = try context.fetch(FetchDescriptor<CustomList>())
         let restoredItems = try context.fetch(FetchDescriptor<CustomListItem>())
         let restoredReminders = try context.fetch(FetchDescriptor<PremiereReminder>())
@@ -188,6 +192,8 @@ final class WatchlistImportTests: XCTestCase {
         XCTAssertTrue(restoredProgress.first?.isWatched == true)
         XCTAssertEqual(restoredHistory.first?.id, event.id)
         XCTAssertEqual(restoredHistory.first?.watchedAt, viewedAt)
+        XCTAssertEqual(restoredMovieHistory.first?.tmdbID, 550)
+        XCTAssertEqual(restoredMovieHistory.first?.watchedAt, viewedAt)
         XCTAssertEqual(restoredLists.first?.id, list.id)
         XCTAssertEqual(restoredItems.first?.stableID, membership.stableID)
         XCTAssertEqual(restoredReminders.first?.stableID, reminder.stableID)
