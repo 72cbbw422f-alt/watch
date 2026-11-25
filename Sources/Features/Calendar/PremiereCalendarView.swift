@@ -159,8 +159,29 @@ struct PremiereCalendarView: View {
             events = datedEvents
                 .filter { event in event.date >= today }
                 .sorted { first, second in first.date < second.date }
+            await reconcileReminderDates()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func reconcileReminderDates() async {
+        for reminder in savedReminders {
+            guard let matchingEvent = events.first(where: { $0.item.stableID == reminder.stableID }),
+                  Calendar.current.isDate(matchingEvent.date, inSameDayAs: reminder.premiereDate) == false else {
+                continue
+            }
+
+            let previousDate = reminder.premiereDate
+            reminder.premiereDate = matchingEvent.date
+            do {
+                try await PremiereNotificationService.schedule(reminder)
+                try modelContext.save()
+            } catch {
+                reminder.premiereDate = previousDate
+                reminderError = "Datumet för \(reminder.title) har ändrats, men påminnelsen kunde inte uppdateras: \(error.localizedDescription)"
+            }
         }
     }
 
