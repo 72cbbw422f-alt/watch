@@ -78,12 +78,21 @@ struct ProgressDashboardView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(WatchlistColor.secondaryText)
                 Spacer()
-                NavigationLink {
-                    EpisodeHistoryView()
-                } label: {
-                    Label("Historik", systemImage: "clock.arrow.circlepath")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(WatchlistColor.accent)
+                HStack(spacing: 14) {
+                    NavigationLink {
+                        WatchStatsView()
+                    } label: {
+                        Label("Årsöversikt", systemImage: "chart.bar.xaxis")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
+                    NavigationLink {
+                        EpisodeHistoryView()
+                    } label: {
+                        Label("Historik", systemImage: "clock.arrow.circlepath")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
                 }
             }
         }
