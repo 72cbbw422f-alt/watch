@@ -189,6 +189,7 @@ struct MediaDetailView: View {
                 }
                 .padding(15)
                 .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
+                favoriteButton(isFavorite: entry.isFavorite)
             } else {
                 Button {
                     let entry = LibraryEntry(item: item)
@@ -203,9 +204,35 @@ struct MediaDetailView: View {
                         .background(WatchlistColor.accent, in: RoundedRectangle(cornerRadius: 15))
                 }
                 .buttonStyle(.plain)
+                favoriteButton(isFavorite: false)
             }
         }
         .padding(.horizontal, 20)
+    }
+
+    private func favoriteButton(isFavorite: Bool) -> some View {
+        Button {
+            if let entry = libraryEntry {
+                entry.isFavorite.toggle()
+            } else {
+                let entry = LibraryEntry(item: item)
+                entry.isFavorite = true
+                modelContext.insert(entry)
+            }
+            try? modelContext.save()
+        } label: {
+            Label(
+                isFavorite ? "Ta bort från favoriter" : "Lägg till i favoriter",
+                systemImage: isFavorite ? "heart.fill" : "heart"
+            )
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(isFavorite ? WatchlistColor.accent : WatchlistColor.secondaryText)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private var titleBlock: some View {
