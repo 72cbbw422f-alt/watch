@@ -31,10 +31,13 @@ final class EpisodeProgressTests: XCTestCase {
         let progress = EpisodeProgress(seriesID: 1396, episode: try makeEpisode())
 
         XCTAssertFalse(progress.isWatched)
+        XCTAssertNil(progress.watchedAt)
         progress.setWatched(true)
         XCTAssertTrue(progress.isWatched)
+        XCTAssertNotNil(progress.watchedAt)
         progress.setWatched(false)
         XCTAssertFalse(progress.isWatched)
+        XCTAssertNil(progress.watchedAt)
     }
 
     func testEpisodeProgressPersistsInMemory() throws {
@@ -53,5 +56,6 @@ final class EpisodeProgressTests: XCTestCase {
         XCTAssertEqual(saved.count, 1)
         XCTAssertEqual(saved.first?.stableID, "tv-1396-s2-e1")
         XCTAssertTrue(saved.first?.isWatched == true)
+        XCTAssertNotNil(saved.first?.watchedAt)
     }
 }
