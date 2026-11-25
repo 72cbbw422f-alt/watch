@@ -111,7 +111,15 @@ struct PremiereCalendarView: View {
             MediaDetailView(item: item)
         }
         .task { await loadEvents() }
-        .alert("Kunde inte skapa påminnelse", isPresented: Binding(\n            get: { reminderError != nil },\n            set: { if !$0 { reminderError = nil } }\n        )) {\n            Button("OK", role: .cancel) { reminderError = nil }\n        } message: {\n            Text(reminderError ?? "Ett oväntat fel uppstod.")\n        }\n    }
+        .alert("Kunde inte skapa påminnelse", isPresented: Binding(
+            get: { reminderError != nil },
+            set: { if !$0 { reminderError = nil } }
+        )) {
+            Button("OK", role: .cancel) { reminderError = nil }
+        } message: {
+            Text(reminderError ?? "Ett oväntat fel uppstod.")
+        }
+    }
 
     @MainActor
     private func loadEvents() async {
