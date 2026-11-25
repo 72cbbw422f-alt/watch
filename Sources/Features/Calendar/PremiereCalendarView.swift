@@ -74,7 +74,7 @@ struct PremiereCalendarView: View {
                                                 .frame(width: 36, height: 44)
                                                 .contentShape(Rectangle())
                                         }
-                                        .accessibilityLabel("Påminnelse för \\(event.item.title)")
+                                        .accessibilityLabel("Påminnelse för \(event.item.title)")
                                     }
                                     .listRowBackground(WatchlistColor.surface)
                                     .listRowSeparatorTint(WatchlistColor.hairline)
