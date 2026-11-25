@@ -1,6 +1,12 @@
 import SwiftUI
 import SwiftData
 
+private struct WatchSeriesStat: Identifiable {
+    let id: Int
+    let title: String
+    let count: Int
+}
+
 struct WatchStatsView: View {
     @Query(sort: \\EpisodeWatchEvent.watchedAt, order: .reverse)
     private var events: [EpisodeWatchEvent]
@@ -32,11 +38,11 @@ struct WatchStatsView: View {
         }
     }
 
-    private var topSeries: [(id: Int, title: String, count: Int)] {
+    private var topSeries: [WatchSeriesStat] {
         let names = Dictionary(entries.map { ($0.tmdbID, $0.title) }, uniquingKeysWith: { first, _ in first })
         let grouped = Dictionary(grouping: yearEvents, by: \\.seriesID)
         return grouped.map { id, values in
-            (id: id, title: names[id] ?? "Serie", count: values.count)
+            WatchSeriesStat(id: id, title: names[id] ?? "Serie", count: values.count)
         }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
     }
 
@@ -173,9 +179,9 @@ struct WatchStatsView: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(topSeries.enumerated()), id: \\.element.id) { index, series in
+                    ForEach(topSeries) { series in
                         HStack(spacing: 12) {
-                            Text(String(format: "%02d", index + 1))
+                            Text(String(format: "%02d", (topSeries.firstIndex(where: { $0.id == series.id }) ?? 0) + 1))
                                 .font(.system(size: 10, weight: .bold, design: .rounded))
                                 .foregroundStyle(WatchlistColor.accent)
                             Text(series.title)
@@ -188,7 +194,7 @@ struct WatchStatsView: View {
                                 .foregroundStyle(WatchlistColor.secondaryText)
                         }
                         .padding(.vertical, 12)
-                        if index < topSeries.count - 1 {
+                        if series.id != topSeries.last?.id {
                             Rectangle().fill(WatchlistColor.hairline).frame(height: 1)
                         }
                     }
