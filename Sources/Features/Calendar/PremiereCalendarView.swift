@@ -6,6 +6,9 @@ struct PremiereCalendarView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var reminderError: String?
+    @State private var calendarMode = CalendarMode.agenda
+    @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @Environment(\.modelContext) private var modelContext
     @Query private var savedReminders: [PremiereReminder]
     private let client = TMDBConfiguration.makeClient()
@@ -17,91 +20,57 @@ struct PremiereCalendarView: View {
         }
     }
 
+    private enum CalendarMode: String, CaseIterable {
+        case agenda = "Agenda"
+        case month = "Månad"
+    }
+
+    private let weekdaySymbols = ["M", "T", "O", "T", "F", "L", "S"]
+
+    private var monthDays: [Date?] {
+        let calendar = Calendar.current
+        guard let interval = calendar.dateInterval(of: .month, for: displayedMonth),
+              let dayRange = calendar.range(of: .day, in: .month, for: displayedMonth) else { return [] }
+        let weekday = calendar.component(.weekday, from: interval.start)
+        let leadingSpaces = (weekday + 5) % 7
+        return Array(repeating: nil, count: leadingSpaces) +
+            dayRange.compactMap { day -> Date? in calendar.date(byAdding: .day, value: day - 1, to: interval.start) }
+                .map { Optional($0) }
+    }
+
+    private var selectedDayEvents: [PremiereEvent] {
+        events.filter { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }
+            .sorted { $0.item.title < $1.item.title }
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
-
             Group {
                 if isLoading && events.isEmpty {
-                    ProgressView("Hämtar premiärer…")
-                        .tint(WatchlistColor.accent)
+                    ProgressView("Hämtar premiärer…").tint(WatchlistColor.accent)
                 } else if let errorMessage, events.isEmpty {
-                    emptyState(
-                        title: "Kunde inte hämta premiärer",
-                        message: errorMessage,
-                        symbol: "wifi.exclamationmark"
-                    )
+                    emptyState(title: "Kunde inte hämta premiärer", message: errorMessage, symbol: "wifi.exclamationmark")
                 } else if events.isEmpty {
-                    emptyState(
-                        title: "Inga kommande datum",
-                        message: "TMDB har inga kommande svenska premiärdatum att visa just nu.",
-                        symbol: "calendar"
-                    )
+                    emptyState(title: "Inga kommande datum", message: "TMDB har inga kommande svenska premiärdatum att visa just nu.", symbol: "calendar")
                 } else {
-                    List {
-                        ForEach(groupedEvents, id: \.date) { group in
-                            Section {
-                                ForEach(group.events) { event in
-                                    HStack(spacing: 8) {
-                                        NavigationLink(value: event.item) {
-                                            PremiereCalendarRow(event: event)
-                                        }
-                                        .buttonStyle(.plain)
-                                        Menu {
-                                            if let saved = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
-                                                Section("Ändra påminnelse") {
-                                                    Button("En vecka före") {
-                                                        Task { await addReminder(for: event, leadDays: 7) }
-                                                    }
-                                                    Button("Dagen före") {
-                                                        Task { await addReminder(for: event, leadDays: 1) }
-                                                    }
-                                                    Button("Samma dag") {
-                                                        Task { await addReminder(for: event, leadDays: 0) }
-                                                    }
-                                                }
-                                                Button(role: .destructive) {
-                                                    removeReminder(saved)
-                                                } label: {
-                                                    Label("Ta bort påminnelse", systemImage: "bell.slash")
-                                                }
-                                            } else {
-                                                Section("Påminn mig") {
-                                                    Button("En vecka före") {
-                                                        Task { await addReminder(for: event, leadDays: 7) }
-                                                    }
-                                                    Button("Dagen före") {
-                                                        Task { await addReminder(for: event, leadDays: 1) }
-                                                    }
-                                                    Button("Samma dag") {
-                                                        Task { await addReminder(for: event, leadDays: 0) }
-                                                    }
-                                                }
-                                            }
-                                        } label: {
-                                            Image(systemName: savedReminders.contains(where: { $0.stableID == event.item.stableID }) ? "bell.badge.fill" : "bell")
-                                                .font(.system(size: 16, weight: .medium))
-                                                .foregroundStyle(WatchlistColor.accent)
-                                                .frame(width: 36, height: 44)
-                                                .contentShape(Rectangle())
-                                        }
-                                        .accessibilityLabel("Påminnelse för \(event.item.title)")
-                                    }
-                                    .listRowBackground(WatchlistColor.surface)
-                                    .listRowSeparatorTint(WatchlistColor.hairline)
-                                }
-                            } header: {
-                                Text(group.date.formatted(
-                                    .dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.wide)
-                                ).uppercased())
-                                .font(.system(size: 9, weight: .bold))
-                                .tracking(1.2)
-                                .foregroundStyle(WatchlistColor.accent)
+                    VStack(spacing: 12) {
+                        Picker("Kalendervy", selection: $calendarMode) {
+                            ForEach(CalendarMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue).tag(mode)
                             }
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 16)
+
+                        if calendarMode == .month {
+                            monthCalendar
+                            Divider().overlay(WatchlistColor.hairline)
+                            selectedDayContent
+                        } else {
+                            agendaContent
+                        }
                     }
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.insetGrouped)
                 }
             }
         }
@@ -109,20 +78,15 @@ struct PremiereCalendarView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task { await loadEvents() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundStyle(WatchlistColor.secondaryText)
+                Button { Task { await loadEvents() } } label: {
+                    Image(systemName: "arrow.clockwise").foregroundStyle(WatchlistColor.secondaryText)
                 }
                 .accessibilityLabel("Uppdatera premiärer")
             }
         }
-        .navigationDestination(for: MediaItem.self) { item in
-            MediaDetailView(item: item)
-        }
+        .navigationDestination(for: MediaItem.self) { item in MediaDetailView(item: item) }
         .task { await loadEvents() }
-        .alert("Kunde inte skapa påminnelse", isPresented: Binding(
+        .alert("Kunde inte hantera påminnelse", isPresented: Binding(
             get: { reminderError != nil },
             set: { if !$0 { reminderError = nil } }
         )) {
@@ -130,6 +94,133 @@ struct PremiereCalendarView: View {
         } message: {
             Text(reminderError ?? "Ett oväntat fel uppstod.")
         }
+    }
+
+    private var monthCalendar: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Button {
+                    displayedMonth = Calendar.current.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
+                } label: { Image(systemName: "chevron.left") }
+                Spacer()
+                Text(displayedMonth.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).month(.wide).year()).capitalized)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                Spacer()
+                Button {
+                    displayedMonth = Calendar.current.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
+                } label: { Image(systemName: "chevron.right") }
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(WatchlistColor.accent)
+            .padding(.horizontal, 8)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 8) {
+                ForEach(weekdaySymbols.indices, id: \.self) { index in
+                    Text(weekdaySymbols[index])
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(WatchlistColor.mutedText)
+                        .frame(maxWidth: .infinity)
+                }
+                ForEach(Array(monthDays.enumerated()), id: \.offset) { _, date in
+                    if let date {
+                        let hasEvents = events.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
+                        let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                        Button { selectedDate = date } label: {
+                            VStack(spacing: 4) {
+                                Text(date.formatted(.dateTime.day()))
+                                    .font(.system(size: 12, weight: isSelected ? .bold : .medium))
+                                    .foregroundStyle(isSelected ? WatchlistColor.background : WatchlistColor.primaryText)
+                                Circle()
+                                    .fill(hasEvents ? (isSelected ? WatchlistColor.background : WatchlistColor.accent) : .clear)
+                                    .frame(width: 4, height: 4)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 34)
+                            .background(isSelected ? WatchlistColor.accent : .clear, in: RoundedRectangle(cornerRadius: 8))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!hasEvents)
+                        .opacity(hasEvents ? 1 : 0.42)
+                        .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (hasEvents ? ", premiärer" : ""))
+                    } else {
+                        Color.clear.frame(height: 34)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+    }
+
+    private var selectedDayContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(selectedDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.wide)).capitalized)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .padding(.horizontal, 16)
+            if selectedDayEvents.isEmpty {
+                Text("Inga premiärer den här dagen.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(WatchlistColor.mutedText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(selectedDayEvents) { event in eventRow(event) }
+                    }
+                    .padding(.horizontal, 12)
+                }
+            }
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var agendaContent: some View {
+        List {
+            ForEach(groupedEvents, id: \.date) { group in
+                Section {
+                    ForEach(group.events) { event in eventRow(event) }
+                } header: {
+                    Text(group.date.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.wide)).uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundStyle(WatchlistColor.accent)
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .listStyle(.insetGrouped)
+    }
+
+    private func eventRow(_ event: PremiereEvent) -> some View {
+        HStack(spacing: 8) {
+            NavigationLink(value: event.item) { PremiereCalendarRow(event: event) }
+                .buttonStyle(.plain)
+            Menu {
+                Section(savedReminders.contains(where: { $0.stableID == event.item.stableID }) ? "Ändra påminnelse" : "Påminn mig") {
+                    Button("En vecka före") { Task { await addReminder(for: event, leadDays: 7) } }
+                    Button("Dagen före") { Task { await addReminder(for: event, leadDays: 1) } }
+                    Button("Samma dag") { Task { await addReminder(for: event, leadDays: 0) } }
+                }
+                if let saved = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
+                    Button(role: .destructive) { removeReminder(saved) } label: {
+                        Label("Ta bort påminnelse", systemImage: "bell.slash")
+                    }
+                }
+            } label: {
+                Image(systemName: savedReminders.contains(where: { $0.stableID == event.item.stableID }) ? "bell.badge.fill" : "bell")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(WatchlistColor.accent)
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Påminnelse för \\(event.item.title)")
+        }
+        .padding(.horizontal, 8)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 10))
     }
 
     @MainActor
@@ -159,6 +250,11 @@ struct PremiereCalendarView: View {
             events = datedEvents
                 .filter { event in event.date >= today }
                 .sorted { first, second in first.date < second.date }
+            if !events.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }),
+               let firstEvent = events.first {
+                selectedDate = Calendar.current.startOfDay(for: firstEvent.date)
+                displayedMonth = Calendar.current.dateInterval(of: .month, for: firstEvent.date)?.start ?? firstEvent.date
+            }
             await reconcileReminderDates()
         } catch {
             errorMessage = error.localizedDescription
