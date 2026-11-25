@@ -255,7 +255,6 @@ struct MediaDetailView: View {
             if item.voteAverage > 0 {
                 metadataPill("★  " + String(format: "%.1f", item.voteAverage))
             }
-            metadataPill(item.kind == .movie ? "Långfilm" : "TV-serie")
         }
         .padding(.horizontal, 20)
     }
@@ -274,10 +273,7 @@ struct MediaDetailView: View {
         Text(value)
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(WatchlistColor.secondaryText)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 8)
-            .background(WatchlistColor.surface, in: Capsule())
-            .overlay(Capsule().stroke(WatchlistColor.hairline, lineWidth: 1))
+            .padding(.trailing, 5)
     }
 
     private func sectionLabel(_ value: String) -> some View {
