@@ -106,3 +106,7 @@ A dedicated Progress tab now separates active, planned and completed TV series f
 
 
 Episode progress now records an optional watchedAt timestamp whenever a user marks an episode watched. Unmarking clears that timestamp. The Progress dashboard can use the timestamp to show viewing recency; older records without it retain dateUpdated as a fallback. This timestamp represents the moment the user marked an episode watched, not an imported historical date. CI verification pending.
+
+
+## Next episode metadata (2026-11-25)
+TV series detail decoding now reads TMDB's `next_episode_to_air` object. When a series detail page refreshes, the library snapshot stores the next episode title, season/episode code and air date. The Progress rows display the next episode and its published date when TMDB provides one. This uses the actual next-episode field, not the series `first_air_date`. CI verification pending.
