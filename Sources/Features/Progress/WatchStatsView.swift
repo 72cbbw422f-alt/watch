@@ -31,7 +31,7 @@ struct WatchStatsView: View {
     }
 
     private var uniqueMovies: Int {
-        Set(yearMovieEvents.map(\\.tmdbID)).count
+        Set(yearMovieEvents.map(\.tmdbID)).count
     }
 
     private var uniqueEpisodes: Int {
