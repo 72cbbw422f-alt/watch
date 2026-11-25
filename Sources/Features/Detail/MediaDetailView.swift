@@ -7,6 +7,7 @@ struct MediaDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
+    @Query private var movieWatchEvents: [MovieWatchEvent]
     @Query(sort: \CustomList.name) private var customLists: [CustomList]
     @Query private var customListItems: [CustomListItem]
     @State private var persistenceError: String?
@@ -28,6 +29,7 @@ struct MediaDetailView: View {
                     artworkHeader
                     metadata
                     libraryActions
+                    movieHistorySection
                     PersonalReviewSection(
                         rating: libraryEntry?.personalRating,
                         notes: libraryEntry?.personalNotes ?? "",
@@ -235,6 +237,59 @@ struct MediaDetailView: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder
+    private var movieHistorySection: some View {
+        if item.kind == .movie {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionLabel("TITTARHISTORIK")
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(movieWatchEvents.filter { $0.tmdbID == item.id }.count == 0
+                             ? "Har du sett filmen?"
+                             : "Sedd \(movieWatchEvents.filter { $0.tmdbID == item.id }.count) gånger")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                        Text("Varje registrering sparas separat, även omtittningar.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                    Spacer()
+                    Button {
+                        registerMovieViewing()
+                    } label: {
+                        Label("Registrera", systemImage: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(WatchlistColor.background)
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 10)
+                            .background(WatchlistColor.accent, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(14)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private func registerMovieViewing() {
+        modelContext.insert(MovieWatchEvent(
+            tmdbID: item.id,
+            title: item.title,
+            posterPath: item.posterPath
+        ))
+        let entry: LibraryEntry
+        if let existing = libraryEntry {
+            entry = existing
+        } else {
+            entry = LibraryEntry(item: item, status: .watched)
+            modelContext.insert(entry)
+        }
+        entry.status = .watched
+        saveChanges()
     }
 
     private func favoriteButton(isFavorite: Bool) -> some View {
