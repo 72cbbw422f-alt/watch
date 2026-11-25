@@ -53,14 +53,20 @@ struct WatchStatsView: View {
         let grouped = Dictionary(grouping: yearEvents, by: \.seriesID)
         return grouped.map { id, values in
             WatchSeriesStat(id: id, title: names[id] ?? "Serie", count: values.count)
-        }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
+        }.sorted {
+            if $0.count != $1.count { return $0.count > $1.count }
+            return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }.prefix(5).map { $0 }
     }
 
     private var topMovies: [(id: Int, title: String, count: Int)] {
         let grouped = Dictionary(grouping: yearMovieEvents, by: \.tmdbID)
         return grouped.map { id, values in
             (id: id, title: values.first?.title ?? "Film", count: values.count)
-        }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
+        }.sorted {
+            if $0.count != $1.count { return $0.count > $1.count }
+            return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }.prefix(5).map { $0 }
     }
 
     private var maxMonthlyCount: Int { max(monthlyCounts.max() ?? 0, 1) }
