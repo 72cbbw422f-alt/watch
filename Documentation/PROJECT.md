@@ -108,6 +108,10 @@ A dedicated Progress tab now separates active, planned and completed TV series f
 Episode progress now records an optional watchedAt timestamp whenever a user marks an episode watched. Unmarking clears that timestamp. The Progress dashboard can use the timestamp to show viewing recency; older records without it retain dateUpdated as a fallback. This timestamp represents the moment the user marked an episode watched, not an imported historical date. CI verification pending.
 
 
+## Episode viewing history (2026-11-25)
+
+An append-only `EpisodeWatchEvent` model now records each manual action that marks an episode watched. Events have independent UUIDs and preserve series/episode identity, title, timestamp and source. Rewatching the same episode can therefore create another event without overwriting earlier viewing history. The existing `EpisodeProgress` model remains the current watched/unwatched state used for progress calculations; unmarking an episode does not erase past viewing events. Existing `watchedAt` values are not retroactively converted into historical events because they do not establish a complete viewing history. The model is registered in the app's SwiftData container, and tests cover multiple events for the same episode and persisted identity. Import mapping and an explicit rewatch action are still to be implemented; CI and device migration checks are pending.
+
 ## Next episode metadata (2026-11-25)
 TV series detail decoding now reads TMDB's `next_episode_to_air` object. When a series detail page refreshes, the library snapshot stores the next episode title, season/episode code and air date. The Progress rows display the next episode and its published date when TMDB provides one. This uses the actual next-episode field, not the series `first_air_date`. CI verification pending.
 
