@@ -22,7 +22,7 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                SimpleFeatureView(title: "Bibliotek", subtitle: "Allt du vill se och allt du redan sett.", symbol: "square.grid.2x2")
+                LibraryView()
             }
             .tag(2)
             .tabItem {
