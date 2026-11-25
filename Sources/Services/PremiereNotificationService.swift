@@ -48,7 +48,7 @@ enum PremiereNotificationService {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Premiär idag"
+        content.title = "Kommande premiär"
         content.body = "\(reminder.title) har premiär \(reminder.premiereDate.formatted(date: .abbreviated, time: .omitted))."
         content.sound = .default
 
