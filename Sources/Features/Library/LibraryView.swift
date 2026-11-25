@@ -96,7 +96,7 @@ struct LibraryView: View {
 
     private func statistic(value: Int, label: String) -> some View {
         VStack(alignment: .center, spacing: 4) {
-            Text("\\(value)")
+            Text("\(value)")
                 .font(.system(size: 21, weight: .semibold, design: .rounded))
                 .foregroundStyle(WatchlistColor.primaryText)
                 .contentTransition(.numericText())
