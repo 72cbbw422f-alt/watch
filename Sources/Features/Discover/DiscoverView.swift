@@ -28,7 +28,7 @@ struct DiscoverView: View {
                     .foregroundStyle(WatchlistColor.secondaryText)
                     Spacer()
                 } else if isSearching {
-                    ProgressView("Söker i filmbiblioteket…")
+                    ProgressView("Söker hos TMDB…")
                         .tint(WatchlistColor.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if results.isEmpty {
@@ -142,18 +142,22 @@ struct DiscoverView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 13) {
-            Image(systemName: "sparkle.magnifyingglass")
+        let hasSearchTerm = !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        return VStack(spacing: 13) {
+            Image(systemName: hasSearchTerm ? "film.slash" : "sparkle.magnifyingglass")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(WatchlistColor.accent)
-            Text("Vad är du sugen på?")
+            Text(hasSearchTerm ? "Inga träffar" : "Vad är du sugen på?")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text("Sök efter en film eller serie och bygg din egen lista.")
+            Text(hasSearchTerm
+                 ? "Vi hittade inga \(selectedKind == .movie ? "filmer" : "serier") för ”\(query)”. Prova en annan titel eller stavning."
+                 : "Sök efter en film eller serie och bygg din egen lista.")
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 260)
+                .frame(maxWidth: 280)
             if !TMDBConfiguration.isConfigured {
                 Text("TMDB är inte konfigurerat ännu. Lägg till din åtkomsttoken enligt TMDB_SETUP.md.")
                     .font(.system(size: 10))
