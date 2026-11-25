@@ -8,7 +8,7 @@ struct HomeView: View {
     @State private var trendingItems: [MediaItem] = []
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
-    @Query(sort: \\LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
+    @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
 
     private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
 
