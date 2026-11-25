@@ -43,6 +43,55 @@ actor TMDBClient: MediaSearching {
         try await search(query: query, kind: .television)
     }
 
+    func televisionDetails(id: Int) async throws -> TVSeriesDetails {
+        try await fetch(
+            path: "/tv/\(id)",
+            as: TVSeriesDetails.self
+        )
+    }
+
+    func televisionSeason(id: Int, seasonNumber: Int) async throws -> TVSeasonDetails {
+        try await fetch(
+            path: "/tv/\(id)/season/\(seasonNumber)",
+            as: TVSeasonDetails.self
+        )
+    }
+
+    private func fetch<Response: Decodable & Sendable>(
+        path: String,
+        as responseType: Response.Type
+    ) async throws -> Response {
+        guard !accessToken.isEmpty else { throw TMDBError.missingAccessToken }
+
+        var components = URLComponents(
+            url: baseURL.appending(path: path),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "language", value: "sv-SE")
+        ]
+        guard let url = components?.url else { throw TMDBError.invalidResponse }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw TMDBError.httpStatus(httpResponse.statusCode)
+        }
+
+        do {
+            return try JSONDecoder().decode(responseType, from: data)
+        } catch {
+            throw TMDBError.decodingFailed
+        }
+    }
+
     func trendingThisWeek() async throws -> [MediaItem] {
         guard !accessToken.isEmpty else { throw TMDBError.missingAccessToken }
 
