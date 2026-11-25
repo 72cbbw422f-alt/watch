@@ -30,7 +30,7 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                SimpleFeatureView(title: "Kalender", subtitle: "Premiärer och nya avsnitt samlade på ett ställe.", symbol: "calendar")
+                PremiereCalendarView()
             }
             .tag(3)
             .tabItem {
