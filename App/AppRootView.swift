@@ -1,11 +1,14 @@
 import SwiftUI
 
 struct AppRootView: View {
+    @State private var selectedTab = 0
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
-                HomeView()
+                HomeView(onExplore: { selectedTab = 1 })
             }
+            .tag(0)
             .tabItem {
                 Label("Hem", systemImage: "house.fill")
             }
@@ -13,6 +16,7 @@ struct AppRootView: View {
             NavigationStack {
                 DiscoverView()
             }
+            .tag(1)
             .tabItem {
                 Label("Upptäck", systemImage: "sparkle.magnifyingglass")
             }
@@ -20,6 +24,7 @@ struct AppRootView: View {
             NavigationStack {
                 SimpleFeatureView(title: "Bibliotek", subtitle: "Allt du vill se och allt du redan sett.", symbol: "square.grid.2x2")
             }
+            .tag(2)
             .tabItem {
                 Label("Bibliotek", systemImage: "books.vertical.fill")
             }
@@ -27,6 +32,7 @@ struct AppRootView: View {
             NavigationStack {
                 SimpleFeatureView(title: "Kalender", subtitle: "Premiärer och nya avsnitt samlade på ett ställe.", symbol: "calendar")
             }
+            .tag(3)
             .tabItem {
                 Label("Kalender", systemImage: "calendar")
             }
@@ -34,6 +40,7 @@ struct AppRootView: View {
             NavigationStack {
                 SimpleFeatureView(title: "Profil", subtitle: "Dina inställningar och preferenser.", symbol: "person.crop.circle")
             }
+            .tag(4)
             .tabItem {
                 Label("Profil", systemImage: "person.crop.circle")
             }
