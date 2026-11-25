@@ -9,6 +9,7 @@ struct WatchlistBackup: Codable {
     let library: [LibraryRecord]
     let episodeProgress: [EpisodeProgressRecord]
     let episodeHistory: [EpisodeHistoryRecord]
+    let movieHistory: [MovieHistoryRecord]?
     let customLists: [CustomListRecord]
     let customListItems: [CustomListItemRecord]
     let premiereReminders: [PremiereReminderRecord]
@@ -18,6 +19,7 @@ struct WatchlistBackup: Codable {
         library: [LibraryRecord],
         episodeProgress: [EpisodeProgressRecord],
         episodeHistory: [EpisodeHistoryRecord],
+        movieHistory: [MovieHistoryRecord] = [],
         customLists: [CustomListRecord],
         customListItems: [CustomListItemRecord],
         premiereReminders: [PremiereReminderRecord]
@@ -27,6 +29,7 @@ struct WatchlistBackup: Codable {
         self.library = library
         self.episodeProgress = episodeProgress
         self.episodeHistory = episodeHistory
+        self.movieHistory = movieHistory
         self.customLists = customLists
         self.customListItems = customListItems
         self.premiereReminders = premiereReminders
@@ -47,6 +50,12 @@ struct WatchlistBackup: Codable {
         }
         guard episodeHistory.allSatisfy({ $0.seriesID > 0 && $0.episodeID > 0 && $0.seasonNumber >= 0 && $0.episodeNumber > 0 && !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidEpisodeRecord
+        }
+        guard (movieHistory ?? []).allSatisfy({ $0.tmdbID > 0 && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw WatchlistBackupError.invalidMovieHistoryRecord
+        }
+        guard Set((movieHistory ?? []).map(\\.id)).count == (movieHistory ?? []).count else {
+            throw WatchlistBackupError.duplicateIdentity
         }
         guard customLists.allSatisfy({ !$0.id.isEmpty && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidCustomList
@@ -164,6 +173,24 @@ struct EpisodeHistoryRecord: Codable {
     }
 }
 
+struct MovieHistoryRecord: Codable {
+    let id: UUID
+    let tmdbID: Int
+    let title: String
+    let posterPath: String?
+    let watchedAt: Date
+    let sourceRawValue: String
+
+    init(_ value: MovieWatchEvent) {
+        id = value.id
+        tmdbID = value.tmdbID
+        title = value.title
+        posterPath = value.posterPath
+        watchedAt = value.watchedAt
+        sourceRawValue = value.sourceRawValue
+    }
+}
+
 struct CustomListRecord: Codable {
     let id: String
     let name: String
@@ -234,6 +261,7 @@ enum WatchlistBackupError: LocalizedError {
     case unsupportedVersion(Int)
     case invalidLibraryRecord
     case invalidEpisodeRecord
+    case invalidMovieHistoryRecord
     case invalidCustomList
     case invalidCustomListItem
     case invalidReminder
@@ -247,6 +275,8 @@ enum WatchlistBackupError: LocalizedError {
             "Backupfilen innehåller en ogiltig film- eller seriepost."
         case .invalidEpisodeRecord:
             "Backupfilen innehåller en ogiltig avsnittspost."
+        case .invalidMovieHistoryRecord:
+            "Backupfilen innehåller en ogiltig filmhistorikpost."
         case .invalidCustomList:
             "Backupfilen innehåller en ogiltig egen lista."
         case .invalidCustomListItem:
@@ -266,6 +296,7 @@ enum WatchlistBackupService {
             library: try context.fetch(FetchDescriptor<LibraryEntry>()).map(LibraryRecord.init),
             episodeProgress: try context.fetch(FetchDescriptor<EpisodeProgress>()).map(EpisodeProgressRecord.init),
             episodeHistory: try context.fetch(FetchDescriptor<EpisodeWatchEvent>()).map(EpisodeHistoryRecord.init),
+            movieHistory: try context.fetch(FetchDescriptor<MovieWatchEvent>()).map(MovieHistoryRecord.init),
             customLists: try context.fetch(FetchDescriptor<CustomList>()).map(CustomListRecord.init),
             customListItems: try context.fetch(FetchDescriptor<CustomListItem>()).map(CustomListItemRecord.init),
             premiereReminders: try context.fetch(FetchDescriptor<PremiereReminder>()).map(PremiereReminderRecord.init)
