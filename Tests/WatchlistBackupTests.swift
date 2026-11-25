@@ -109,4 +109,49 @@ final class WatchlistBackupTests: XCTestCase {
 
         XCTAssertThrowsError(try WatchlistBackupService.decode(json))
     }
+
+    func testRejectsUnknownMediaKindAndStatus() throws {
+        let item = MediaItem(
+            id: 550,
+            kind: .movie,
+            title: "Fight Club",
+            overview: "",
+            posterPath: nil,
+            backdropPath: nil,
+            releaseDate: nil,
+            voteAverage: 0
+        )
+        let entry = LibraryEntry(item: item)
+        var record = LibraryRecord(entry)
+        record = LibraryRecord(
+            stableID: record.stableID,
+            tmdbID: record.tmdbID,
+            mediaKind: "unknown-kind",
+            title: record.title,
+            overview: record.overview,
+            posterPath: record.posterPath,
+            backdropPath: record.backdropPath,
+            releaseDate: record.releaseDate,
+            voteAverage: record.voteAverage,
+            statusRawValue: record.statusRawValue,
+            dateAdded: record.dateAdded,
+            dateUpdated: record.dateUpdated,
+            isFavorite: record.isFavorite,
+            personalRating: record.personalRating,
+            personalNotes: record.personalNotes,
+            episodeTotalCount: record.episodeTotalCount,
+            nextEpisodeTitle: record.nextEpisodeTitle,
+            nextEpisodeCode: record.nextEpisodeCode,
+            nextEpisodeAirDate: record.nextEpisodeAirDate
+        )
+        let backup = WatchlistBackup(
+            library: [record],
+            episodeProgress: [],
+            episodeHistory: [],
+            customLists: [],
+            customListItems: [],
+            premiereReminders: []
+        )
+        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+    }
 }
