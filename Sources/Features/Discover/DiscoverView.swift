@@ -132,11 +132,11 @@ struct DiscoverView: View {
         } label: {
             Label(title, systemImage: symbol)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(selectedKind == kind ? WatchlistColor.accent : WatchlistColor.secondaryText)
+                .foregroundStyle(selectedKind == kind ? WatchlistColor.primaryText : WatchlistColor.secondaryText)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 9)
-                .background(selectedKind == kind ? WatchlistColor.accent.opacity(0.10) : WatchlistColor.surface, in: Capsule())
-                .overlay(Capsule().stroke(selectedKind == kind ? WatchlistColor.accent.opacity(0.35) : WatchlistColor.hairline, lineWidth: 1))
+                .background(selectedKind == kind ? WatchlistColor.surfaceElevated : Color.clear, in: Capsule())
+                .overlay(Capsule().stroke(selectedKind == kind ? WatchlistColor.hairline : Color.clear, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -208,7 +208,7 @@ private struct MediaSearchRow: View {
                     }
                 }
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(WatchlistColor.accent)
+                .foregroundStyle(WatchlistColor.secondaryText)
                 Text(item.overview.isEmpty ? "Ingen beskrivning finns tillgänglig." : item.overview)
                     .font(.system(size: 10))
                     .foregroundStyle(WatchlistColor.secondaryText)
@@ -216,9 +216,7 @@ private struct MediaSearchRow: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(11)
-        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+        .padding(.vertical, 7)
     }
 
     @ViewBuilder
