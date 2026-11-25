@@ -482,8 +482,22 @@ struct MediaDetailView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isEpisodeWatched(episode) ? "Markera som ej sedd" : "Markera som sedd")
+            .contextMenu {
+                if isEpisodeWatched(episode) {
+                    Button {
+                        registerEpisodeRewatch(episode)
+                    } label: {
+                        Label("Registrera omtittning", systemImage: "arrow.clockwise")
+                    }
+                }
+            }
         }
         .padding(.vertical, 10)
+    }
+
+    private func registerEpisodeRewatch(_ episode: TVEpisode) {
+        modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
+        saveChanges()
     }
 
     private func seasonProgressLabel(for season: TVSeason) -> String {
