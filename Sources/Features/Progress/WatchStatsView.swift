@@ -19,7 +19,7 @@ struct WatchStatsView: View {
     private let monthSymbols = Calendar.current.monthSymbols
 
     private var years: [Int] {
-        Array(Set(events.map { calendar.component(.year, from: $0.watchedAt) })).sorted(by: >)
+        Array(Set(events.map { calendar.component(.year, from: $0.watchedAt) }).union(movieEvents.map { calendar.component(.year, from: $0.watchedAt) })).sorted(by: >)
     }
 
     private var yearEvents: [EpisodeWatchEvent] {
