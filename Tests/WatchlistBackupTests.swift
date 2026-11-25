@@ -134,4 +134,4 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertNotEqual(validJSON, invalidJSON)
         XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
     }
-}}
+}
