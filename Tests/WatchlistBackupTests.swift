@@ -43,7 +43,7 @@ final class WatchlistBackupTests: XCTestCase {
     func testBackupServiceExportsAllLocalCollections() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
-            for: LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
+            for: LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self, MovieWatchEvent.self,
             CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration
         )
@@ -69,6 +69,7 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertEqual(restored.customLists.map(\.name), ["Favoriter"])
         XCTAssertTrue(restored.episodeProgress.isEmpty)
         XCTAssertTrue(restored.episodeHistory.isEmpty)
+        XCTAssertTrue((restored.movieHistory ?? []).isEmpty)
         XCTAssertTrue(restored.customListItems.isEmpty)
         XCTAssertTrue(restored.premiereReminders.isEmpty)
     }
