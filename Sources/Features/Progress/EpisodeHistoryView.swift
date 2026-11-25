@@ -15,10 +15,37 @@ struct EpisodeHistoryView: View {
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
-            if events.isEmpty {
+            if events.isEmpty && movieEvents.isEmpty {
                 emptyState
             } else {
                 List {
+                    if !movieEvents.isEmpty {
+                        Section("FILMER") {
+                            ForEach(movieEvents) { event in
+                                HStack(spacing: 12) {
+                                    Image(systemName: "film")
+                                        .foregroundStyle(WatchlistColor.accent)
+                                        .frame(width: 28)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(event.title)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(WatchlistColor.primaryText)
+                                        Text(event.watchedAt.formatted(date: .long, time: .shortened))
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(WatchlistColor.mutedText)
+                                    }
+                                    Spacer()
+                                    Text(event.sourceRawValue == "manual" ? "MANUELL" : event.sourceRawValue.uppercased())
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(WatchlistColor.accent)
+                                }
+                                .padding(.vertical, 6)
+                                .listRowBackground(WatchlistColor.surface)
+                            }
+                        }
+                    }
+                    if !events.isEmpty {
+                        Section("SERIER") {
                     ForEach(events) { event in
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 5) {
@@ -42,6 +69,8 @@ struct EpisodeHistoryView: View {
                         .padding(.vertical, 7)
                         .listRowBackground(WatchlistColor.surface)
                     }
+                        }
+                    }
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.plain)
@@ -59,7 +88,7 @@ struct EpisodeHistoryView: View {
             Text("Ingen visningshistorik ännu")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text("När du markerar ett avsnitt som sett sparas tillfället här. Du kan även registrera omtittningar.")
+            Text("När du registrerar en film eller markerar ett avsnitt som sett sparas tillfället här. Omtittningar registreras separat.")
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
                 .multilineTextAlignment(.center)
