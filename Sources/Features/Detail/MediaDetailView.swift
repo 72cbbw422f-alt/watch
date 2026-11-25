@@ -1,7 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct MediaDetailView: View {
     let item: MediaItem
+
+    @Environment(\.modelContext) private var modelContext
+    @Query private var libraryEntries: [LibraryEntry]
 
     var body: some View {
         ZStack {
@@ -12,6 +16,7 @@ struct MediaDetailView: View {
                     artworkHeader
                     titleBlock
                     metadata
+                    libraryActions
                     if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         VStack(alignment: .leading, spacing: 9) {
                             sectionLabel("OM TITELN")
@@ -146,6 +151,61 @@ struct MediaDetailView: View {
                     .blur(radius: 55)
                     .offset(x: 45, y: -30)
             }
+    }
+
+
+    private var libraryEntry: LibraryEntry? {
+        libraryEntries.first { $0.stableID == item.stableID }
+    }
+
+    private var libraryActions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let entry = libraryEntry {
+                HStack(spacing: 10) {
+                    Label(entry.status.title, systemImage: entry.status.symbol)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.accent)
+                    Spacer()
+                    Menu {
+                        ForEach(LibraryStatus.allCases) { status in
+                            Button {
+                                entry.status = status
+                                try? modelContext.save()
+                            } label: {
+                                Label(status.title, systemImage: status.symbol)
+                            }
+                        }
+                        Button(role: .destructive) {
+                            modelContext.delete(entry)
+                            try? modelContext.save()
+                        } label: {
+                            Label("Ta bort från bibliotek", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 21))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                }
+                .padding(15)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
+            } else {
+                Button {
+                    let entry = LibraryEntry(item: item)
+                    modelContext.insert(entry)
+                    try? modelContext.save()
+                } label: {
+                    Label("Lägg till i min lista", systemImage: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(WatchlistColor.background)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(WatchlistColor.accent, in: RoundedRectangle(cornerRadius: 15))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     private var titleBlock: some View {
