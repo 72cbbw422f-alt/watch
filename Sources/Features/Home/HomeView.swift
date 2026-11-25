@@ -8,6 +8,14 @@ struct HomeView: View {
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
 
+    private var visibleTrendingItems: [MediaItem] {
+        switch selectedFilter {
+        case "Filmer": trendingItems.filter { $0.kind == .movie }
+        case "Serier": trendingItems.filter { $0.kind == .television }
+        default: trendingItems
+        }
+    }
+
     private let filters = ["För dig", "Filmer", "Serier"]
 
     var body: some View {
@@ -29,6 +37,9 @@ struct HomeView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(for: MediaItem.self) { item in
+            MediaDetailView(item: item)
+        }
         .task { await loadTrending() }
     }
 
@@ -243,8 +254,11 @@ struct HomeView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 13) {
-                        ForEach(trendingItems.prefix(12), id: \.stableID) { item in
-                            MediaPosterTile(item: item, rank: (trendingItems.firstIndex(of: item) ?? 0) + 1)
+                        ForEach(Array(visibleTrendingItems.prefix(12).enumerated()), id: \.element.stableID) { index, item in
+                            NavigationLink(value: item) {
+                                MediaPosterTile(item: item, rank: index + 1)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -336,7 +350,7 @@ struct HomeView: View {
                     .foregroundStyle(WatchlistColor.primaryText)
             }
             Spacer()
-            Button(trailing) {}
+            Text(trailing)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(WatchlistColor.secondaryText)
         }
