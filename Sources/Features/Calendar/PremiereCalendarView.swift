@@ -122,8 +122,8 @@ struct PremiereCalendarView: View {
                         .foregroundStyle(WatchlistColor.mutedText)
                         .frame(maxWidth: .infinity)
                 }
-                ForEach(Array(monthDays.enumerated()), id: \.offset) { _, date in
-                    if let date {
+                ForEach(Array(monthDays.enumerated()), id: \.offset) { entry in
+                    if let date = entry.element {
                         let hasEvents = events.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
                         let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
                         Button { selectedDate = date } label: {
@@ -217,7 +217,7 @@ struct PremiereCalendarView: View {
                     .frame(width: 36, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Påminnelse för \\(event.item.title)")
+            .accessibilityLabel("Påminnelse för \(event.item.title)")
         }
         .padding(.horizontal, 8)
         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 10))
