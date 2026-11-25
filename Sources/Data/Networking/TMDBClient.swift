@@ -43,6 +43,31 @@ actor TMDBClient: MediaSearching {
         try await search(query: query, kind: .television)
     }
 
+    func upcomingMovies() async throws -> [MediaItem] {
+        let response = try await fetch(
+            path: "/movie/upcoming",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "region", value: "SE"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        return response.results
+    }
+
+    func onTheAirTelevision() async throws -> [MediaItem] {
+        let response = try await fetch(
+            path: "/tv/on_the_air",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        return response.results
+    }
+
     func televisionDetails(id: Int) async throws -> TVSeriesDetails {
         try await fetch(
             path: "/tv/\(id)",
@@ -59,7 +84,10 @@ actor TMDBClient: MediaSearching {
 
     private func fetch<Response: Decodable & Sendable>(
         path: String,
-        as responseType: Response.Type
+        as responseType: Response.Type,
+        queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "language", value: "sv-SE")
+        ]
     ) async throws -> Response {
         guard !accessToken.isEmpty else { throw TMDBError.missingAccessToken }
 
@@ -67,9 +95,7 @@ actor TMDBClient: MediaSearching {
             url: baseURL.appending(path: path),
             resolvingAgainstBaseURL: false
         )
-        components?.queryItems = [
-            URLQueryItem(name: "language", value: "sv-SE")
-        ]
+        components?.queryItems = queryItems
         guard let url = components?.url else { throw TMDBError.invalidResponse }
 
         var request = URLRequest(url: url)
@@ -167,6 +193,10 @@ actor TMDBClient: MediaSearching {
             throw TMDBError.decodingFailed
         }
     }
+}
+
+private struct TMDBPagedMediaResponse: Decodable {
+    let results: [MediaItem]
 }
 
 private struct TMDBSearchResponse: Decodable {
