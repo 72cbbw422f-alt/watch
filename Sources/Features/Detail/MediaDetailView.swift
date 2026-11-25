@@ -14,7 +14,6 @@ struct MediaDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     artworkHeader
-                    titleBlock
                     metadata
                     libraryActions
                     if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -250,13 +249,13 @@ struct MediaDetailView: View {
 
     private var metadata: some View {
         HStack(spacing: 10) {
-            metadataPill(item.kind.displayName)
             if let year = item.releaseDate?.prefix(4), !year.isEmpty {
                 metadataPill(String(year))
             }
             if item.voteAverage > 0 {
                 metadataPill("★  " + String(format: "%.1f", item.voteAverage))
             }
+            metadataPill(item.kind == .movie ? "Långfilm" : "TV-serie")
         }
         .padding(.horizontal, 20)
     }
