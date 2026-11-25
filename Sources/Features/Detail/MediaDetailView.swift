@@ -25,6 +25,13 @@ struct MediaDetailView: View {
                     artworkHeader
                     metadata
                     libraryActions
+                    PersonalReviewSection(
+                        rating: libraryEntry?.personalRating,
+                        notes: libraryEntry?.personalNotes ?? "",
+                        onRatingChange: updatePersonalRating,
+                        onNotesSave: updatePersonalNotes
+                    )
+                    .padding(.horizontal, 20)
                     if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         VStack(alignment: .leading, spacing: 9) {
                             sectionLabel("OM TITELN")
@@ -504,6 +511,32 @@ struct MediaDetailView: View {
         Text(value)
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(WatchlistColor.secondaryText)
+    }
+
+    private func updatePersonalRating(_ rating: Int?) {
+        let entry: LibraryEntry
+        if let existing = libraryEntry {
+            entry = existing
+        } else {
+            entry = LibraryEntry(item: item)
+            modelContext.insert(entry)
+        }
+        entry.personalRating = rating
+        entry.dateUpdated = .now
+        saveChanges()
+    }
+
+    private func updatePersonalNotes(_ notes: String) {
+        let entry: LibraryEntry
+        if let existing = libraryEntry {
+            entry = existing
+        } else {
+            entry = LibraryEntry(item: item)
+            modelContext.insert(entry)
+        }
+        entry.personalNotes = notes
+        entry.dateUpdated = .now
+        saveChanges()
     }
 
     private func saveChanges() {
