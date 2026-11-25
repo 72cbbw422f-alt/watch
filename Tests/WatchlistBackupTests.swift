@@ -73,81 +73,40 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertTrue(restored.premiereReminders.isEmpty)
     }
 
-    func testRejectsInvalidLibraryIdentity() {
-        let record = LibraryRecord(
-            stableID: "",
-            tmdbID: 550,
-            mediaKind: "movie",
-            title: "Fight Club",
-            overview: "",
-            posterPath: nil,
-            backdropPath: nil,
-            releaseDate: nil,
-            voteAverage: 0,
-            statusRawValue: "watched",
-            dateAdded: .now,
-            dateUpdated: .now,
-            isFavorite: false,
-            personalRating: nil,
-            personalNotes: "",
-            episodeTotalCount: nil,
-            nextEpisodeTitle: nil,
-            nextEpisodeCode: nil,
-            nextEpisodeAirDate: nil
-        )
-        let backup = WatchlistBackup(
-            library: [record],
-            episodeProgress: [],
-            episodeHistory: [],
-            customLists: [],
-            customListItems: [],
-            premiereReminders: []
-        )
+    func testRejectsInvalidLibraryIdentity() throws {
+        let json = """
+        {
+          "schemaVersion": 1,
+          "exportedAt": "2026-11-25T00:00:00Z",
+          "library": [{
+            "stableID": "",
+            "tmdbID": 550,
+            "mediaKind": "movie",
+            "title": "Fight Club",
+            "overview": "",
+            "posterPath": null,
+            "backdropPath": null,
+            "releaseDate": null,
+            "voteAverage": 0,
+            "statusRawValue": "watched",
+            "dateAdded": "2026-11-25T00:00:00Z",
+            "dateUpdated": "2026-11-25T00:00:00Z",
+            "isFavorite": false,
+            "personalRating": null,
+            "personalNotes": "",
+            "episodeTotalCount": null,
+            "nextEpisodeTitle": null,
+            "nextEpisodeCode": null,
+            "nextEpisodeAirDate": null
+          }],
+          "episodeProgress": [],
+          "episodeHistory": [],
+          "customLists": [],
+          "customListItems": [],
+          "premiereReminders": []
+        }
+        """.data(using: .utf8)!
 
-        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
-    }
-}
-
-private extension LibraryRecord {
-    init(
-        stableID: String,
-        tmdbID: Int,
-        mediaKind: String,
-        title: String,
-        overview: String,
-        posterPath: String?,
-        backdropPath: String?,
-        releaseDate: String?,
-        voteAverage: Double,
-        statusRawValue: String,
-        dateAdded: Date,
-        dateUpdated: Date,
-        isFavorite: Bool,
-        personalRating: Int?,
-        personalNotes: String,
-        episodeTotalCount: Int?,
-        nextEpisodeTitle: String?,
-        nextEpisodeCode: String?,
-        nextEpisodeAirDate: String?
-    ) {
-        self.stableID = stableID
-        self.tmdbID = tmdbID
-        self.mediaKind = mediaKind
-        self.title = title
-        self.overview = overview
-        self.posterPath = posterPath
-        self.backdropPath = backdropPath
-        self.releaseDate = releaseDate
-        self.voteAverage = voteAverage
-        self.statusRawValue = statusRawValue
-        self.dateAdded = dateAdded
-        self.dateUpdated = dateUpdated
-        self.isFavorite = isFavorite
-        self.personalRating = personalRating
-        self.personalNotes = personalNotes
-        self.episodeTotalCount = episodeTotalCount
-        self.nextEpisodeTitle = nextEpisodeTitle
-        self.nextEpisodeCode = nextEpisodeCode
-        self.nextEpisodeAirDate = nextEpisodeAirDate
+        XCTAssertThrowsError(try WatchlistBackupService.decode(json))
     }
 }
