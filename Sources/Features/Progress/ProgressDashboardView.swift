@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ProgressDashboardView: View {
-    @Query(sort: \\LibraryEntry.dateUpdated, order: .reverse) private var entries: [LibraryEntry]
+    @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var entries: [LibraryEntry]
     @Query private var episodeProgress: [EpisodeProgress]
     @State private var selectedFilter = ProgressFilter.watching
     @State private var searchText = ""
@@ -24,7 +24,7 @@ struct ProgressDashboardView: View {
     }
 
     private var watchedEpisodeCount: Int {
-        episodeProgress.filter(\\.isWatched).count
+        episodeProgress.filter(\.isWatched).count
     }
 
     var body: some View {
@@ -73,7 +73,7 @@ struct ProgressDashboardView: View {
                 .font(.system(size: 31, weight: .bold, design: .rounded))
                 .tracking(-0.8)
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text("\\(seriesEntries.count) serier i biblioteket")
+            Text("\(seriesEntries.count) serier i biblioteket")
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
         }
@@ -95,7 +95,7 @@ struct ProgressDashboardView: View {
 
     private func metric(value: Int, label: String) -> some View {
         VStack(spacing: 5) {
-            Text("\\(value)")
+            Text("\(value)")
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundStyle(WatchlistColor.primaryText)
                 .contentTransition(.numericText())
@@ -118,7 +118,7 @@ struct ProgressDashboardView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Text(filter.title)
-                            Text("\\(count(for: filter))")
+                            Text("\(count(for: filter))")
                                 .foregroundStyle(selectedFilter == filter ? WatchlistColor.primaryText.opacity(0.75) : WatchlistColor.mutedText)
                         }
                         .font(.system(size: 11, weight: .semibold))
@@ -209,11 +209,11 @@ private struct ProgressSeriesRow: View {
                     ProgressView(value: fraction)
                         .tint(WatchlistColor.accent)
                         .background(WatchlistColor.surfaceElevated)
-                    Text("\\(watchedCount) av \\(total) avsnitt · \\(Int(fraction * 100)) %")
+                    Text("\(watchedCount) av \(total) avsnitt · \(Int(fraction * 100)) %")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundStyle(WatchlistColor.secondaryText)
                 } else {
-                    Text(watchedCount == 0 ? "Ingen avsnittsprogress registrerad" : "\\(watchedCount) avsnitt markerade som sedda")
+                    Text(watchedCount == 0 ? "Ingen avsnittsprogress registrerad" : "\(watchedCount) avsnitt markerade som sedda")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(WatchlistColor.secondaryText)
                 }
