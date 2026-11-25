@@ -264,6 +264,10 @@ struct MediaDetailView: View {
             VStack(alignment: .leading, spacing: 13) {
                 sectionLabel("SÄSONGER OCH AVSNITT")
 
+                if !televisionSeasons.isEmpty {
+                    seriesProgressSummary
+                }
+
                 if isLoadingSeasons && televisionSeasons.isEmpty {
                     ProgressView("Hämtar säsonger…")
                         .tint(WatchlistColor.accent)
@@ -284,6 +288,33 @@ struct MediaDetailView: View {
             }
             .padding(.horizontal, 20)
         }
+    }
+
+    private var seriesProgressSummary: some View {
+        let totalEpisodes = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+        let watchedEpisodes = episodeProgressEntries.filter {
+            $0.seriesID == item.id && $0.isWatched
+        }.count
+        let progress = totalEpisodes > 0
+            ? Double(watchedEpisodes) / Double(totalEpisodes)
+            : 0
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(watchedEpisodes) av \(totalEpisodes) avsnitt sedda")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                Spacer()
+                Text("\(Int(progress * 100)) %")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+            }
+            ProgressView(value: progress)
+                .tint(WatchlistColor.accent)
+                .background(WatchlistColor.surfaceElevated)
+        }
+        .padding(14)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
     private func seasonRow(_ season: TVSeason) -> some View {
