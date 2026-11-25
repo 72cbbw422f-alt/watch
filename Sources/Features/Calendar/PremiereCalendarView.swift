@@ -49,6 +49,17 @@ struct PremiereCalendarView: View {
                                         .buttonStyle(.plain)
                                         Menu {
                                             if let saved = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
+                                                Section("Ändra påminnelse") {
+                                                    Button("En vecka före") {
+                                                        Task { await addReminder(for: event, leadDays: 7) }
+                                                    }
+                                                    Button("Dagen före") {
+                                                        Task { await addReminder(for: event, leadDays: 1) }
+                                                    }
+                                                    Button("Samma dag") {
+                                                        Task { await addReminder(for: event, leadDays: 0) }
+                                                    }
+                                                }
                                                 Button(role: .destructive) {
                                                     removeReminder(saved)
                                                 } label: {
@@ -158,8 +169,17 @@ struct PremiereCalendarView: View {
         let reminder = PremiereReminder(item: event.item, premiereDate: event.date, leadDays: leadDays)
         do {
             try await PremiereNotificationService.schedule(reminder)
-            modelContext.insert(reminder)
-            try modelContext.save()
+            if let existing = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
+                existing.premiereDate = event.date
+                existing.leadDays = leadDays
+                existing.title = event.item.title
+                existing.tmdbID = event.item.id
+                existing.mediaKind = event.item.kind.rawValue
+                try modelContext.save()
+            } else {
+                modelContext.insert(reminder)
+                try modelContext.save()
+            }
         } catch {
             PremiereNotificationService.cancel(reminder)
             reminderError = error.localizedDescription
