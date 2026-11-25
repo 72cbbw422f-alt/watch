@@ -7,6 +7,8 @@ struct MediaDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
+    @Query(sort: \CustomList.name) private var customLists: [CustomList]
+    @Query private var customListItems: [CustomListItem]
     @State private var persistenceError: String?
     @State private var televisionSeasons: [TVSeason] = []
     @State private var episodesBySeason: [Int: [TVEpisode]] = [:]
@@ -32,6 +34,7 @@ struct MediaDetailView: View {
                         onNotesSave: updatePersonalNotes
                     )
                     .padding(.horizontal, 20)
+                    addToCustomListSection
                     if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         VStack(alignment: .leading, spacing: 9) {
                             sectionLabel("OM TITELN")
@@ -251,6 +254,57 @@ struct MediaDetailView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    private var addToCustomListSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("EGNA SAMLINGAR")
+            if customLists.isEmpty {
+                NavigationLink {
+                    CustomListsView()
+                } label: {
+                    Label("Skapa en lista", systemImage: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                }
+            } else {
+                Menu {
+                    ForEach(customLists) { list in
+                        let isSaved = customListItems.contains {
+                            $0.listID == list.id && $0.mediaStableID == item.stableID
+                        }
+                        Button {
+                            add(item, to: list)
+                        } label: {
+                            Label(
+                                isSaved ? "\(list.name) · Tillagd" : list.name,
+                                systemImage: isSaved ? "checkmark" : "rectangle.stack"
+                            )
+                        }
+                        .disabled(isSaved)
+                    }
+                } label: {
+                    Label("Lägg till i en lista", systemImage: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func add(_ mediaItem: MediaItem, to list: CustomList) {
+        let stableID = "\(list.id)::\(mediaItem.stableID)"
+        guard !customListItems.contains(where: { $0.stableID == stableID }) else { return }
+        modelContext.insert(CustomListItem(listID: list.id, item: mediaItem))
+        list.updatedAt = .now
+        saveChanges()
     }
 
     private var metadata: some View {
