@@ -1,0 +1,200 @@
+import SwiftUI
+
+struct MediaDetailView: View {
+    let item: MediaItem
+
+    var body: some View {
+        ZStack {
+            WatchlistColor.background.ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    artworkHeader
+                    titleBlock
+                    metadata
+                    if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        VStack(alignment: .leading, spacing: 9) {
+                            sectionLabel("OM TITELN")
+                            Text(item.overview)
+                                .font(.system(size: 14))
+                                .foregroundStyle(WatchlistColor.secondaryText)
+                                .lineSpacing(5)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    sourceNote
+                }
+                .padding(.bottom, 36)
+            }
+            .ignoresSafeArea(edges: .top)
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(false)
+    }
+
+    private var artworkHeader: some View {
+        ZStack(alignment: .bottomLeading) {
+            Group {
+                if let url = item.backdropURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        case .empty, .failure:
+                            backdropPlaceholder
+                        @unknown default:
+                            backdropPlaceholder
+                        }
+                    }
+                } else {
+                    backdropPlaceholder
+                }
+            }
+            .frame(height: 390)
+            .frame(maxWidth: .infinity)
+            .clipped()
+
+            LinearGradient(
+                stops: [
+                    .init(color: .black.opacity(0.05), location: 0),
+                    .init(color: .black.opacity(0.18), location: 0.42),
+                    .init(color: WatchlistColor.background, location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            HStack(alignment: .bottom, spacing: 16) {
+                poster
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(item.kind.displayName.uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.8)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text(item.title)
+                        .font(.system(size: 27, weight: .bold, design: .rounded))
+                        .tracking(-0.7)
+                        .foregroundStyle(WatchlistColor.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                        Text(String(year))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                    if item.voteAverage > 0 {
+                        Label(String(format: "%.1f / 10", item.voteAverage), systemImage: "star.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 5)
+        }
+        .frame(height: 390)
+    }
+
+    @ViewBuilder
+    private var poster: some View {
+        if let url = item.posterURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .empty, .failure:
+                    posterPlaceholder
+                @unknown default:
+                    posterPlaceholder
+                }
+            }
+            .frame(width: 104, height: 154)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.14), lineWidth: 1))
+            .shadow(color: .black.opacity(0.35), radius: 18, y: 8)
+        } else {
+            posterPlaceholder
+        }
+    }
+
+    private var posterPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: item.kind == .movie ? "film" : "tv")
+                    .font(.system(size: 25, weight: .light))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+            .frame(width: 104, height: 154)
+    }
+
+    private var backdropPlaceholder: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: 0x493020), WatchlistColor.background, Color(hex: 0x171311)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            )
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(WatchlistColor.accent.opacity(0.16))
+                    .frame(width: 180, height: 180)
+                    .blur(radius: 55)
+                    .offset(x: 45, y: -30)
+            }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(item.title)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(WatchlistColor.primaryText)
+            Text(item.kind == .movie ? "Film" : "TV-serie")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(WatchlistColor.secondaryText)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var metadata: some View {
+        HStack(spacing: 10) {
+            metadataPill(item.kind.displayName)
+            if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                metadataPill(String(year))
+            }
+            if item.voteAverage > 0 {
+                metadataPill("★  " + String(format: "%.1f", item.voteAverage))
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var sourceNote: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "info.circle")
+            Text("Titelinformation och betyg tillhandahålls av TMDB.")
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(WatchlistColor.mutedText)
+        .padding(.horizontal, 20)
+    }
+
+    private func metadataPill(_ value: String) -> some View {
+        Text(value)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(WatchlistColor.secondaryText)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(WatchlistColor.surface, in: Capsule())
+            .overlay(Capsule().stroke(WatchlistColor.hairline, lineWidth: 1))
+    }
+
+    private func sectionLabel(_ value: String) -> some View {
+        Text(value)
+            .font(.system(size: 9, weight: .bold))
+            .tracking(1.7)
+            .foregroundStyle(WatchlistColor.accent)
+    }
+}
