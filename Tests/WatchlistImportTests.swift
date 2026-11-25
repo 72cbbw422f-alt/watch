@@ -102,19 +102,30 @@ final class WatchlistImportTests: XCTestCase {
             EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
+        let movieEvent = MovieWatchEvent(
+            tmdbID: 22,
+            title: "Once",
+            watchedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
         let backup = WatchlistBackup(
             library: [LibraryRecord(LibraryEntry(item: item(id: 22, title: "Once")))],
-            episodeProgress: [], episodeHistory: [], customLists: [],
-            customListItems: [], premiereReminders: []
+            episodeProgress: [], episodeHistory: [],
+            movieHistory: [MovieHistoryRecord(movieEvent)],
+            customLists: [], customListItems: [], premiereReminders: []
         )
 
         let first = try WatchlistImportService.merge(backup, into: context)
         let second = try WatchlistImportService.merge(backup, into: context)
         let saved = try context.fetch(FetchDescriptor<LibraryEntry>())
+        let savedMovieEvents = try context.fetch(FetchDescriptor<MovieWatchEvent>())
 
         XCTAssertEqual(first.newLibraryItems, 1)
+        XCTAssertEqual(first.newMovieHistoryEvents, 1)
         XCTAssertEqual(second.newLibraryItems, 0)
+        XCTAssertEqual(second.newMovieHistoryEvents, 0)
         XCTAssertEqual(saved.count, 1)
+        XCTAssertEqual(savedMovieEvents.count, 1)
+        XCTAssertEqual(savedMovieEvents.first?.id, movieEvent.id)
     }
 
     func testMergeRestoresEpisodeProgressHistoryListsAndReminders() throws {
