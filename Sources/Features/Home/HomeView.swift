@@ -3,6 +3,7 @@ import SwiftData
 
 struct HomeView: View {
     let onExplore: () -> Void
+    let onCalendar: () -> Void
 
     @State private var selectedFilter = "För dig"
     @State private var trendingItems: [MediaItem] = []
@@ -256,27 +257,55 @@ struct HomeView: View {
 
     private var premieres: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Premiärer att hålla koll på", eyebrow: "KOMMER SNART", trailing: "Kalender")
-            HStack(spacing: 12) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(WatchlistColor.accent)
-                    .frame(width: 42, height: 42)
-                    .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+            HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Dina kommande premiärer")
-                        .font(.system(size: 13, weight: .semibold))
+                    Text("KOMMER SNART")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text("Premiärkalender")
+                        .font(.system(size: 19, weight: .semibold, design: .serif))
                         .foregroundStyle(WatchlistColor.primaryText)
-                    Text("Här samlas premiärer för filmer och serier du följer.")
-                        .font(.system(size: 10))
-                        .foregroundStyle(WatchlistColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+                Spacer()
+                Button(action: onCalendar) {
+                    HStack(spacing: 5) {
+                        Text("Visa alla")
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                }
+                .buttonStyle(.plain)
             }
-            .padding(14)
-            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+            Button(action: onCalendar) {
+                HStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(width: 42, height: 42)
+                        .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Kommande film- och seriepremiärer")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                            .multilineTextAlignment(.leading)
+                        Text("Se svenska premiärdatum i kalendern.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+                .padding(14)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
     }
