@@ -7,6 +7,13 @@ struct MediaDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
     @State private var persistenceError: String?
+    @State private var televisionSeasons: [TVSeason] = []
+    @State private var episodesBySeason: [Int: [TVEpisode]] = [:]
+    @State private var expandedSeason: Int?
+    @State private var isLoadingSeasons = false
+    @State private var loadingSeasonNumber: Int?
+    @State private var seasonError: String?
+    private let tmdbClient = TMDBConfiguration.makeClient()
 
     var body: some View {
         ZStack {
@@ -27,6 +34,7 @@ struct MediaDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    televisionSeasonsSection
                     sourceNote
                 }
                 .padding(.bottom, 36)
@@ -37,6 +45,9 @@ struct MediaDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
+        .task {
+            await loadTelevisionSeasons()
+        }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
             set: { if !$0 { persistenceError = nil } }
@@ -244,6 +255,163 @@ struct MediaDetailView: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder
+    private var televisionSeasonsSection: some View {
+        if item.kind == .television {
+            VStack(alignment: .leading, spacing: 13) {
+                sectionLabel("SÄSONGER OCH AVSNITT")
+
+                if isLoadingSeasons && televisionSeasons.isEmpty {
+                    ProgressView("Hämtar säsonger…")
+                        .tint(WatchlistColor.accent)
+                        .font(.system(size: 12))
+                } else if let seasonError {
+                    Text(seasonError)
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                } else if televisionSeasons.isEmpty {
+                    Text("Ingen säsongsinformation finns tillgänglig.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                } else {
+                    ForEach(televisionSeasons) { season in
+                        seasonRow(season)
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private func seasonRow(_ season: TVSeason) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                Task { await toggleSeason(season) }
+            } label: {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(season.displayName)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                        Text("\(season.episodeCount) avsnitt")
+                            .font(.system(size: 10))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                    Spacer()
+                    if loadingSeasonNumber == season.seasonNumber {
+                        ProgressView()
+                            .tint(WatchlistColor.accent)
+                    } else {
+                        Image(systemName: expandedSeason == season.seasonNumber ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.mutedText)
+                    }
+                }
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if expandedSeason == season.seasonNumber {
+                if let episodes = episodesBySeason[season.seasonNumber] {
+                    VStack(spacing: 0) {
+                        ForEach(episodes) { episode in
+                            episodeRow(episode)
+                            if episode.id != episodes.last?.id {
+                                Rectangle()
+                                    .fill(WatchlistColor.hairline)
+                                    .frame(height: 1)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 10)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func episodeRow(_ episode: TVEpisode) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            Text(episode.displayCode)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundStyle(WatchlistColor.accent)
+                .frame(width: 58, alignment: .leading)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(episode.name.isEmpty ? "Avsnitt \(episode.episodeNumber)" : episode.name)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                HStack(spacing: 8) {
+                    if let airDate = episode.airDate, !airDate.isEmpty {
+                        Text(airDate)
+                    }
+                    if let runtime = episode.runtime, runtime > 0 {
+                        Text("\(runtime) min")
+                    }
+                }
+                .font(.system(size: 9))
+                .foregroundStyle(WatchlistColor.mutedText)
+                if !episode.overview.isEmpty {
+                    Text(episode.overview)
+                        .font(.system(size: 10))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .lineLimit(3)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+    }
+
+    @MainActor
+    private func loadTelevisionSeasons() async {
+        guard item.kind == .television, televisionSeasons.isEmpty, !isLoadingSeasons else { return }
+        guard TMDBConfiguration.isConfigured else {
+            seasonError = "Lägg till din TMDB-token för att visa säsonger och avsnitt."
+            return
+        }
+
+        isLoadingSeasons = true
+        seasonError = nil
+        defer { isLoadingSeasons = false }
+
+        do {
+            let details = try await tmdbClient.televisionDetails(id: item.id)
+            televisionSeasons = details.regularSeasons
+        } catch {
+            seasonError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func toggleSeason(_ season: TVSeason) async {
+        if expandedSeason == season.seasonNumber {
+            expandedSeason = nil
+            return
+        }
+
+        expandedSeason = season.seasonNumber
+        guard episodesBySeason[season.seasonNumber] == nil else { return }
+
+        loadingSeasonNumber = season.seasonNumber
+        defer { loadingSeasonNumber = nil }
+
+        do {
+            let details = try await tmdbClient.televisionSeason(
+                id: item.id,
+                seasonNumber: season.seasonNumber
+            )
+            episodesBySeason[season.seasonNumber] = details.episodes.sorted {
+                $0.episodeNumber < $1.episodeNumber
+            }
+        } catch {
+            seasonError = error.localizedDescription
+        }
     }
 
     private var sourceNote: some View {
