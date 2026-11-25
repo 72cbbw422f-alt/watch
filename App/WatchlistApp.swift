@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct WatchlistApp: App {
@@ -6,6 +7,7 @@ struct WatchlistApp: App {
         WindowGroup {
             AppRootView()
                 .preferredColorScheme(.dark)
+                .modelContainer(for: LibraryEntry.self)
         }
     }
 }
