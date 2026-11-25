@@ -36,14 +36,26 @@ struct WatchlistBackup: Codable {
         guard schemaVersion == Self.currentSchemaVersion else {
             throw WatchlistBackupError.unsupportedVersion(schemaVersion)
         }
-        guard library.allSatisfy({ !$0.stableID.isEmpty && $0.tmdbID > 0 && !$0.title.isEmpty }) else {
+        guard library.allSatisfy({ !$0.stableID.isEmpty && $0.tmdbID > 0 && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidLibraryRecord
+        }
+        guard library.allSatisfy({ MediaKind(rawValue: $0.mediaKind) != nil && LibraryStatus(rawValue: $0.statusRawValue) != nil }) else {
+            throw WatchlistBackupError.invalidLibraryRecord
+        }
+        guard episodeProgress.allSatisfy({ !$0.stableID.isEmpty && $0.seriesID > 0 && $0.episodeID > 0 && $0.seasonNumber >= 0 && $0.episodeNumber > 0 && !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw WatchlistBackupError.invalidEpisodeRecord
+        }
+        guard episodeHistory.allSatisfy({ $0.seriesID > 0 && $0.episodeID > 0 && $0.seasonNumber >= 0 && $0.episodeNumber > 0 && !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw WatchlistBackupError.invalidEpisodeRecord
         }
         guard customLists.allSatisfy({ !$0.id.isEmpty && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidCustomList
         }
-        guard customListItems.allSatisfy({ !$0.stableID.isEmpty && !$0.listID.isEmpty && !$0.mediaStableID.isEmpty }) else {
+        guard customListItems.allSatisfy({ !$0.stableID.isEmpty && !$0.listID.isEmpty && !$0.mediaStableID.isEmpty && $0.tmdbID > 0 && MediaKind(rawValue: $0.mediaKind) != nil }) else {
             throw WatchlistBackupError.invalidCustomListItem
+        }
+        guard premiereReminders.allSatisfy({ !$0.stableID.isEmpty && $0.tmdbID > 0 && MediaKind(rawValue: $0.mediaKind) != nil && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (0...7).contains($0.leadDays) }) else {
+            throw WatchlistBackupError.invalidReminder
         }
         let listIDs = Set(customLists.map(\.id))
         guard customListItems.allSatisfy({ listIDs.contains($0.listID) }) else {
@@ -221,8 +233,10 @@ struct PremiereReminderRecord: Codable {
 enum WatchlistBackupError: LocalizedError {
     case unsupportedVersion(Int)
     case invalidLibraryRecord
+    case invalidEpisodeRecord
     case invalidCustomList
     case invalidCustomListItem
+    case invalidReminder
     case duplicateIdentity
 
     var errorDescription: String? {
@@ -230,11 +244,17 @@ enum WatchlistBackupError: LocalizedError {
         case .unsupportedVersion(let version):
             "Backupversion \(version) stöds inte."
         case .invalidLibraryRecord:
-            "Backupfilen innehåller en ogiltig bibliotekspost."
+            "Backupfilen innehåller en ogiltig film- eller seriepost."
+        case .invalidEpisodeRecord:
+            "Backupfilen innehåller en ogiltig avsnittspost."
         case .invalidCustomList:
             "Backupfilen innehåller en ogiltig egen lista."
         case .invalidCustomListItem:
             "Backupfilen innehåller ett ogiltigt listinnehåll."
+        case .invalidReminder:
+            "Backupfilen innehåller en ogiltig premiumpåminnelse."
+        case .duplicateIdentity:
+            "Backupfilen innehåller dubbla identiteter."
         }
     }
 }
