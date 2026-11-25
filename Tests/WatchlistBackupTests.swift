@@ -121,37 +121,17 @@ final class WatchlistBackupTests: XCTestCase {
             releaseDate: nil,
             voteAverage: 0
         )
-        let entry = LibraryEntry(item: item)
-        var record = LibraryRecord(entry)
-        record = LibraryRecord(
-            stableID: record.stableID,
-            tmdbID: record.tmdbID,
-            mediaKind: "unknown-kind",
-            title: record.title,
-            overview: record.overview,
-            posterPath: record.posterPath,
-            backdropPath: record.backdropPath,
-            releaseDate: record.releaseDate,
-            voteAverage: record.voteAverage,
-            statusRawValue: record.statusRawValue,
-            dateAdded: record.dateAdded,
-            dateUpdated: record.dateUpdated,
-            isFavorite: record.isFavorite,
-            personalRating: record.personalRating,
-            personalNotes: record.personalNotes,
-            episodeTotalCount: record.episodeTotalCount,
-            nextEpisodeTitle: record.nextEpisodeTitle,
-            nextEpisodeCode: record.nextEpisodeCode,
-            nextEpisodeAirDate: record.nextEpisodeAirDate
-        )
         let backup = WatchlistBackup(
-            library: [record],
+            library: [LibraryRecord(LibraryEntry(item: item))],
             episodeProgress: [],
             episodeHistory: [],
             customLists: [],
             customListItems: [],
             premiereReminders: []
         )
-        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+        let validJSON = String(decoding: try WatchlistBackupService.encode(backup), as: UTF8.self)
+        let invalidJSON = validJSON.replacingOccurrences(of: "\"mediaKind\" : \"movie\"", with: "\"mediaKind\" : \"unknown-kind\"")
+        XCTAssertNotEqual(validJSON, invalidJSON)
+        XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
     }
-}
+}}
