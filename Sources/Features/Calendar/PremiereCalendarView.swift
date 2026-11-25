@@ -77,7 +77,14 @@ struct PremiereCalendarView: View {
         .navigationTitle("Premiärkalender")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                NavigationLink {
+                    SavedPremiereRemindersView()
+                } label: {
+                    Image(systemName: "bell")
+                        .foregroundStyle(WatchlistColor.accent)
+                }
+                .accessibilityLabel("Mina påminnelser")
                 Button { Task { await loadEvents() } } label: {
                     Image(systemName: "arrow.clockwise").foregroundStyle(WatchlistColor.secondaryText)
                 }
@@ -455,5 +462,101 @@ private struct PremiereCalendarRow: View {
                 Image(systemName: event.item.kind == .movie ? "film" : "tv")
                     .foregroundStyle(WatchlistColor.mutedText)
             }
+    }
+}
+
+
+private struct SavedPremiereRemindersView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \PremiereReminder.premiereDate, order: .forward) private var reminders: [PremiereReminder]
+    @State private var errorMessage: String?
+
+    var body: some View {
+        ZStack {
+            WatchlistColor.background.ignoresSafeArea()
+            if reminders.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text("Inga sparade påminnelser")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text("Lägg till påminnelser från premiärkalendern.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                }
+                .padding(32)
+            } else {
+                List {
+                    ForEach(reminders, id: \.stableID) { reminder in
+                        HStack(spacing: 12) {
+                            Image(systemName: reminder.mediaKind == MediaKind.movie.rawValue ? "film" : "tv")
+                                .foregroundStyle(WatchlistColor.accent)
+                                .frame(width: 38, height: 44)
+                                .background(WatchlistColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 9))
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(reminder.title)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                    .lineLimit(2)
+                                Text(reminder.mediaKind == MediaKind.movie.rawValue ? "FILM" : "SERIE")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .tracking(1)
+                                    .foregroundStyle(WatchlistColor.mutedText)
+                                Text(reminder.leadDescription)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text(reminder.premiereDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day()))
+                                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                Text(reminder.premiereDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).month(.abbreviated)).uppercased())
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(WatchlistColor.accent)
+                            }
+                        }
+                        .padding(.vertical, 5)
+                        .listRowBackground(WatchlistColor.surface)
+                        .listRowSeparatorTint(WatchlistColor.hairline)
+                        .swipeActions {
+                            Button(role: .destructive) { remove(reminder) } label: {
+                                Label("Ta bort", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+            }
+        }
+        .navigationTitle("Mina påminnelser")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Kunde inte ta bort påminnelsen", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "Ett oväntat fel uppstod.")
+        }
+    }
+
+    private func remove(_ reminder: PremiereReminder) {
+        modelContext.delete(reminder)
+        do {
+            try modelContext.save()
+            PremiereNotificationService.cancel(reminder)
+        } catch {
+            modelContext.insert(reminder)
+            do { try modelContext.save() }
+            catch {
+                errorMessage = "Påminnelsen kunde inte återställas: \(error.localizedDescription)"
+                return
+            }
+            errorMessage = error.localizedDescription
+        }
     }
 }
