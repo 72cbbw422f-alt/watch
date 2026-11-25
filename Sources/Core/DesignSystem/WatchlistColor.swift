@@ -1,16 +1,16 @@
 import SwiftUI
 
 enum WatchlistColor {
-    static let background = Color(hex: 0x08090B)
-    static let backgroundElevated = Color(hex: 0x111318)
-    static let surface = Color(hex: 0x171A20)
-    static let surfaceElevated = Color(hex: 0x20242C)
-    static let accent = Color(hex: 0xC6F36A)
-    static let accentPressed = Color(hex: 0xA8D94A)
-    static let primaryText = Color(hex: 0xF5F5F2)
-    static let secondaryText = Color(hex: 0xA5A9B2)
-    static let mutedText = Color(hex: 0x737985)
-    static let warmHighlight = Color(hex: 0xD8C39A)
+    static let background = Color(hex: 0x080808)
+    static let backgroundElevated = Color(hex: 0x111111)
+    static let surface = Color(hex: 0x191919)
+    static let surfaceElevated = Color(hex: 0x242424)
+    static let accent = Color(hex: 0xF47721)
+    static let accentPressed = Color(hex: 0xD96116)
+    static let primaryText = Color(hex: 0xF4F1ED)
+    static let secondaryText = Color(hex: 0xAAA6A1)
+    static let mutedText = Color(hex: 0x77736F)
+    static let warmHighlight = Color(hex: 0xD0C8BE)
     static let hairline = Color.white.opacity(0.09)
 }
 
