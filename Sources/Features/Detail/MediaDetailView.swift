@@ -214,6 +214,7 @@ struct MediaDetailView: View {
         Button {
             if let entry = libraryEntry {
                 entry.isFavorite.toggle()
+                entry.dateUpdated = .now
             } else {
                 let entry = LibraryEntry(item: item)
                 entry.isFavorite = true
