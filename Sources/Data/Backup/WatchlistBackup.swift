@@ -54,7 +54,7 @@ struct WatchlistBackup: Codable {
         guard (movieHistory ?? []).allSatisfy({ $0.tmdbID > 0 && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidMovieHistoryRecord
         }
-        guard Set((movieHistory ?? []).map(\\.id)).count == (movieHistory ?? []).count else {
+        guard Set((movieHistory ?? []).map(\.id)).count == (movieHistory ?? []).count else {
             throw WatchlistBackupError.duplicateIdentity
         }
         guard customLists.allSatisfy({ !$0.id.isEmpty && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
