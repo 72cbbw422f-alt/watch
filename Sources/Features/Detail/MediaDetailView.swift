@@ -511,9 +511,14 @@ struct MediaDetailView: View {
             episodeNumber: episode.episodeNumber
         )
         if let progress = episodeProgressEntries.first(where: { $0.stableID == id }) {
-            progress.setWatched(!progress.isWatched)
+            let shouldMarkWatched = !progress.isWatched
+            progress.setWatched(shouldMarkWatched)
+            if shouldMarkWatched {
+                modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
+            }
         } else {
             modelContext.insert(EpisodeProgress(seriesID: item.id, episode: episode, isWatched: true))
+            modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
         }
         saveChanges()
     }
