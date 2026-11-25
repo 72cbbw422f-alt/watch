@@ -38,7 +38,10 @@ struct DiscoverView: View {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 12) {
                             ForEach(results) { item in
-                                MediaSearchRow(item: item)
+                                NavigationLink(value: item) {
+                                    MediaSearchRow(item: item)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.bottom, 28)
@@ -49,6 +52,9 @@ struct DiscoverView: View {
             .padding(.top, 16)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(for: MediaItem.self) { item in
+            MediaDetailView(item: item)
+        }
     }
 
     private var header: some View {
