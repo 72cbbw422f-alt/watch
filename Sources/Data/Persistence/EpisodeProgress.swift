@@ -11,6 +11,7 @@ final class EpisodeProgress {
     var episodeTitle: String
     var airDate: String?
     var isWatched: Bool
+    var watchedAt: Date?
     var dateUpdated: Date
 
     init(seriesID: Int, episode: TVEpisode, isWatched: Bool = false) {
@@ -26,6 +27,7 @@ final class EpisodeProgress {
         episodeTitle = episode.name
         airDate = episode.airDate
         self.isWatched = isWatched
+        watchedAt = isWatched ? .now : nil
         dateUpdated = .now
     }
 
@@ -35,6 +37,7 @@ final class EpisodeProgress {
 
     func setWatched(_ watched: Bool) {
         isWatched = watched
+        watchedAt = watched ? .now : nil
         dateUpdated = .now
     }
 }
