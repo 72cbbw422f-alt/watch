@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    let onExplore: () -> Void
+
     @State private var selectedFilter = "För dig"
     @State private var trendingItems: [MediaItem] = []
     @State private var isLoadingTrending = false
@@ -45,7 +47,7 @@ struct HomeView: View {
 
             Spacer()
 
-            Button {} label: {
+            Button(action: onExplore) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(WatchlistColor.primaryText)
@@ -147,7 +149,7 @@ struct HomeView: View {
                     .lineSpacing(3)
                     .frame(maxWidth: 285, alignment: .leading)
 
-                Button {} label: {
+                Button(action: onExplore) {
                     HStack(spacing: 9) {
                         Text("Utforska")
                         Image(systemName: "arrow.up.right")
