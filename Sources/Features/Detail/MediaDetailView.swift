@@ -527,12 +527,18 @@ struct MediaDetailView: View {
             let details = try await tmdbClient.televisionDetails(id: item.id)
             televisionSeasons = details.regularSeasons
             if let entry = libraryEntry {
-                let total = details.regularSeasons.reduce(0) { $0 + $1.episodeCount }
-                if entry.episodeTotalCount != total {
-                    entry.episodeTotalCount = total
-                    entry.dateUpdated = .now
-                    saveChanges()
+                entry.episodeTotalCount = details.regularSeasons.reduce(0) { $0 + $1.episodeCount }
+                if let next = details.nextEpisodeToAir {
+                    entry.nextEpisodeTitle = next.name
+                    entry.nextEpisodeCode = next.displayCode
+                    entry.nextEpisodeAirDate = next.airDate
+                } else {
+                    entry.nextEpisodeTitle = nil
+                    entry.nextEpisodeCode = nil
+                    entry.nextEpisodeAirDate = nil
                 }
+                entry.dateUpdated = .now
+                saveChanges()
             }
         } catch {
             seasonError = error.localizedDescription
