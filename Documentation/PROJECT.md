@@ -84,5 +84,10 @@ Prefer protocol-backed repositories so UI and tests do not depend directly on ne
 - M4: premiere calendar and reminders.
 - M5: streaming availability, polish and release candidate.
 
-## Current status
-Repository contains product/design documentation, XcodeGen project configuration, SwiftUI app entry point, five-tab navigation shell, shared color tokens and a Cinematic Premium home-screen prototype. The Discover tab now has a real search flow for TMDB movie and TV results, Swedish locale/region defaults, poster loading, loading/error/empty states, and a protocol-backed search client. The catalogue domain model is in place. The API token is deliberately not committed; configure the Info.plist key TMDBAccessToken as described in TMDB_SETUP.md. Home shelves and the personal library/calendar are still presentation placeholders; SwiftData persistence and detail flows are not implemented. CI workflow is configured, but a successful build has not yet been confirmed. Next: verify compilation in Actions, then implement detail views and SwiftData-backed personal watch state.
+## Current status (2026-11-25)
+
+The repository now includes the SwiftUI app shell, Cinematic Premium home screen, TMDB movie/TV search, localized weekly trending feed, poster artwork, and a navigable catalogue detail screen. The detail screen displays backdrop/poster art, synopsis, year and rating.
+
+SwiftData persistence is now wired at the app root. `LibraryEntry` stores the user's saved catalogue metadata separately from the TMDB API, with three personal statuses: Want to watch, Watching and Watched. The detail screen can add a title to the library, change its status or remove it. The Library tab now lists saved titles, filters by status and links back to detail screens. Home trending posters open detail screens and the movie/series filters affect the displayed trending feed.
+
+Remaining work: verify the newest CI run, handle persistence errors visibly rather than silently, implement editing/favorites and a useful currently-watching home shelf, then build season/episode progress and the premiere calendar. No successful build or installable IPA is confirmed yet. TMDB token remains intentionally absent from source control; configure it using TMDB_SETUP.md.
