@@ -3,32 +3,34 @@
 ## Vision
 WATCHLIST is a premium, cinematic personal film and television companion. The interface must feel editorial, immersive and unmistakably native to iOS — never like a generic media catalogue or an admin dashboard.
 
-## Art direction: Obsidian / Amber
+## Art direction: Graphite / Champagne
+
+The visual language is deliberately mature and restrained: a premium editorial film journal, not a gaming interface or a brightly colored streaming clone. Prioritize composition, typography, image quality and whitespace over decorative effects.
 - Immersive, edge-to-edge key art where it adds meaning.
 - Confident editorial typography with clear hierarchy.
-- Deep black foundations and carefully layered graphite surfaces.
-- Restrained warm orange as the signature accent for primary actions, selected states and meaningful progress.
+- Deep graphite foundations with subtle tonal separation; avoid pure-black-on-black stacking.
+- Muted champagne/amber as a rare accent for primary actions, selected states and meaningful progress.
 - Poster artwork is the hero. UI chrome must support it, not compete with it.
-- Rich but controlled depth: subtle gradients, selective blur, layered materials and soft separators.
+- Quiet depth: fine separators, restrained gradients and natural system materials only where useful.
 - Motion should feel intentional, fluid and fast. Use transitions to connect a poster to its detail page, not decorative animation everywhere.
-- The overall impression should be cinematic, refined and confident — not gaming-like, overly neon or visually noisy.
+- The overall impression should be cinematic, understated, confident and expensive. Never juvenile, neon-heavy, toy-like or visually noisy.
 
 ## Color tokens
 Initial design tokens (refine after first device screenshots):
-- Background: #080808
-- Background elevated: #111111
-- Surface: #191919
-- Surface elevated: #242424
-- Primary text: #F4F1ED
-- Secondary text: #AAA6A1
-- Muted text: #77736F
-- Accent orange: #F47721
-- Accent pressed: #D96116
+- Background: #0B0C0E
+- Background elevated: #121417
+- Surface: #191C20
+- Surface elevated: #24282D
+- Primary text: #F1EEE9
+- Secondary text: #B4B0AA
+- Muted text: #817D77
+- Muted champagne amber: #D49A68
+- Accent pressed: #B77A4A
 - Accent glow: orange at low opacity, used only behind selected hero actions or key moments
 - Divider: white at 8–10% opacity
 - Neutral highlight: #D0C8BE (rare, metadata only)
 
-Orange is an accent, not a page background. Reserve it for meaningful actions, active states, selected filters, progress and small highlights. Avoid coloring every icon or decorative element orange. Most interface surfaces remain black or graphite.
+Amber is an accent, not a page background. Reserve it for meaningful actions and selected states. Most icons and metadata should remain neutral. Avoid accent-colored decoration without functional meaning.
 
 ## Typography
 - Use the system SF family as the foundation.
@@ -123,3 +125,14 @@ A screen is not finished because it compiles. It is finished when:
 4. Scrolling and transitions feel smooth on a physical iPhone.
 5. Loading, empty and error states receive the same design attention.
 6. It remains legible and usable with accessibility settings enabled.
+
+
+## Professional finish — non-negotiable rules
+- No oversized decorative sparkles, glowing blobs or gradients used as filler.
+- Avoid excessive capsules, outlined cards and stacked containers. Prefer clean alignment and whitespace.
+- Do not render the same title twice on a detail page; the hero owns the title.
+- Use one clear primary action per screen, with secondary actions visually quieter.
+- Statistics are information, not decoration: neutral icons, restrained numerals and no unnecessary accent color.
+- Avoid tiny uppercase labels when a normal-case title communicates better.
+- Use consistent spacing, corner radii and poster ratios across all features.
+- Never use placeholder copy that pretends a feature is live. Clearly communicate what is available.
