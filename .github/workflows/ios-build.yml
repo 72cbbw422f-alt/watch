@@ -23,5 +23,5 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build and run unit tests
-        run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
+      - name: Build app and unit test bundle
+        run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build-for-testing
