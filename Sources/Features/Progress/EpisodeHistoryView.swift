@@ -4,6 +4,8 @@ import SwiftData
 struct EpisodeHistoryView: View {
     @Query(sort: \EpisodeWatchEvent.watchedAt, order: .reverse)
     private var events: [EpisodeWatchEvent]
+    @Query(sort: \\MovieWatchEvent.watchedAt, order: .reverse)
+    private var movieEvents: [MovieWatchEvent]
     @Query private var entries: [LibraryEntry]
 
     private var seriesNames: [Int: String] {
