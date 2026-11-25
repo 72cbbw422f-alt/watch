@@ -35,7 +35,7 @@ struct BackupSettingsView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         backupRow("Bibliotek", detail: "Status, favoriter, betyg och anteckningar")
                         backupRow("Avsnittsprogress", detail: "Vilka avsnitt som är markerade som sedda")
-                        backupRow("Visningshistorik", detail: "Varje registrerat tittillfälle och omtittning")
+                        backupRow("Visningshistorik", detail: "Filmvisningar, avsnitt och omtittningar")
                         backupRow("Egna listor", detail: "Listor och deras filmer/serier")
                         backupRow("Premiärpåminnelser", detail: "Sparade datum och påminnelseinställningar")
                     }
@@ -108,7 +108,7 @@ struct BackupSettingsView: View {
             Button("Avbryt", role: .cancel) { pendingImport = nil; importPreview = nil }
         } message: {
             if let importPreview {
-                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.existingLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Historikhändelser: \(importPreview.newHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
+                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.existingLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Seriehändelser: \(importPreview.newHistoryEvents). Filmhändelser: \(importPreview.newMovieHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
             }
         }
         .alert("Säkerhetskopiering", isPresented: Binding(
@@ -159,7 +159,7 @@ struct BackupSettingsView: View {
             let summary = try WatchlistImportService.merge(pendingImport, into: modelContext)
             self.pendingImport = nil
             importPreview = nil
-            importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
+            importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents + summary.newMovieHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
             restoreImportedNotifications(withIDs: reminderIDs)
         } catch { errorMessage = error.localizedDescription }
     }
