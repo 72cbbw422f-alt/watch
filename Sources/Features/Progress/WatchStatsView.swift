@@ -8,7 +8,7 @@ private struct WatchSeriesStat: Identifiable {
 }
 
 struct WatchStatsView: View {
-    @Query(sort: \\EpisodeWatchEvent.watchedAt, order: .reverse)
+    @Query(sort: \EpisodeWatchEvent.watchedAt, order: .reverse)
     private var events: [EpisodeWatchEvent]
     @Query private var entries: [LibraryEntry]
     @State private var selectedYear = Calendar.current.component(.year, from: .now)
@@ -25,7 +25,7 @@ struct WatchStatsView: View {
     }
 
     private var uniqueEpisodes: Int {
-        Set(yearEvents.map(\\.episodeStableID)).count
+        Set(yearEvents.map(\.episodeStableID)).count
     }
 
     private var rewatchEvents: Int {
@@ -40,7 +40,7 @@ struct WatchStatsView: View {
 
     private var topSeries: [WatchSeriesStat] {
         let names = Dictionary(entries.map { ($0.tmdbID, $0.title) }, uniquingKeysWith: { first, _ in first })
-        let grouped = Dictionary(grouping: yearEvents, by: \\.seriesID)
+        let grouped = Dictionary(grouping: yearEvents, by: \.seriesID)
         return grouped.map { id, values in
             WatchSeriesStat(id: id, title: names[id] ?? "Serie", count: values.count)
         }.sorted { $0.count > $1.count }.prefix(5).map { $0 }
@@ -89,7 +89,7 @@ struct WatchStatsView: View {
                     .foregroundStyle(WatchlistColor.primaryText)
                 Spacer()
                 Menu {
-                    ForEach(years, id: \\.self) { year in
+                    ForEach(years, id: \.self) { year in
                         Button(String(year)) { selectedYear = year }
                     }
                 } label: {
@@ -121,7 +121,7 @@ struct WatchStatsView: View {
 
     private func metric(value: Int, label: String) -> some View {
         VStack(spacing: 5) {
-            Text("\\(value)")
+            Text("\(value)")
                 .font(.system(size: 21, weight: .semibold, design: .rounded))
                 .foregroundStyle(WatchlistColor.primaryText)
             Text(label)
@@ -141,7 +141,7 @@ struct WatchStatsView: View {
                 .tracking(1.4)
                 .foregroundStyle(WatchlistColor.secondaryText)
             VStack(spacing: 12) {
-                ForEach(1...12, id: \\.self) { month in
+                ForEach(1...12, id: \.self) { month in
                     HStack(spacing: 10) {
                         Text(monthSymbols[month - 1].capitalized)
                             .font(.system(size: 10, weight: .medium))
@@ -189,7 +189,7 @@ struct WatchStatsView: View {
                                 .foregroundStyle(WatchlistColor.primaryText)
                                 .lineLimit(1)
                             Spacer()
-                            Text("\\(series.count) avsnitt")
+                            Text("\(series.count) avsnitt")
                                 .font(.system(size: 10))
                                 .foregroundStyle(WatchlistColor.secondaryText)
                         }
