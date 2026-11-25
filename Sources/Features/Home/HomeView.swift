@@ -2,6 +2,9 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var selectedFilter = "För dig"
+    @State private var trendingItems: [MediaItem] = []
+    @State private var isLoadingTrending = false
+    @State private var trendingError: String?
 
     private let filters = ["För dig", "Filmer", "Serier"]
 
@@ -24,6 +27,7 @@ struct HomeView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .task { await loadTrending() }
     }
 
     private var header: some View {
@@ -231,16 +235,48 @@ struct HomeView: View {
 
     private var trending: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Värt att upptäcka", eyebrow: "JUST NU", trailing: "Se allt")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 13) {
-                    PosterTile(title: "Dune: Part Two", subtitle: "FILM · SCI-FI", colors: [Color(hex: 0xC18B56), Color(hex: 0x3A2825)], symbol: "sun.max.fill", number: "01")
-                    PosterTile(title: "Severance", subtitle: "SERIE · THRILLER", colors: [Color(hex: 0xA9B7B2), Color(hex: 0x263C3A)], symbol: "building.2.fill", number: "02")
-                    PosterTile(title: "The Bear", subtitle: "SERIE · DRAMA", colors: [Color(hex: 0xB66C43), Color(hex: 0x35201B)], symbol: "flame.fill", number: "03")
-                    PosterTile(title: "The Last of Us", subtitle: "SERIE · DRAMA", colors: [Color(hex: 0x82916B), Color(hex: 0x202A22)], symbol: "leaf.fill", number: "04")
+            sectionHeading("Populärt just nu", eyebrow: "TRENDAR GLOBALT", trailing: "Upptäck")
+            if isLoadingTrending && trendingItems.isEmpty {
+                ProgressView()
+                    .tint(WatchlistColor.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+            } else if let trendingError, trendingItems.isEmpty {
+                Text(trendingError)
+                    .font(.system(size: 11))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                    .padding(.horizontal, 20)
+            } else if trendingItems.isEmpty {
+                Text(TMDBConfiguration.isConfigured
+                     ? "Just nu finns inget att visa. Försök igen om en stund."
+                     : "Lägg till din TMDB-token för att visa veckans populäraste filmer och serier.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                    .padding(.horizontal, 20)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 13) {
+                        ForEach(Array(trendingItems.prefix(12).enumerated()), id: \.element.id) { index, item in
+                            MediaPosterTile(item: item, rank: index + 1)
+                        }
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
             }
+        }
+    }
+
+    @MainActor
+    private func loadTrending() async {
+        guard TMDBConfiguration.isConfigured else { return }
+        isLoadingTrending = true
+        trendingError = nil
+        defer { isLoadingTrending = false }
+
+        do {
+            trendingItems = try await TMDBConfiguration.makeClient().trendingThisWeek()
+        } catch {
+            trendingError = error.localizedDescription
         }
     }
 
@@ -309,49 +345,77 @@ struct HomeView: View {
     }
 }
 
-private struct PosterTile: View {
-    let title: String
-    let subtitle: String
-    let colors: [Color]
-    let symbol: String
-    let number: String
+private struct MediaPosterTile: View {
+    let item: MediaItem
+    let rank: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .bottomLeading) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
-                Circle()
-                    .fill(.white.opacity(0.12))
-                    .frame(width: 90, height: 90)
-                    .blur(radius: 22)
-                    .offset(x: 48, y: -82)
-                Image(systemName: symbol)
-                    .font(.system(size: 42, weight: .ultraLight))
-                    .foregroundStyle(.white.opacity(0.62))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(15)
-                LinearGradient(colors: [.clear, .black.opacity(0.58)], startPoint: .center, endPoint: .bottom)
-                Text(number)
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .padding(12)
+                posterArtwork
+                LinearGradient(colors: [.clear, .black.opacity(0.78)], startPoint: .center, endPoint: .bottom)
+                Text(String(format: "%02d", rank))
+                    .font(.system(size: 31, weight: .black, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(11)
             }
             .frame(width: 132, height: 184)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(.white.opacity(0.10), lineWidth: 1))
 
-            Text(title)
+            Text(item.title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(WatchlistColor.primaryText)
                 .lineLimit(1)
-            Text(subtitle)
-                .font(.system(size: 8, weight: .bold))
-                .tracking(0.8)
-                .foregroundStyle(WatchlistColor.mutedText)
-                .lineLimit(1)
+            HStack(spacing: 5) {
+                Text(item.kind.displayName.uppercased())
+                if item.voteAverage > 0 {
+                    Text("·")
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text(String(format: "%.1f", item.voteAverage))
+                }
+            }
+            .font(.system(size: 8, weight: .bold))
+            .tracking(0.5)
+            .foregroundStyle(WatchlistColor.mutedText)
+            .lineLimit(1)
         }
         .frame(width: 132, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var posterArtwork: some View {
+        if let url = item.posterURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .empty:
+                    placeholder.overlay { ProgressView().tint(.white.opacity(0.7)) }
+                case .failure:
+                    placeholder
+                @unknown default:
+                    placeholder
+                }
+            }
+            .frame(width: 132, height: 184)
+            .clipped()
+        } else {
+            placeholder
+        }
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated.gradient)
+            .overlay {
+                Image(systemName: item.kind == .movie ? "film" : "tv")
+                    .font(.system(size: 30, weight: .light))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+            .frame(width: 132, height: 184)
     }
 }
 
