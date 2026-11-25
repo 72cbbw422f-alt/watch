@@ -31,6 +31,31 @@ struct LibraryView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     header
+                    NavigationLink {
+                        CustomListsView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "rectangle.stack")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(WatchlistColor.accent)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Mina listor")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                Text("Skapa egna samlingar av filmer och serier")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(WatchlistColor.mutedText)
+                        }
+                        .padding(14)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 13))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 18)
                     collectionStats
                     statusFilters
                     if filteredEntries.isEmpty {
