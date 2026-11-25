@@ -127,3 +127,8 @@ TV series detail decoding now reads TMDB's `next_episode_to_air` object. When a 
 
 
 The Progress row now distinguishes a next-episode air date that is today/past (`NYTT AVSNITT`) from a future date (`IKAPP`). This label is based only on TMDB's `next_episode_to_air.air_date`; when TMDB provides no next episode, no availability state is inferred. It does not yet replace a full episode-release sync or push notification system.
+
+
+### Backup/import verification update (2026-11-25)
+
+The additive JSON import is now covered by CI runs #186 and #187: the import notification restore call receives only the reminder IDs present in the selected backup, local-only library entries remain untouched, and importing the same backup twice is idempotent. A full restoration integration test has been added for episode progress, append-only episode history, custom lists, list memberships and premiere reminders; its CI run is pending. Notification scheduling remains conditional on existing notification authorization and still requires physical-device verification. Generic JSON import is not a Seenr importer; a real Seenr export sample is required before implementing source-specific mapping.
