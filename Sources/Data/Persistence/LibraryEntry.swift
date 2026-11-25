@@ -16,6 +16,8 @@ final class LibraryEntry {
     var dateAdded: Date
     var dateUpdated: Date
     var isFavorite: Bool
+    var personalRating: Int?
+    var personalNotes: String
 
     init(item: MediaItem, status: LibraryStatus = .wantToWatch) {
         stableID = item.stableID
@@ -31,6 +33,8 @@ final class LibraryEntry {
         dateAdded = .now
         dateUpdated = .now
         isFavorite = false
+        personalRating = nil
+        personalNotes = ""
     }
 
     var status: LibraryStatus {
