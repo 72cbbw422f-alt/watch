@@ -33,17 +33,45 @@ enum PremiereNotificationService {
         }
 
         guard authorized else { throw PremiereNotificationError.permissionDenied }
+        try await addNotification(for: reminder, using: center)
+    }
 
+    /// Restores an imported reminder only when notification permission already exists.
+    /// Import never triggers a permission prompt.
+    static func scheduleIfAuthorized(_ reminder: PremiereReminder) async throws -> Bool {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            try await addNotification(for: reminder, using: center)
+            return true
+        case .notDetermined, .denied:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    private static func addNotification(
+        for reminder: PremiereReminder,
+        using center: UNUserNotificationCenter
+    ) async throws {
         let reminderDate = Calendar.current.date(
             byAdding: .day,
             value: -reminder.leadDays,
             to: reminder.premiereDate
         ) ?? reminder.premiereDate
+        let scheduledDate = Calendar.current.date(
+            bySettingHour: 9,
+            minute: 0,
+            second: 0,
+            of: reminderDate
+        ) ?? reminderDate
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute],
-            from: Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: reminderDate) ?? reminderDate
+            from: scheduledDate
         )
-        guard let fireDate = Calendar.current.date(from: components), fireDate > .now else {
+        guard scheduledDate > .now else {
             throw PremiereNotificationError.reminderTooLate
         }
 
