@@ -70,4 +70,50 @@ final class WatchlistImportTests: XCTestCase {
         XCTAssertEqual(saved.first(where: { $0.stableID == "movie-1" })?.personalNotes, "Keep my notes")
         XCTAssertNotNil(saved.first(where: { $0.stableID == "movie-2" }))
     }
+
+    func testPreviewCountsLocalOnlyItemsAndMergePreservesThem() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
+            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            configurations: configuration)
+        let context = ModelContext(container)
+        context.insert(LibraryEntry(item: item(id: 10, title: "Only on this device")))
+        try context.save()
+
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(LibraryEntry(item: item(id: 11, title: "From backup")))],
+            episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [], premiereReminders: []
+        )
+
+        let preview = try WatchlistImportService.preview(backup, in: context)
+        XCTAssertEqual(preview.existingLibraryItems, 1)
+
+        _ = try WatchlistImportService.merge(backup, into: context)
+        let saved = try context.fetch(FetchDescriptor<LibraryEntry>())
+        XCTAssertEqual(saved.count, 2)
+        XCTAssertNotNil(saved.first(where: { $0.stableID == "movie-10" }))
+        XCTAssertNotNil(saved.first(where: { $0.stableID == "movie-11" }))
+    }
+
+    func testRepeatedImportIsIdempotent() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
+            EpisodeWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            configurations: configuration)
+        let context = ModelContext(container)
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(LibraryEntry(item: item(id: 22, title: "Once")))],
+            episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [], premiereReminders: []
+        )
+
+        let first = try WatchlistImportService.merge(backup, into: context)
+        let second = try WatchlistImportService.merge(backup, into: context)
+        let saved = try context.fetch(FetchDescriptor<LibraryEntry>())
+
+        XCTAssertEqual(first.newLibraryItems, 1)
+        XCTAssertEqual(second.newLibraryItems, 0)
+        XCTAssertEqual(saved.count, 1)
+    }
 }
