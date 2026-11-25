@@ -46,7 +46,7 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                SimpleFeatureView(title: "Profil", subtitle: "Dina inställningar och preferenser.", symbol: "person.crop.circle")
+                BackupSettingsView()
             }
             .tag(5)
             .tabItem {
