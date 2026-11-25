@@ -95,3 +95,5 @@ Favorites are implemented: titles can be marked from the detail screen and filte
 
 ## Visual quality direction (2026-11-25)
 The visual system has been refined toward a mature premium editorial look: graphite surfaces, warm champagne/amber accent, restrained decoration, neutral information styling and stricter rules against placeholder-like or juvenile UI. See DESIGN.md for the professional finish checklist.
+
+Personal reviews are now part of each library entry: an optional private 1–10 rating and free-text notes, kept separate from TMDB's public rating. The title detail screen creates a library entry automatically when a user adds a personal rating or note to a title not yet saved. The Library list displays the personal rating and a note indicator where present. Persistence tests cover the empty defaults and in-memory save/fetch of review data. The new review UI and data model have been added; CI verification is in progress. No physical-device migration test has been completed yet.
