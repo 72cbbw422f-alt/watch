@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
     let onExplore: () -> Void
@@ -7,6 +8,9 @@ struct HomeView: View {
     @State private var trendingItems: [MediaItem] = []
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
+    @Query(sort: \\LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
+
+    private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
 
     private var visibleTrendingItems: [MediaItem] {
         switch selectedFilter {
@@ -192,41 +196,60 @@ struct HomeView: View {
 
     private var continueWatching: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Fortsätt titta", eyebrow: "DIN RESA", trailing: "Visa alla")
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(LinearGradient(colors: [Color(hex: 0x59636B), Color(hex: 0x171D24)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .frame(width: 74, height: 94)
-
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("Din serie väntar")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(WatchlistColor.primaryText)
-                    Text("Dina pågående serier visas här")
-                        .font(.system(size: 11))
-                        .foregroundStyle(WatchlistColor.secondaryText)
-                    HStack {
-                        Text("AVSNITTSSTATUS")
-                            .font(.system(size: 8, weight: .bold))
-                            .tracking(1.1)
-                            .foregroundStyle(WatchlistColor.mutedText)
-                        Spacer()
-                        Text("—")
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
-                            .foregroundStyle(WatchlistColor.accent)
+            sectionHeading("Fortsätt titta", eyebrow: "DIN RESA", trailing: "\(inProgressEntries.count) PÅGÅR")
+            if inProgressEntries.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "play.circle")
+                        .font(.system(size: 21, weight: .light))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(width: 44, height: 44)
+                        .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Din tittarlista är redo")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                        Text("Markera en titel som pågående i biblioteket så dyker den upp här.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    Capsule().fill(.white.opacity(0.10)).frame(height: 3)
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
+                .padding(14)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(inProgressEntries.prefix(3)) { entry in
+                        NavigationLink(value: entry.mediaItem) {
+                            HStack(spacing: 12) {
+                                LibraryHomePoster(entry: entry)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(entry.title)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(WatchlistColor.primaryText)
+                                        .lineLimit(1)
+                                    Text(entry.mediaKind == "movie" ? "FILM" : "SERIE")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .tracking(1)
+                                        .foregroundStyle(WatchlistColor.mutedText)
+                                    Label("Tittar på", systemImage: "play.circle.fill")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundStyle(WatchlistColor.accent)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(WatchlistColor.mutedText)
+                            }
+                            .padding(10)
+                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15))
+                            .overlay(RoundedRectangle(cornerRadius: 15).stroke(WatchlistColor.hairline, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
-            .padding(13)
-            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
         }
         .padding(.horizontal, 20)
     }
@@ -355,6 +378,38 @@ struct HomeView: View {
                 .foregroundStyle(WatchlistColor.secondaryText)
         }
         .padding(.horizontal, 20)
+    }
+}
+
+
+private struct LibraryHomePoster: View {
+    let entry: LibraryEntry
+
+    var body: some View {
+        Group {
+            if let url = entry.mediaItem.posterURL {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: 48, height: 66)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: entry.mediaKind == "movie" ? "film" : "tv")
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
     }
 }
 
