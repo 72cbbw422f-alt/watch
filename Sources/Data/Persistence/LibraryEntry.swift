@@ -18,6 +18,7 @@ final class LibraryEntry {
     var isFavorite: Bool
     var personalRating: Int?
     var personalNotes: String = ""
+    var episodeTotalCount: Int?
 
     init(item: MediaItem, status: LibraryStatus = .wantToWatch) {
         stableID = item.stableID
