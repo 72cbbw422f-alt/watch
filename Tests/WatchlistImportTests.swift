@@ -2,6 +2,7 @@ import XCTest
 import SwiftData
 @testable import WATCHLIST
 
+@MainActor
 final class WatchlistImportTests: XCTestCase {
     private func item(id: Int, title: String) -> MediaItem {
         MediaItem(
