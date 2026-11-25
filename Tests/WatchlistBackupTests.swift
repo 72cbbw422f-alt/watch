@@ -59,6 +59,8 @@ final class WatchlistBackupTests: XCTestCase {
             voteAverage: 8.4
         )
         context.insert(LibraryEntry(item: item))
+        let movieEvent = MovieWatchEvent(tmdbID: 550, title: "Fight Club", watchedAt: Date(timeIntervalSince1970: 1_700_000_000))
+        context.insert(movieEvent)
         context.insert(CustomList(name: "Favoriter"))
         try context.save()
 
@@ -69,7 +71,8 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertEqual(restored.customLists.map(\.name), ["Favoriter"])
         XCTAssertTrue(restored.episodeProgress.isEmpty)
         XCTAssertTrue(restored.episodeHistory.isEmpty)
-        XCTAssertTrue((restored.movieHistory ?? []).isEmpty)
+        XCTAssertEqual(restored.movieHistory?.count, 1)
+        XCTAssertEqual(restored.movieHistory?.first?.id, movieEvent.id)
         XCTAssertTrue(restored.customListItems.isEmpty)
         XCTAssertTrue(restored.premiereReminders.isEmpty)
     }
