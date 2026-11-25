@@ -6,7 +6,7 @@ struct AppRootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                HomeView(onExplore: { selectedTab = 1 }, onCalendar: { selectedTab = 3 })
+                HomeView(onExplore: { selectedTab = 1 }, onCalendar: { selectedTab = 4 })
             }
             .tag(0)
             .tabItem {
@@ -22,9 +22,17 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                LibraryView()
+                ProgressDashboardView()
             }
             .tag(2)
+            .tabItem {
+                Label("Progress", systemImage: "play.circle.fill")
+            }
+
+            NavigationStack {
+                LibraryView()
+            }
+            .tag(3)
             .tabItem {
                 Label("Bibliotek", systemImage: "books.vertical.fill")
             }
@@ -32,7 +40,7 @@ struct AppRootView: View {
             NavigationStack {
                 PremiereCalendarView()
             }
-            .tag(3)
+            .tag(4)
             .tabItem {
                 Label("Kalender", systemImage: "calendar")
             }
@@ -40,7 +48,7 @@ struct AppRootView: View {
             NavigationStack {
                 SimpleFeatureView(title: "Profil", subtitle: "Dina inställningar och preferenser.", symbol: "person.crop.circle")
             }
-            .tag(4)
+            .tag(5)
             .tabItem {
                 Label("Profil", systemImage: "person.crop.circle")
             }
