@@ -155,11 +155,12 @@ struct BackupSettingsView: View {
     private func performImport() {
         guard let pendingImport else { return }
         do {
+            let reminderIDs = Set(pendingImport.premiereReminders.map(\.stableID))
             let summary = try WatchlistImportService.merge(pendingImport, into: modelContext)
             self.pendingImport = nil
             importPreview = nil
             importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
-            restoreImportedNotifications()
+            restoreImportedNotifications(withIDs: reminderIDs)
         } catch { errorMessage = error.localizedDescription }
     }
 
