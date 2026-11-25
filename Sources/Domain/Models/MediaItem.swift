@@ -29,6 +29,8 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
     let releaseDate: String?
     let voteAverage: Double
 
+    var stableID: String { "\(kind.rawValue)-\(id)" }
+
     var posterURL: URL? {
         imageURL(path: posterPath, size: "w500")
     }
