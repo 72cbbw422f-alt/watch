@@ -19,6 +19,9 @@ final class LibraryEntry {
     var personalRating: Int?
     var personalNotes: String = ""
     var episodeTotalCount: Int?
+    var nextEpisodeTitle: String?
+    var nextEpisodeCode: String?
+    var nextEpisodeAirDate: String?
 
     init(item: MediaItem, status: LibraryStatus = .wantToWatch) {
         stableID = item.stableID
