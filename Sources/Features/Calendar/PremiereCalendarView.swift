@@ -176,10 +176,17 @@ struct PremiereCalendarView: View {
             let previousDate = reminder.premiereDate
             reminder.premiereDate = matchingEvent.date
             do {
-                try await PremiereNotificationService.schedule(reminder)
+                // Persist the new date before replacing the pending notification.
                 try modelContext.save()
+                try await PremiereNotificationService.schedule(reminder)
             } catch {
                 reminder.premiereDate = previousDate
+                do {
+                    try modelContext.save()
+                } catch {
+                    reminderError = "Datumet för \(reminder.title) kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+                    continue
+                }
                 reminderError = "Datumet för \(reminder.title) har ändrats, men påminnelsen kunde inte uppdateras: \(error.localizedDescription)"
             }
         }
@@ -188,30 +195,59 @@ struct PremiereCalendarView: View {
     @MainActor
     private func addReminder(for event: PremiereEvent, leadDays: Int) async {
         let reminder = PremiereReminder(item: event.item, premiereDate: event.date, leadDays: leadDays)
-        do {
-            try await PremiereNotificationService.schedule(reminder)
-            if let existing = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
-                existing.premiereDate = event.date
-                existing.leadDays = leadDays
-                existing.title = event.item.title
-                existing.tmdbID = event.item.id
-                existing.mediaKind = event.item.kind.rawValue
+        if let existing = savedReminders.first(where: { $0.stableID == event.item.stableID }) {
+            let previousDate = existing.premiereDate
+            let previousLeadDays = existing.leadDays
+            let previousTitle = existing.title
+            let previousTMDBID = existing.tmdbID
+            let previousMediaKind = existing.mediaKind
+
+            existing.premiereDate = event.date
+            existing.leadDays = leadDays
+            existing.title = event.item.title
+            existing.tmdbID = event.item.id
+            existing.mediaKind = event.item.kind.rawValue
+
+            do {
                 try modelContext.save()
-            } else {
-                modelContext.insert(reminder)
-                try modelContext.save()
+                try await PremiereNotificationService.schedule(existing)
+            } catch {
+                existing.premiereDate = previousDate
+                existing.leadDays = previousLeadDays
+                existing.title = previousTitle
+                existing.tmdbID = previousTMDBID
+                existing.mediaKind = previousMediaKind
+                do {
+                    try modelContext.save()
+                } catch {
+                    reminderError = "Påminnelsen kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+                    return
+                }
+                reminderError = error.localizedDescription
             }
-        } catch {
-            PremiereNotificationService.cancel(reminder)
-            reminderError = error.localizedDescription
+        } else {
+            modelContext.insert(reminder)
+            do {
+                try modelContext.save()
+                try await PremiereNotificationService.schedule(reminder)
+            } catch {
+                modelContext.delete(reminder)
+                do {
+                    try modelContext.save()
+                } catch {
+                    reminderError = "Påminnelsen kunde inte tas bort efter ett sparfel: \(error.localizedDescription)"
+                    return
+                }
+                reminderError = error.localizedDescription
+            }
         }
     }
 
     private func removeReminder(_ reminder: PremiereReminder) {
-        PremiereNotificationService.cancel(reminder)
         modelContext.delete(reminder)
         do {
             try modelContext.save()
+            PremiereNotificationService.cancel(reminder)
         } catch {
             reminderError = error.localizedDescription
         }
