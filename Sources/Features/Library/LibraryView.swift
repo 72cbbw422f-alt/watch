@@ -189,6 +189,17 @@ private struct LibraryRow: View {
                 Label(entry.status.title, systemImage: entry.status.symbol)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(WatchlistColor.accent)
+                HStack(spacing: 9) {
+                    if let rating = entry.personalRating {
+                        Label("\(rating)/10", systemImage: "star.fill")
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
+                    if !entry.personalNotes.isEmpty {
+                        Label("Anteckning", systemImage: "note.text")
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                }
+                .font(.system(size: 9, weight: .medium))
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
