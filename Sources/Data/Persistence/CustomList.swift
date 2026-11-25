@@ -14,6 +14,12 @@ final class CustomList {
         createdAt = .now
         updatedAt = .now
     }
+    init(id: String, name: String, createdAt: Date, updatedAt: Date) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 @Model
