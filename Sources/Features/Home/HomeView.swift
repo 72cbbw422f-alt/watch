@@ -80,23 +80,23 @@ struct HomeView: View {
                 ZStack {
                     LinearGradient(
                         colors: [
-                            Color(hex: 0x66747B),
-                            Color(hex: 0x303B42),
-                            Color(hex: 0x10171D),
-                            Color(hex: 0x08090B)
+                            Color(hex: 0x4A3328),
+                            Color(hex: 0x211A17),
+                            Color(hex: 0x0E0D0C),
+                            Color(hex: 0x080808)
                         ],
                         startPoint: .topTrailing,
                         endPoint: .bottomLeading
                     )
 
                     Circle()
-                        .fill(Color(hex: 0xD7C6A0).opacity(0.28))
+                        .fill(Color(hex: 0xF47721).opacity(0.25))
                         .frame(width: 210, height: 210)
                         .blur(radius: 48)
                         .offset(x: proxy.size.width * 0.30, y: -85)
 
                     Ellipse()
-                        .fill(Color(hex: 0x8A9A9B).opacity(0.22))
+                        .fill(Color(hex: 0x7B4A2D).opacity(0.20))
                         .frame(width: 300, height: 130)
                         .blur(radius: 36)
                         .rotationEffect(.degrees(-22))
@@ -282,13 +282,25 @@ struct HomeView: View {
 
     private var premieres: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Snart på skärmen", eyebrow: "KOMMANDE PREMIÄRER", trailing: "Kalender")
-            VStack(spacing: 0) {
-                PremiereRow(day: "28", month: "NOV", title: "Nya avsnitt väntar", detail: "Premiärer från serier du följer", kind: "AVSNITT")
-                Rectangle().fill(WatchlistColor.hairline).frame(height: 1).padding(.leading, 66)
-                PremiereRow(day: "02", month: "DEC", title: "Nya filmer på väg", detail: "Filmer på din bevakningslista", kind: "FILM")
+            sectionHeading("Premiärer att hålla koll på", eyebrow: "KOMMER SNART", trailing: "Kalender")
+            HStack(spacing: 12) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(WatchlistColor.accent)
+                    .frame(width: 42, height: 42)
+                    .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Dina kommande premiärer")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text("Här samlas premiärer för filmer och serier du följer.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
+            .padding(14)
             .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
         }
