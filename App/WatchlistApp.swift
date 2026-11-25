@@ -7,7 +7,7 @@ struct WatchlistApp: App {
         WindowGroup {
             AppRootView()
                 .preferredColorScheme(.dark)
-                .modelContainer(for: [LibraryEntry.self, EpisodeProgress.self])
+                .modelContainer(for: [LibraryEntry.self, EpisodeProgress.self, PremiereReminder.self])
         }
     }
 }
