@@ -6,7 +6,7 @@ struct AppRootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                HomeView(onExplore: { selectedTab = 1 })
+                HomeView(onExplore: { selectedTab = 1 }, onCalendar: { selectedTab = 3 })
             }
             .tag(0)
             .tabItem {
