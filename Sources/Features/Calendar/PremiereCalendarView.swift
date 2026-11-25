@@ -95,8 +95,8 @@ struct PremiereCalendarView: View {
             let fetched = try await (movies, television)
             let today = Calendar.current.startOfDay(for: .now)
 
-            events = (fetched.0.map { PremiereEvent(item: $0) }
-                + fetched.1.map { PremiereEvent(item: $0) })
+            events = (fetched.0.compactMap { PremiereEvent(item: $0) }
+                + fetched.1.compactMap { PremiereEvent(item: $0) })
                 .filter { $0.date >= today }
                 .sorted { $0.date < $1.date }
         } catch {
