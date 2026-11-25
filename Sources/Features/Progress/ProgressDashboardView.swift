@@ -217,6 +217,17 @@ private struct ProgressSeriesRow: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(WatchlistColor.secondaryText)
                 }
+                if let nextCode = entry.nextEpisodeCode {
+                    HStack(spacing: 5) {
+                        Image(systemName: "play.fill").foregroundStyle(WatchlistColor.accent)
+                        Text("Nästa: \\(nextCode)").foregroundStyle(WatchlistColor.primaryText)
+                        if let date = entry.nextEpisodeAirDate, !date.isEmpty {
+                            Text("· \\(date)").foregroundStyle(WatchlistColor.mutedText)
+                        }
+                    }
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                }
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
