@@ -15,12 +15,13 @@ struct DiscoverView: View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                searchField
-                mediaPicker
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    header
+                    searchField
+                    mediaPicker
 
-                if let errorMessage {
+                    if let errorMessage {
                     ContentUnavailableView(
                         "Sökningen kunde inte genomföras",
                         systemImage: "wifi.exclamationmark",
@@ -35,8 +36,7 @@ struct DiscoverView: View {
                 } else if results.isEmpty {
                     emptyState
                     Spacer()
-                } else {
-                    ScrollView(showsIndicators: false) {
+                    } else {
                         LazyVStack(spacing: 12) {
                             ForEach(results) { item in
                                 NavigationLink(value: item) {
@@ -48,11 +48,21 @@ struct DiscoverView: View {
                         .padding(.bottom, 28)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
         }
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Klart") { searchFocused = false }
+                    .tint(WatchlistColor.accent)
+            }
+        }
         .navigationDestination(for: MediaItem.self) { item in
             MediaDetailView(item: item)
         }
@@ -178,7 +188,11 @@ struct DiscoverView: View {
     @MainActor
     private func search() async {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !term.isEmpty else { return }
+        guard !term.isEmpty else {
+            searchFocused = false
+            return
+        }
+        searchFocused = false
 
         let requestID = UUID()
         let requestedKind = selectedKind
