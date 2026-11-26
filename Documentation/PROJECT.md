@@ -180,3 +180,6 @@ Episode-history backup regression coverage now explicitly tests duplicate event 
 ## Library usability (2026-11-26)
 
 The personal library now includes an inline search that matches title and personal notes, alongside a compact sort menu for recently added or alphabetical order. Status and favorites filters continue to compose with the search, and the default ordering remains newest additions first. This is a local SwiftData presentation feature and does not require a network request.
+
+
+Library search empty state: when a query has no matches, the library now explains that neither titles nor personal notes matched and offers a one-tap clear action. This avoids presenting the first-use onboarding message while the library already contains items.
