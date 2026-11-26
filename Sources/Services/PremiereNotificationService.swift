@@ -84,8 +84,12 @@ enum PremiereNotificationService {
             try await addNotification(for: reminder, using: center)
             return true
         case .notDetermined, .denied:
+            // Remove any stale request when permission is unavailable.
+            // Otherwise a previously scheduled date could fire if permission is enabled later.
+            center.removePendingNotificationRequests(withIdentifiers: [reminder.notificationID])
             return false
         @unknown default:
+            center.removePendingNotificationRequests(withIdentifiers: [reminder.notificationID])
             return false
         }
     }
