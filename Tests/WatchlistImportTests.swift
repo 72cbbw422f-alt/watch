@@ -39,7 +39,7 @@ final class WatchlistImportTests: XCTestCase {
             existingReminderIDs: [existingReminder.stableID]
         )
 
-        XCTAssertEqual(ids, [newReminder.stableID])
+        XCTAssertEqual(ids, Set([newReminder.stableID]))
     }
 
     func testRepeatedImportSchedulesNoExistingReminderIDs() {
