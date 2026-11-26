@@ -62,6 +62,7 @@ enum WatchlistImportService {
     /// Merge is additive: existing local records are never overwritten or deleted.
     static func merge(_ backup: WatchlistBackup, into context: ModelContext) throws -> WatchlistImportPreview {
         let summary = try preview(backup, in: context)
+        try context.transaction {
         let library = try context.fetch(FetchDescriptor<LibraryEntry>())
         let states = try context.fetch(FetchDescriptor<EpisodeProgress>())
         let history = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
@@ -184,7 +185,7 @@ enum WatchlistImportService {
             context.insert(reminder)
         }
 
-        try context.save()
+        }
         return summary
     }
 }
