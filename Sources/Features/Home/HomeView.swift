@@ -33,6 +33,7 @@ struct HomeView: View {
                     featured
                     quickFilters
                     continueWatching
+                    recommendations
                     trending
                     premieres
                     comingSoon
@@ -45,7 +46,10 @@ struct HomeView: View {
         .navigationDestination(for: MediaItem.self) { item in
             MediaDetailView(item: item)
         }
-        .task { await loadTrending() }
+        .task {
+            await loadTrending()
+            await loadPersonalRecommendations()
+        }
     }
 
     private var header: some View {
@@ -203,6 +207,70 @@ struct HomeView: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+
+    private var recommendations: some View {
+        Group {
+            if isLoadingRecommendations || !personalRecommendations.isEmpty {
+                VStack(alignment: .leading, spacing: 14) {
+                    sectionHeading("Utvalt för dig", eyebrow: "BYGGT FRÅN DITT BIBLIOTEK", trailing: "Personligt")
+                    if isLoadingRecommendations && personalRecommendations.isEmpty {
+                        ProgressView()
+                            .tint(WatchlistColor.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 22)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(alignment: .top, spacing: 13) {
+                                ForEach(personalRecommendations, id: \\.stableID) { item in
+                                    NavigationLink(value: item) {
+                                        MediaPosterTile(item: item, rank: (personalRecommendations.firstIndex(of: item) ?? 0) + 1)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func loadPersonalRecommendations() async {
+        guard TMDBConfiguration.isConfigured else { return }
+        let seeds = libraryEntries
+            .filter { $0.isFavorite || ($0.personalRating ?? 0) >= 8 }
+            .sorted {
+                let firstScore = ($0.isFavorite ? 100 : 0) + ($0.personalRating ?? 0)
+                let secondScore = ($1.isFavorite ? 100 : 0) + ($1.personalRating ?? 0)
+                if firstScore != secondScore { return firstScore > secondScore }
+                return $0.dateUpdated > $1.dateUpdated
+            }
+            .prefix(3)
+
+        guard !seeds.isEmpty else { return }
+        isLoadingRecommendations = true
+        defer { isLoadingRecommendations = false }
+
+        let client = TMDBConfiguration.makeClient()
+        let savedIDs = Set(libraryEntries.map(\\.stableID))
+        var candidates: [String: MediaItem] = [:]
+        for seed in seeds {
+            do {
+                let similar = try await client.similarTitles(to: seed.mediaItem)
+                for item in similar where !savedIDs.contains(item.stableID) && item.id > 0 {
+                    candidates[item.stableID] = item
+                }
+            } catch {
+                continue
+            }
+        }
+        personalRecommendations = candidates.values.sorted {
+            if $0.voteAverage != $1.voteAverage { return $0.voteAverage > $1.voteAverage }
+            return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }.prefix(12).map { $0 }
     }
 
     private var trending: some View {
