@@ -159,3 +159,5 @@ The additive backup merge now runs inside a SwiftData model-context transaction.
 Backup validation now also verifies that each custom-list membership's media identity matches its media type and TMDB ID, and that its membership ID matches the exact list/media pair. A regression test rejects tampered membership identities before import.
 
 Library backup validation now also requires each stable ID to match its media type and TMDB ID (for example, movie-550). A regression test rejects a tampered library identity before restore.
+
+The import integration tests now also assert that a backup with a tampered custom-list membership is rejected before any library, list or membership records are inserted into the context. This covers the preflight validation boundary of the transactional merge.
