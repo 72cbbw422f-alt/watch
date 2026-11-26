@@ -133,6 +133,26 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertThrowsError(try WatchlistBackupService.decode(json))
     }
 
+    func testRejectsLibraryStableIDThatDoesNotMatchTMDBIdentity() throws {
+        let item = MediaItem(
+            id: 550, kind: .movie, title: "Fight Club", overview: "",
+            posterPath: nil, backdropPath: nil, releaseDate: nil, voteAverage: 0
+        )
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(LibraryEntry(item: item))],
+            episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [], premiereReminders: []
+        )
+        let validJSON = String(decoding: try WatchlistBackupService.encode(backup), as: UTF8.self)
+        let invalidJSON = validJSON.replacingOccurrences(
+            of: "movie-550",
+            with: "movie-551"
+        )
+
+        XCTAssertNotEqual(validJSON, invalidJSON)
+        XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
+    }
+
     func testRejectsPersonalRatingOutsideOneToTen() throws {
         let item = MediaItem(
             id: 550,
