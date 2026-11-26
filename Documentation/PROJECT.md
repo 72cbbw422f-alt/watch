@@ -136,6 +136,8 @@ The additive JSON import is now covered by CI runs #186 and #187: the import not
 
 ## Yearly viewing statistics (2026-11-25)
 
+The annual dashboard's pure calculation rules have now been extracted into `WatchStatisticsCalculator`, with focused unit tests for unique-title counts, additional viewing events and combined monthly totals across film and episode dates. This keeps the arithmetic independently testable rather than burying it in SwiftUI view properties. CI verification is pending.
+
 A new annual overview is available from the Progress dashboard. It combines append-only film and episode viewing events, showing total viewing occasions, unique episodes, unique films, additional viewing events, month-by-month activity, and the five most-viewed series and films. Users can switch between years represented in their history. Legacy watched-state records without a corresponding event are not retroactively counted. The combined movie/episode statistics and history query fixes compile in CI run #216 (generic iOS Simulator build-for-testing, success). This is a build verification only; no physical iPhone validation has been completed.
 
 
