@@ -4,6 +4,7 @@ import UserNotifications
 enum PremiereNotificationError: LocalizedError {
     case reminderTooLate
     case permissionDenied
+    case invalidLeadDays
 
     var errorDescription: String? {
         switch self {
@@ -11,7 +12,44 @@ enum PremiereNotificationError: LocalizedError {
             "Påminnelsedatumet har redan passerat. Välj ett senare premiärdatum."
         case .permissionDenied:
             "Notiser är avstängda för WATCHLIST. Aktivera dem i iPhone-inställningarna."
+        case .invalidLeadDays:
+            "Påminnelsen har ett ogiltigt antal dagar före premiären."
         }
+    }
+}
+
+/// Pure date calculation shared by notification scheduling and unit tests.
+enum PremiereNotificationSchedule {
+    static func scheduledDate(
+        premiereDate: Date,
+        leadDays: Int,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) throws -> Date {
+        guard [0, 1, 7].contains(leadDays) else {
+            throw PremiereNotificationError.invalidLeadDays
+        }
+
+        let reminderDate = calendar.date(
+            byAdding: .day,
+            value: -leadDays,
+            to: premiereDate
+        ) ?? premiereDate
+        let scheduledDate = calendar.date(
+            bySettingHour: 9,
+            minute: 0,
+            second: 0,
+            of: reminderDate
+        ) ?? reminderDate
+
+        guard scheduledDate > now else {
+            throw PremiereNotificationError.reminderTooLate
+        }
+        return scheduledDate
+    }
+
+    static func dateComponents(for scheduledDate: Date, calendar: Calendar = .current) -> DateComponents {
+        calendar.dateComponents([.year, .month, .day, .hour, .minute], from: scheduledDate)
     }
 }
 
@@ -56,24 +94,11 @@ enum PremiereNotificationService {
         for reminder: PremiereReminder,
         using center: UNUserNotificationCenter
     ) async throws {
-        let reminderDate = Calendar.current.date(
-            byAdding: .day,
-            value: -reminder.leadDays,
-            to: reminder.premiereDate
-        ) ?? reminder.premiereDate
-        let scheduledDate = Calendar.current.date(
-            bySettingHour: 9,
-            minute: 0,
-            second: 0,
-            of: reminderDate
-        ) ?? reminderDate
-        let components = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour, .minute],
-            from: scheduledDate
+        let scheduledDate = try PremiereNotificationSchedule.scheduledDate(
+            premiereDate: reminder.premiereDate,
+            leadDays: reminder.leadDays
         )
-        guard scheduledDate > .now else {
-            throw PremiereNotificationError.reminderTooLate
-        }
+        let components = PremiereNotificationSchedule.dateComponents(for: scheduledDate)
 
         let content = UNMutableNotificationContent()
         content.title = "Kommande premiär"
