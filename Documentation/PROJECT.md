@@ -109,6 +109,8 @@ Episode progress now records an optional watchedAt timestamp whenever a user mar
 
 
 ## JSON backup import (2026-11-25)
+Backup validation now also rejects personal ratings outside the supported 1–10 range and episode-progress records whose stable ID does not match their series/season/episode identity. A focused regression test covers invalid personal ratings; CI verification is pending.
+
 
 The Profile backup screen supports selecting a JSON backup, decoding and validating it, showing a pre-import summary, and explicitly confirming an additive merge. The import service previews new versus matching library IDs and counts episode states, film/episode viewing events, custom lists, memberships and reminders. The merge inserts missing records and deliberately leaves matching local library entries untouched; it does not delete local-only records. Event UUIDs and stable membership IDs prevent duplicate imports. Backup validation rejects unsupported schema versions, invalid identities, duplicate IDs and custom-list memberships whose parent list is absent. Integration tests cover restoration of the local collections and prove that repeated imports do not duplicate movie viewing events. CI runs #217 and #218 passed using generic iOS Simulator build-for-testing; this verifies compilation of app and test targets, not execution of the tests. This is the generic WATCHLIST v1 JSON import path; it is not a Seenr importer. Seenr-specific mapping requires an actual export sample and must preserve whatever dates/fields that file really contains. Physical-device file-picker and notification checks remain pending.
 
@@ -136,7 +138,7 @@ The additive JSON import is now covered by CI runs #186 and #187: the import not
 
 ## Yearly viewing statistics (2026-11-25)
 
-The annual dashboard's pure calculation rules have now been extracted into `WatchStatisticsCalculator`, with focused unit tests for unique-title counts, additional viewing events and combined monthly totals across film and episode dates. This keeps the arithmetic independently testable rather than burying it in SwiftUI view properties. CI verification is pending.
+The annual dashboard's pure calculation rules have now been extracted into `WatchStatisticsCalculator`, with focused unit tests for unique-title counts, additional viewing events and combined monthly totals across film and episode dates. This keeps the arithmetic independently testable rather than burying it in SwiftUI view properties. CI runs #222–#224 passed using generic iOS Simulator build-for-testing; this compiles app and test targets but does not execute simulator tests.
 
 A new annual overview is available from the Progress dashboard. It combines append-only film and episode viewing events, showing total viewing occasions, unique episodes, unique films, additional viewing events, month-by-month activity, and the five most-viewed series and films. Users can switch between years represented in their history. Legacy watched-state records without a corresponding event are not retroactively counted. The combined movie/episode statistics and history query fixes compile in CI run #216 (generic iOS Simulator build-for-testing, success). This is a build verification only; no physical iPhone validation has been completed.
 
