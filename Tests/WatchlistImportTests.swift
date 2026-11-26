@@ -38,7 +38,7 @@ final class WatchlistImportTests: XCTestCase {
         let preview = try WatchlistImportService.preview(backup, in: context)
 
         XCTAssertEqual(preview.newLibraryItems, 1)
-        XCTAssertEqual(preview.updatedLibraryItems, 1)
+        XCTAssertEqual(preview.matchingLibraryItems, 1)
     }
 
     func testMergeAddsNewItemsWithoutOverwritingExistingItems() throws {
@@ -87,7 +87,7 @@ final class WatchlistImportTests: XCTestCase {
         )
 
         let preview = try WatchlistImportService.preview(backup, in: context)
-        XCTAssertEqual(preview.existingLibraryItems, 1)
+        XCTAssertEqual(preview.localOnlyLibraryItems, 1)
 
         _ = try WatchlistImportService.merge(backup, into: context)
         let saved = try context.fetch(FetchDescriptor<LibraryEntry>())
