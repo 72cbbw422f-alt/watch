@@ -42,10 +42,25 @@ struct WatchlistBackup: Codable {
         guard library.allSatisfy({ !$0.stableID.isEmpty && $0.tmdbID > 0 && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidLibraryRecord
         }
-        guard library.allSatisfy({ MediaKind(rawValue: $0.mediaKind) != nil && LibraryStatus(rawValue: $0.statusRawValue) != nil }) else {
+        guard library.allSatisfy({
+            MediaKind(rawValue: $0.mediaKind) != nil &&
+            LibraryStatus(rawValue: $0.statusRawValue) != nil &&
+            ($0.personalRating.map { (1...10).contains($0) } ?? true)
+        }) else {
             throw WatchlistBackupError.invalidLibraryRecord
         }
-        guard episodeProgress.allSatisfy({ !$0.stableID.isEmpty && $0.seriesID > 0 && $0.episodeID > 0 && $0.seasonNumber >= 0 && $0.episodeNumber > 0 && !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        guard episodeProgress.allSatisfy({
+            $0.stableID == EpisodeProgress.makeStableID(
+                seriesID: $0.seriesID,
+                seasonNumber: $0.seasonNumber,
+                episodeNumber: $0.episodeNumber
+            ) &&
+            $0.seriesID > 0 &&
+            $0.episodeID > 0 &&
+            $0.seasonNumber >= 0 &&
+            $0.episodeNumber > 0 &&
+            !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }) else {
             throw WatchlistBackupError.invalidEpisodeRecord
         }
         guard episodeHistory.allSatisfy({ $0.seriesID > 0 && $0.episodeID > 0 && $0.seasonNumber >= 0 && $0.episodeNumber > 0 && !$0.episodeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
