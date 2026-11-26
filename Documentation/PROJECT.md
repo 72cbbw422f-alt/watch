@@ -202,4 +202,4 @@ GitHub Actions run #270 passed the generic iOS Simulator `build-for-testing` ste
 
 ## CI simulator test execution (2026-11-26)
 
-The iOS workflow now runs the unit-test scheme on an iPhone 16 simulator after the generic simulator build-for-testing step. This adds runtime XCTest execution to the existing compile check. The first run after this workflow change must confirm that the selected simulator is available on the GitHub macOS runner and that all tests pass. This remains simulator validation, not physical-device validation or a signed IPA build.
+The iOS workflow now runs the unit-test scheme on an iPhone 16 simulator after the generic simulator build-for-testing step. GitHub Actions run #275 completed successfully: both the generic simulator build and the `Run unit tests on iPhone Simulator` step passed. This confirms that the selected simulator is available on the hosted macOS runner and that the current XCTest suite executes successfully. This remains simulator validation, not physical-device validation or a signed IPA build.
