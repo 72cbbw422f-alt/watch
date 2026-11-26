@@ -8,11 +8,13 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var sortAlphabetically = false
     @State private var usesPosterGrid = true
+    @State private var selectedKind: LibraryKindFilter = .all
 
     private var filteredEntries: [LibraryEntry] {
         let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let matching = entries.filter { entry in
             (selectedStatus == nil || entry.status == selectedStatus)
+                && (selectedKind == .all || (selectedKind == .movies ? entry.mediaKind == "movie" : entry.mediaKind == "tv" || entry.mediaKind == "television"))
                 && (!favoritesOnly || entry.isFavorite)
                 && (term.isEmpty ||
                     entry.title.localizedCaseInsensitiveContains(term) ||
@@ -71,6 +73,7 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 18)
                     collectionStats
+                    mediaKindFilters
                     statusFilters
                     if filteredEntries.isEmpty {
                         emptyState
@@ -224,6 +227,35 @@ struct LibraryView: View {
                 .foregroundStyle(WatchlistColor.mutedText)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var mediaKindFilters: some View {
+        HStack(spacing: 8) {
+            kindChip("Allt", kind: .all)
+            kindChip("Filmer", kind: .movies)
+            kindChip("Serier", kind: .series)
+            Spacer(minLength: 0)
+            Text("\(filteredEntries.count) TITLAR")
+                .font(.system(size: 8, weight: .bold))
+                .tracking(0.9)
+                .foregroundStyle(WatchlistColor.mutedText)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func kindChip(_ title: String, kind: LibraryKindFilter) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) { selectedKind = kind }
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(selectedKind == kind ? WatchlistColor.primaryText : WatchlistColor.secondaryText)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 8)
+                .background(selectedKind == kind ? WatchlistColor.accent.opacity(0.16) : WatchlistColor.surface, in: Capsule())
+                .overlay(Capsule().stroke(selectedKind == kind ? WatchlistColor.accent.opacity(0.45) : WatchlistColor.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private var statusFilters: some View {
@@ -438,4 +470,11 @@ private struct LibraryPosterTile: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             }
     }
+}
+
+
+private enum LibraryKindFilter {
+    case all
+    case movies
+    case series
 }
