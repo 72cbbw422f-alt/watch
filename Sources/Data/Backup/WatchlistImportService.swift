@@ -3,8 +3,8 @@ import SwiftData
 
 struct WatchlistImportPreview {
     let newLibraryItems: Int
-    let updatedLibraryItems: Int
-    let existingLibraryItems: Int
+    let matchingLibraryItems: Int
+    let localOnlyLibraryItems: Int
     let newEpisodeStates: Int
     let newHistoryEvents: Int
     let newMovieHistoryEvents: Int
@@ -48,8 +48,8 @@ enum WatchlistImportService {
 
         return WatchlistImportPreview(
             newLibraryItems: backup.library.filter { !existingLibrary.contains($0.stableID) }.count,
-            updatedLibraryItems: backup.library.filter { existingLibrary.contains($0.stableID) }.count,
-            existingLibraryItems: existingLibrary.subtracting(incomingLibrary).count,
+            matchingLibraryItems: backup.library.filter { existingLibrary.contains($0.stableID) }.count,
+            localOnlyLibraryItems: existingLibrary.subtracting(incomingLibrary).count,
             newEpisodeStates: backup.episodeProgress.filter { !existingState.contains($0.stableID) }.count,
             newHistoryEvents: backup.episodeHistory.filter { !existingHistory.contains($0.id) }.count,
             newMovieHistoryEvents: (backup.movieHistory ?? []).filter { !existingMovieHistory.contains($0.id) }.count,
