@@ -166,3 +166,6 @@ Premiere-reminder backup validation now also requires its stable ID to match its
 
 
 The repeated-import idempotency integration test now covers the full viewing-state path: library entry, current episode progress, append-only episode viewing event and movie viewing event. It asserts that the first restore inserts each record and the second restore inserts none, while preserving the original stable IDs/event UUIDs. CI build-for-testing is pending; this compiles the app and test targets but does not execute simulator tests.
+
+
+Premiere-reminder backup validation now also checks the notification identifier against the reminder's stable media identity (`premiere-<media-stable-id>`). This prevents a structurally valid reminder from being restored with an unrelated notification identifier, which could otherwise make later notification reconciliation unreliable. A focused tampering test covers the notification identifier independently of the reminder stable ID. CI build-for-testing is pending.
