@@ -149,3 +149,8 @@ A new annual overview is available from the Progress dashboard. It combines appe
 ## Movie viewing history (2026-11-26)
 
 An append-only `MovieWatchEvent` model records each explicit movie viewing registration with TMDB identity, title, poster path, timestamp and source. The movie detail page offers a dedicated registration action; each tap is a separate event, so rewatches are preserved. Registering a movie also ensures it exists in the library with watched status. The chronological history view now includes film and episode sections. Movie events are included in JSON export and additive import, with duplicate event IDs ignored. The optional `movieHistory` backup field preserves compatibility with earlier schema-v1 backups that do not contain this field. Automated export/restore tests have been added. The SwiftData model, import service, movie-history views and annual statistics compile in CI run #216 (generic iOS Simulator build-for-testing, success). Import idempotency is covered by CI run #217 (generic iOS Simulator build-for-testing, success); run #218 also passed after the documentation update. These runs compile app and test targets but do not execute simulator tests. Physical-device migration and UI checks remain pending.
+
+
+## Transaction-safe backup import (2026-11-26)
+
+The additive backup merge now runs inside a SwiftData model-context transaction. This makes the collection inserts and final persistence save one transaction boundary rather than leaving a sequence of pending inserts if an intermediate operation throws. The pre-import validation and preview still happen before the transaction, and existing local records remain untouched. CI verification is pending.
