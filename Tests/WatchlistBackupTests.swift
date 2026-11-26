@@ -204,6 +204,32 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
     }
 
+    func testRejectsReminderNotificationIDThatDoesNotMatchStableIdentity() throws {
+        let reminder = PremiereReminder(
+            stableID: "movie-550",
+            tmdbID: 550,
+            mediaKind: MediaKind.movie.rawValue,
+            title: "Fight Club",
+            premiereDate: Date(timeIntervalSince1970: 1_800_000_000),
+            leadDays: 1,
+            notificationID: "premiere-movie-550",
+            dateCreated: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let backup = WatchlistBackup(
+            library: [], episodeProgress: [], episodeHistory: [],
+            customLists: [], customListItems: [],
+            premiereReminders: [PremiereReminderRecord(reminder)]
+        )
+        let validJSON = String(decoding: try WatchlistBackupService.encode(backup), as: UTF8.self)
+        let invalidJSON = validJSON.replacingOccurrences(
+            of: "premiere-movie-550",
+            with: "premiere-movie-551"
+        )
+
+        XCTAssertNotEqual(validJSON, invalidJSON)
+        XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
+    }
+
     func testRejectsCustomListMembershipWithMismatchedStableIdentity() throws {
         let list = CustomList(id: "list-1", name: "Favoriter",
             createdAt: .now, updatedAt: .now)
