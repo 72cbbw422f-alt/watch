@@ -7,6 +7,7 @@ struct LibraryView: View {
     @State private var favoritesOnly = false
     @State private var searchText = ""
     @State private var sortAlphabetically = false
+    @State private var usesPosterGrid = true
 
     private var filteredEntries: [LibraryEntry] {
         let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -73,6 +74,16 @@ struct LibraryView: View {
                     statusFilters
                     if filteredEntries.isEmpty {
                         emptyState
+                    } else if usesPosterGrid {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], alignment: .leading, spacing: 18) {
+                            ForEach(filteredEntries) { entry in
+                                NavigationLink(value: entry.mediaItem) {
+                                    LibraryPosterTile(entry: entry)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 18)
                     } else {
                         LazyVStack(spacing: 11) {
                             ForEach(filteredEntries) { entry in
@@ -134,6 +145,27 @@ struct LibraryView: View {
             }
             .padding(.horizontal, 13)
             .frame(height: 44)
+            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(WatchlistColor.hairline, lineWidth: 1))
+
+            HStack(spacing: 5) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { usesPosterGrid = true }
+                } label: {
+                    Image(systemName: "square.grid.3x3.fill")
+                        .foregroundStyle(usesPosterGrid ? WatchlistColor.accent : WatchlistColor.secondaryText)
+                        .frame(width: 36, height: 44)
+                }
+                .accessibilityLabel("Visa affischrutnät")
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { usesPosterGrid = false }
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .foregroundStyle(!usesPosterGrid ? WatchlistColor.accent : WatchlistColor.secondaryText)
+                        .frame(width: 32, height: 44)
+                }
+                .accessibilityLabel("Visa listvy")
+            }
             .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(WatchlistColor.hairline, lineWidth: 1))
 
@@ -336,5 +368,74 @@ private struct LibraryRow: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             }
             .frame(width: 57, height: 82)
+    }
+}
+
+private struct LibraryPosterTile: View {
+    let entry: LibraryEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    if let url = entry.mediaItem.posterURL {
+                        AsyncImage(url: url) { phase in
+                            if let image = phase.image {
+                                image.resizable().scaledToFill()
+                            } else {
+                                placeholder
+                            }
+                        }
+                    } else {
+                        placeholder
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(2 / 3, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                if entry.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(7)
+                        .background(.black.opacity(0.58), in: Circle())
+                        .padding(7)
+                }
+            }
+
+            Text(entry.title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(entry.status == .watched ? WatchlistColor.accent : entry.status == .watching ? Color.green : WatchlistColor.mutedText)
+                    .frame(width: 5, height: 5)
+                Text(entry.status.title)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                Spacer(minLength: 0)
+                if let rating = entry.personalRating {
+                    Label("\(rating)", systemImage: "star.fill")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.accent)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: entry.mediaKind == "movie" ? "film" : "tv")
+                    .font(.system(size: 22, weight: .light))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
     }
 }
