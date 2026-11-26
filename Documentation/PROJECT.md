@@ -154,3 +154,6 @@ An append-only `MovieWatchEvent` model records each explicit movie viewing regis
 ## Transaction-safe backup import (2026-11-26)
 
 The additive backup merge now runs inside a SwiftData model-context transaction. This makes the collection inserts and final persistence save one transaction boundary rather than leaving a sequence of pending inserts if an intermediate operation throws. The pre-import validation and preview still happen before the transaction, and existing local records remain untouched. CI verification is pending.
+
+
+Backup validation now also verifies that each custom-list membership's media identity matches its media type and TMDB ID, and that its membership ID matches the exact list/media pair. A regression test rejects tampered membership identities before import.
