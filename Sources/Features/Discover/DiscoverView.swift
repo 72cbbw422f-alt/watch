@@ -7,7 +7,14 @@ struct DiscoverView: View {
     @State private var isSearching = false
     @State private var errorMessage: String?
     @State private var searchRequestID = UUID()
+    @State private var trendingItems: [MediaItem] = []
+    @State private var isLoadingTrending = false
+    @State private var trendingError: String?
     @FocusState private var searchFocused: Bool
+
+    private var visibleTrendingItems: [MediaItem] {
+        trendingItems.filter { $0.kind == selectedKind }
+    }
 
     private let client = TMDBConfiguration.makeClient()
 
@@ -33,6 +40,8 @@ struct DiscoverView: View {
                         ProgressView("Söker hos TMDB…")
                             .tint(WatchlistColor.accent)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        discoveryLanding
                     } else if results.isEmpty {
                         emptyState
                         Spacer()
@@ -64,6 +73,9 @@ struct DiscoverView: View {
         }
         .navigationDestination(for: MediaItem.self) { item in
             MediaDetailView(item: item)
+        }
+        .task {
+            await loadTrending()
         }
     }
 
@@ -153,6 +165,106 @@ struct DiscoverView: View {
                 .overlay(Capsule().stroke(selectedKind == kind ? WatchlistColor.hairline : Color.clear, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    private var discoveryLanding: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("JUST NU")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text("Trendande titlar")
+                        .font(.system(size: 20, weight: .semibold, design: .serif))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                }
+                Spacer()
+                Text("DEN HÄR VECKAN")
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(1)
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+
+            if !TMDBConfiguration.isConfigured {
+                VStack(alignment: .leading, spacing: 9) {
+                    Label("Anslut TMDB för att upptäcka titlar", systemImage: "film.stack")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text("När databasen är ansluten visas aktuella filmer och serier med affischer, betyg och premiärår här.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
+            } else if isLoadingTrending && trendingItems.isEmpty {
+                ProgressView()
+                    .tint(WatchlistColor.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 35)
+            } else if let trendingError, trendingItems.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Det gick inte att hämta trender")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text(trendingError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                    Button("Försök igen") { Task { await loadTrending() } }
+                        .font(.system(size: 12, weight: .semibold))
+                        .tint(WatchlistColor.accent)
+                }
+            } else if visibleTrendingItems.isEmpty {
+                Text("Inga trendande titlar kunde hämtas just nu.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(visibleTrendingItems.prefix(20)) { item in
+                            NavigationLink(value: item) {
+                                DiscoverPosterTile(item: item)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.trailing, 20)
+                }
+                .contentMargins(.trailing, -20)
+            }
+
+            HStack(spacing: 10) {
+                Image(systemName: selectedKind == .movie ? "film" : "tv")
+                    .font(.system(size: 16))
+                    .foregroundStyle(WatchlistColor.accent)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectedKind == .movie ? "Hitta nästa filmkväll" : "Hitta nästa serie")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text("Sök på titel, skådespelare eller genre")
+                        .font(.system(size: 10))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                }
+                Spacer()
+            }
+            .padding(.top, 4)
+        }
+        .padding(.top, 4)
+    }
+
+    @MainActor
+    private func loadTrending() async {
+        guard TMDBConfiguration.isConfigured else { return }
+        isLoadingTrending = true
+        trendingError = nil
+        defer { isLoadingTrending = false }
+        do {
+            trendingItems = try await client.trendingThisWeek()
+        } catch {
+            trendingError = error.localizedDescription
+        }
     }
 
     private var emptyState: some View {
@@ -283,5 +395,55 @@ private struct MediaSearchRow: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             }
             .frame(width: 64, height: 94)
+    }
+}
+ 
+private struct DiscoverPosterTile: View {
+    let item: MediaItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Group {
+                if let url = item.posterURL {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            placeholder
+                        }
+                    }
+                } else {
+                    placeholder
+                }
+            }
+            .frame(width: 126, height: 184)
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            Text(item.title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .lineLimit(2)
+                .frame(width: 126, alignment: .leading)
+            HStack(spacing: 5) {
+                if item.voteAverage > 0 {
+                    Label(String(format: "%.1f", item.voteAverage), systemImage: "star.fill")
+                }
+                if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                    Text(String(year))
+                }
+            }
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(WatchlistColor.secondaryText)
+        }
+        .frame(width: 126, alignment: .leading)
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 11, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: item.kind == .movie ? "film" : "tv")
+                    .font(.system(size: 22, weight: .light))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
     }
 }
