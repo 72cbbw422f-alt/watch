@@ -108,31 +108,24 @@ final class WatchlistImportTests: XCTestCase {
             createdAt: .now, updatedAt: .now)
         let movie = item(id: 550, title: "Fight Club")
         let membership = CustomListItem(listID: list.id, item: movie)
-        let invalidMembership = CustomListItemRecord(membership)
-        let tamperedMembership = CustomListItemRecord(
-            stableID: "list-invalid::movie-551",
-            listID: invalidMembership.listID,
-            mediaStableID: invalidMembership.mediaStableID,
-            tmdbID: invalidMembership.tmdbID,
-            mediaKind: invalidMembership.mediaKind,
-            title: invalidMembership.title,
-            overview: invalidMembership.overview,
-            posterPath: invalidMembership.posterPath,
-            backdropPath: invalidMembership.backdropPath,
-            releaseDate: invalidMembership.releaseDate,
-            voteAverage: invalidMembership.voteAverage,
-            dateAdded: invalidMembership.dateAdded
-        )
         let backup = WatchlistBackup(
             library: [LibraryRecord(LibraryEntry(item: item(id: 99, title: "Should not import")))],
             episodeProgress: [],
             episodeHistory: [],
             customLists: [CustomListRecord(list)],
-            customListItems: [tamperedMembership],
+            customListItems: [CustomListItemRecord(membership)],
             premiereReminders: []
         )
+        let validJSON = String(decoding: try WatchlistBackupService.encode(backup), as: UTF8.self)
+        let tamperedJSON = validJSON.replacingOccurrences(
+            of: "list-invalid::movie-550",
+            with: "list-invalid::movie-551"
+        )
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let tamperedBackup = try decoder.decode(WatchlistBackup.self, from: Data(tamperedJSON.utf8))
 
-        XCTAssertThrowsError(try WatchlistImportService.merge(backup, into: context))
+        XCTAssertThrowsError(try WatchlistImportService.merge(tamperedBackup, into: context))
         XCTAssertTrue(try context.fetch(FetchDescriptor<LibraryEntry>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<CustomList>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<CustomListItem>()).isEmpty)
