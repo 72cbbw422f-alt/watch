@@ -28,6 +28,8 @@ struct HomeView: View {
             .prefix(3)
             .map { "\($0.stableID):\($0.isFavorite):\($0.personalRating ?? 0):\($0.dateUpdated.timeIntervalSince1970)" }
             .joined(separator: "|")
+        + "#saved:"
+        + libraryEntries.map(\\.stableID).sorted().joined(separator: "|")
     }
 
     private var visibleTrendingItems: [MediaItem] {
