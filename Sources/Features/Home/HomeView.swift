@@ -291,7 +291,7 @@ struct HomeView: View {
         }
 
         let client = TMDBConfiguration.makeClient()
-        let savedIDs = Set(libraryEntries.map(\\.stableID))
+        let savedIDs = Set(libraryEntries.map(\.stableID))
         var recommendations: [MediaItem] = []
         var recommendedIDs = Set<String>()
 
