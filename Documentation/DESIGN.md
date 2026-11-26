@@ -171,3 +171,33 @@ A screen is not accepted if it resembles a website template or an early-2000s po
 - Prefer native SwiftUI controls and platform conventions over web-like controls.
 
 The goal is not to make WATCHLIST look like a streaming service. It is to combine the best tracking and discovery patterns of established apps into a polished personal film and TV library.
+
+
+## User-approved visual reference direction — November 2026
+
+The supplied App Store references (Bingebase, FilmNoir, Queue, Refract and related media trackers) establish the user's preferred product character. Use them as interaction and visual-quality references, not as templates to copy.
+
+### Visual character
+- Keep the WATCHLIST graphite foundation, but let the warm orange accent read more clearly and confidently, closer to the references.
+- Use cinematic artwork as a first-class layout element: full-bleed backdrops on feature/detail screens, portrait posters in shelves and grids, and episode stills in progress views.
+- Prefer compact, information-rich screens with strong spacing discipline. Avoid large unused gaps, but do not compress text or tap targets.
+- Use rounded surfaces and restrained glass/material treatments selectively. Orange outlines, progress bars and selected controls should communicate state, not act as decoration.
+- Use editorial headings with confident weight and clear title/metadata hierarchy. Keep secondary labels readable.
+- The app should feel like a personal media command centre: polished, fast to scan, and useful every day.
+
+### Reference patterns to prioritize
+1. **Home:** Continue watching, planned/watchlist, trending shelves, upcoming releases and personalized selections. Each shelf should have a clear purpose and an artwork-led presentation.
+2. **Library:** Poster grid, status filters, movie/series switch, sorting and custom collections. Show useful counts and progress without crowding the artwork.
+3. **Title detail:** Backdrop plus poster/title, synopsis, genres, release facts, ratings where available, watch status, favorite/list/review actions, and season/episode progress for series.
+4. **Progress:** A practical queue of next episodes with season/episode labels, progress indicators and one-tap completion. Keep history and statistics accessible.
+5. **Calendar:** Month and agenda views with clear premiere/episode distinctions and poster-linked events.
+6. **Statistics/profile:** Watch time, completed titles, episodes, streaks, genre breakdown and personal ratings, presented as meaningful data rather than decorative charts.
+7. **Smart lists:** Saved collections with filters and sorting that can be revisited quickly.
+8. **Availability and integrations:** Where-to-watch information and import/export should be clearly separated from core tracking and should never be presented as live unless the data source supports it.
+
+### Implementation discipline
+- Preserve WATCHLIST's own identity; do not copy third-party logos, exact layouts, labels or proprietary visual treatments.
+- Build coherent end-to-end flows rather than isolated showcase screens.
+- Prefer real TMDB artwork and metadata. Clearly distinguish unavailable data from a genuine empty result.
+- Before changing navigation, map every destination and keep the primary tab bar to a deliberate, consistent set of destinations.
+- Validate horizontal content insets on the actual iPhone width: hero content, section headings, filters and poster shelves must align to the same screen coordinate system. Horizontal carousels may scroll, but their parent page must never shift sideways.
