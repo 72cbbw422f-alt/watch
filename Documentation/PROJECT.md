@@ -188,3 +188,8 @@ Library search empty state: when a query has no matches, the library now explain
 ## Similar titles on detail pages (2026-11-26)
 
 Media detail pages now request TMDB's similar-title endpoint for the current movie or television series, using the Swedish locale. Up to ten results are shown in a horizontal poster shelf. The current title and items already present in the local library are excluded. Selecting a recommendation opens its normal detail page. Network failure is non-blocking: the recommendation shelf remains hidden rather than interrupting the primary title details. This is catalogue similarity from TMDB, not a claim of personalized machine-learning recommendations.
+
+
+## Library-informed home recommendations (2026-11-26)
+
+The home screen now builds a lightweight personal recommendation shelf from up to three seed titles in the local library: favorites and titles with a personal rating of 8/10 or higher. Seeds are prioritized by favorite status, then personal rating, then recent update. Similar titles are fetched through the existing TMDB endpoint, deduplicated by media stable ID, and filtered against all titles already saved locally. The resulting candidates are ordered by TMDB vote average and capped at twelve. If the library has no qualifying seeds, or requests fail, the shelf is omitted; the rest of the home screen remains available. This is a transparent heuristic based on explicit library signals, not a trained recommendation model.
