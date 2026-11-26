@@ -24,7 +24,7 @@ final class WatchlistImportTests: XCTestCase {
             leadDays: 1, notificationID: "premiere-movie-550", dateCreated: .now
         )
         let newReminder = PremiereReminder(
-            stableID: "tv-1396", tmdbID: 1396, mediaKind: MediaKind.tv.rawValue,
+            stableID: "tv-1396", tmdbID: 1396, mediaKind: MediaKind.television.rawValue,
             title: "Breaking Bad", premiereDate: Date(timeIntervalSince1970: 1_900_000_000),
             leadDays: 7, notificationID: "premiere-tv-1396", dateCreated: .now
         )
