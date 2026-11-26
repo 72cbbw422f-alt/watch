@@ -16,8 +16,6 @@ struct DiscoverView: View {
         trendingItems.filter { $0.kind == selectedKind }
     }
 
-    private let client = TMDBConfiguration.makeClient()
-
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -261,7 +259,7 @@ struct DiscoverView: View {
         trendingError = nil
         defer { isLoadingTrending = false }
         do {
-            trendingItems = try await client.trendingThisWeek()
+            trendingItems = try await TMDBConfiguration.makeClient().trendingThisWeek()
         } catch {
             trendingError = error.localizedDescription
         }
@@ -319,8 +317,8 @@ struct DiscoverView: View {
 
         do {
             let fetchedResults = requestedKind == .movie
-                ? try await client.searchMovies(query: term)
-                : try await client.searchTelevision(query: term)
+                ? try await TMDBConfiguration.makeClient().searchMovies(query: term)
+                : try await TMDBConfiguration.makeClient().searchTelevision(query: term)
 
             // Ignore stale responses if the user cleared the query, changed media type,
             // or started a newer search while this request was in flight.
