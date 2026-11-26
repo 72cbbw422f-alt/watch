@@ -108,7 +108,7 @@ struct BackupSettingsView: View {
             Button("Avbryt", role: .cancel) { pendingImport = nil; importPreview = nil }
         } message: {
             if let importPreview {
-                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.updatedLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.existingLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Seriehändelser: \(importPreview.newHistoryEvents). Filmhändelser: \(importPreview.newMovieHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
+                Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.matchingLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.localOnlyLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Seriehändelser: \(importPreview.newHistoryEvents). Filmhändelser: \(importPreview.newMovieHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
             }
         }
         .alert("Säkerhetskopiering", isPresented: Binding(
