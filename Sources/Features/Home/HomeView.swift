@@ -46,19 +46,24 @@ struct HomeView: View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 30) {
-                    header
-                    featured
-                    quickFilters
-                    continueWatching
-                    recommendations
-                    trending
-                    premieres
-                    comingSoon
+            GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 30) {
+                        header
+                        featured
+                        quickFilters
+                        continueWatching
+                        recommendations
+                        trending
+                        premieres
+                        comingSoon
+                    }
+                    .frame(width: geometry.size.width, alignment: .leading)
+                    .padding(.top, 10)
+                    .padding(.bottom, 34)
                 }
-                .padding(.top, 10)
-                .padding(.bottom, 34)
+                .frame(width: geometry.size.width, alignment: .leading)
+                .scrollClipDisabled(false)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
