@@ -216,7 +216,7 @@ struct MediaDetailView: View {
         defer { isLoadingSimilar = false }
         do {
             let results = try await tmdbClient.similarTitles(to: item)
-            let savedIDs = Set(libraryEntries.map(\\.stableID))
+            let savedIDs = Set(libraryEntries.map(\.stableID))
             similarItems = results.filter {
                 $0.id > 0 && !savedIDs.contains($0.stableID)
             }
