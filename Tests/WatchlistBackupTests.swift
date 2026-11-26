@@ -158,6 +158,32 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
     }
 
+    func testRejectsCustomListMembershipWithMismatchedStableIdentity() throws {
+        let list = CustomList(id: "list-1", name: "Favoriter",
+            createdAt: .now, updatedAt: .now)
+        let movie = MediaItem(
+            id: 550, kind: .movie, title: "Fight Club", overview: "",
+            posterPath: nil, backdropPath: nil, releaseDate: nil, voteAverage: 0
+        )
+        let membership = CustomListItem(listID: list.id, item: movie)
+        let backup = WatchlistBackup(
+            library: [],
+            episodeProgress: [],
+            episodeHistory: [],
+            customLists: [CustomListRecord(list)],
+            customListItems: [CustomListItemRecord(membership)],
+            premiereReminders: []
+        )
+        let validJSON = String(decoding: try WatchlistBackupService.encode(backup), as: UTF8.self)
+        let invalidJSON = validJSON.replacingOccurrences(
+            of: "list-1::movie-550",
+            with: "list-1::movie-551"
+        )
+
+        XCTAssertNotEqual(validJSON, invalidJSON)
+        XCTAssertThrowsError(try WatchlistBackupService.decode(Data(invalidJSON.utf8)))
+    }
+
     func testRejectsUnknownMediaKindAndStatus() throws {
         let item = MediaItem(
             id: 550,
