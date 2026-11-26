@@ -31,21 +31,27 @@ struct WatchStatsView: View {
     }
 
     private var uniqueMovies: Int {
-        Set(yearMovieEvents.map(\.tmdbID)).count
+        WatchStatisticsCalculator.uniqueMovieCount(yearMovieEvents.map(\.tmdbID))
     }
 
     private var uniqueEpisodes: Int {
-        Set(yearEvents.map(\.episodeStableID)).count
+        WatchStatisticsCalculator.uniqueEpisodeCount(yearEvents.map(\.episodeStableID))
     }
 
     private var rewatchEvents: Int {
-        max(yearEvents.count + yearMovieEvents.count - uniqueEpisodes - uniqueMovies, 0)
+        WatchStatisticsCalculator.additionalViewingCount(
+            totalEvents: yearEvents.count + yearMovieEvents.count,
+            uniqueEpisodes: uniqueEpisodes,
+            uniqueMovies: uniqueMovies
+        )
     }
 
     private var monthlyCounts: [Int] {
-        (1...12).map { month in
-            yearEvents.filter { calendar.component(.month, from: $0.watchedAt) == month }.count + yearMovieEvents.filter { calendar.component(.month, from: $0.watchedAt) == month }.count
-        }
+        WatchStatisticsCalculator.monthlyCounts(
+            episodeDates: yearEvents.map(\.watchedAt),
+            movieDates: yearMovieEvents.map(\.watchedAt),
+            calendar: calendar
+        )
     }
 
     private var topSeries: [WatchSeriesStat] {
