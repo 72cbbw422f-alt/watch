@@ -258,21 +258,24 @@ struct HomeView: View {
 
         let client = TMDBConfiguration.makeClient()
         let savedIDs = Set(libraryEntries.map(\.stableID))
-        var candidates: [String: MediaItem] = [:]
+        var recommendations: [MediaItem] = []
+        var recommendedIDs = Set<String>()
         for seed in seeds {
             do {
+                // TMDB returns similar titles in relevance order; preserve that order
+                // and let higher-priority library seeds contribute first.
                 let similar = try await client.similarTitles(to: seed.mediaItem)
                 for item in similar where !savedIDs.contains(item.stableID) && item.id > 0 {
-                    candidates[item.stableID] = item
+                    guard recommendedIDs.insert(item.stableID).inserted else { continue }
+                    recommendations.append(item)
+                    if recommendations.count == 12 { break }
                 }
             } catch {
                 continue
             }
+            if recommendations.count == 12 { break }
         }
-        personalRecommendations = candidates.values.sorted {
-            if $0.voteAverage != $1.voteAverage { return $0.voteAverage > $1.voteAverage }
-            return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-        }.prefix(12).map { $0 }
+        personalRecommendations = recommendations
     }
 
     private var trending: some View {
