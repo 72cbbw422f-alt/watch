@@ -20,8 +20,6 @@ struct MediaDetailView: View {
     @State private var seasonError: String?
     @State private var similarItems: [MediaItem] = []
     @State private var isLoadingSimilar = false
-    private let tmdbClient = TMDBConfiguration.makeClient()
-
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -215,7 +213,7 @@ struct MediaDetailView: View {
         isLoadingSimilar = true
         defer { isLoadingSimilar = false }
         do {
-            let results = try await tmdbClient.similarTitles(to: item)
+            let results = try await TMDBConfiguration.makeClient().similarTitles(to: item)
             let savedIDs = Set(libraryEntries.map(\.stableID))
             similarItems = results.filter {
                 $0.id > 0 && !savedIDs.contains($0.stableID)
@@ -653,7 +651,7 @@ struct MediaDetailView: View {
         defer { isLoadingSeasons = false }
 
         do {
-            let details = try await tmdbClient.televisionDetails(id: item.id)
+            let details = try await TMDBConfiguration.makeClient().televisionDetails(id: item.id)
             televisionSeasons = details.regularSeasons
             nextEpisodeToAir = details.nextEpisodeToAir
             if let entry = libraryEntry {
@@ -689,7 +687,7 @@ struct MediaDetailView: View {
         defer { loadingSeasonNumber = nil }
 
         do {
-            let details = try await tmdbClient.televisionSeason(
+            let details = try await TMDBConfiguration.makeClient().televisionSeason(
                 id: item.id,
                 seasonNumber: season.seasonNumber
             )
