@@ -103,48 +103,99 @@ struct HomeView: View {
     }
 
     private var featured: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Rectangle()
-                .fill(WatchlistColor.hairline)
-                .frame(height: 1)
-
-            VStack(alignment: .leading, spacing: 11) {
-                Text("ETT BIBLIOTEK FÖR BERÄTTELSER")
-                    .font(.system(size: 9, weight: .semibold))
-                    .tracking(1.7)
-                    .foregroundStyle(WatchlistColor.accent)
-
-                Text("Hitta något\nminnesvärt.")
-                    .font(.system(size: 36, weight: .regular, design: .serif))
-                    .tracking(-0.8)
-                    .foregroundStyle(WatchlistColor.primaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("Upptäck filmer och serier. Samla favoriterna och håll koll på vad du vill se härnäst.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(WatchlistColor.secondaryText)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(action: onExplore) {
-                    HStack(spacing: 8) {
-                        Text("Utforska biblioteket")
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 11, weight: .semibold))
+        Group {
+            if let item = trendingItems.first {
+                NavigationLink(value: item) {
+                    ZStack(alignment: .bottomLeading) {
+                        Rectangle()
+                            .fill(WatchlistColor.surfaceElevated)
+                        if let url = item.backdropURL {
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable().scaledToFill()
+                                } else {
+                                    heroFallback
+                                }
+                            }
+                        } else {
+                            heroFallback
+                        }
+                        LinearGradient(
+                            stops: [
+                                .init(color: .black.opacity(0.02), location: 0),
+                                .init(color: .black.opacity(0.18), location: 0.38),
+                                .init(color: .black.opacity(0.88), location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        VStack(alignment: .leading, spacing: 9) {
+                            Text("VECKANS UTVALDA")
+                                .font(.system(size: 9, weight: .bold))
+                                .tracking(1.8)
+                                .foregroundStyle(WatchlistColor.accent)
+                            Text(item.title)
+                                .font(.system(size: 27, weight: .semibold, design: .serif))
+                                .tracking(-0.5)
+                                .foregroundStyle(.white)
+                                .lineLimit(2)
+                            HStack(spacing: 10) {
+                                Text(item.kind.displayName.uppercased())
+                                if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                                    Text("·")
+                                    Text(String(year))
+                                }
+                                if item.voteAverage > 0 {
+                                    Label(String(format: "%.1f", item.voteAverage), systemImage: "star.fill")
+                                }
+                            }
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.82))
+                            Label("Visa titel", systemImage: "arrow.up.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(WatchlistColor.accent)
+                                .padding(.top, 2)
+                        }
+                        .padding(20)
                     }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(WatchlistColor.primaryText)
-                    .padding(.top, 3)
+                    .frame(height: 265)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("ETT BIBLIOTEK FÖR BERÄTTELSER")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(1.7)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text("Hitta något\nminnesvärt.")
+                        .font(.system(size: 35, weight: .regular, design: .serif))
+                        .tracking(-0.8)
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text("Upptäck filmer och serier. Samla favoriterna och håll koll på vad du vill se härnäst.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .lineSpacing(4)
+                    Button(action: onExplore) {
+                        Label("Utforska biblioteket", systemImage: "arrow.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 8)
             }
-            .padding(.vertical, 8)
-
-            Rectangle()
-                .fill(WatchlistColor.hairline)
-                .frame(height: 1)
         }
         .padding(.horizontal, 20)
+    }
+
+    private var heroFallback: some View {
+        LinearGradient(
+            colors: [WatchlistColor.surfaceElevated, WatchlistColor.backgroundElevated],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     private var quickFilters: some View {
