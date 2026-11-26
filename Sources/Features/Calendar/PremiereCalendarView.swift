@@ -11,7 +11,6 @@ struct PremiereCalendarView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @Environment(\.modelContext) private var modelContext
     @Query private var savedReminders: [PremiereReminder]
-    private let client = TMDBConfiguration.makeClient()
 
     private var groupedEvents: [(date: Date, events: [PremiereEvent])] {
         let groups = Dictionary(grouping: events) { Calendar.current.startOfDay(for: $0.date) }
@@ -242,6 +241,8 @@ struct PremiereCalendarView: View {
         defer { isLoading = false }
 
         do {
+            // Resolve the client at request time so a token saved after this view was created is picked up.
+            let client = TMDBConfiguration.makeClient()
             async let movies = client.upcomingMovies()
             async let television = client.upcomingTelevisionPremieres()
             let fetched = try await (movies, television)
