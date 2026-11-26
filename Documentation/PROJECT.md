@@ -163,3 +163,6 @@ Library backup validation now also requires each stable ID to match its media ty
 The import integration tests now also assert that a backup with a tampered custom-list membership is rejected before any library, list or membership records are inserted into the context. This covers the preflight validation boundary of the transactional merge.
 
 Premiere-reminder backup validation now also requires its stable ID to match its media type and TMDB ID. A regression test rejects mismatched reminder identity. The invalid-import integration test fixture was corrected to decode a tampered JSON payload directly, ensuring the service itself performs the rejection before mutating the context.
+
+
+The repeated-import idempotency integration test now covers the full viewing-state path: library entry, current episode progress, append-only episode viewing event and movie viewing event. It asserts that the first restore inserts each record and the second restore inserts none, while preserving the original stable IDs/event UUIDs. CI build-for-testing is pending; this compiles the app and test targets but does not execute simulator tests.
