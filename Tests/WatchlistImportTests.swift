@@ -17,6 +17,51 @@ final class WatchlistImportTests: XCTestCase {
         )
     }
 
+    func testReminderSchedulingSelectionIncludesOnlyNewReminderIDs() {
+        let existingReminder = PremiereReminder(
+            stableID: "movie-550", tmdbID: 550, mediaKind: MediaKind.movie.rawValue,
+            title: "Fight Club", premiereDate: Date(timeIntervalSince1970: 1_900_000_000),
+            leadDays: 1, notificationID: "premiere-movie-550", dateCreated: .now
+        )
+        let newReminder = PremiereReminder(
+            stableID: "tv-1396", tmdbID: 1396, mediaKind: MediaKind.tv.rawValue,
+            title: "Breaking Bad", premiereDate: Date(timeIntervalSince1970: 1_900_000_000),
+            leadDays: 7, notificationID: "premiere-tv-1396", dateCreated: .now
+        )
+        let backup = WatchlistBackup(
+            library: [], episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [],
+            premiereReminders: [PremiereReminderRecord(existingReminder), PremiereReminderRecord(newReminder)]
+        )
+
+        let ids = WatchlistImportService.reminderIDsToSchedule(
+            from: backup,
+            existingReminderIDs: [existingReminder.stableID]
+        )
+
+        XCTAssertEqual(ids, [newReminder.stableID])
+    }
+
+    func testRepeatedImportSchedulesNoExistingReminderIDs() {
+        let reminder = PremiereReminder(
+            stableID: "movie-550", tmdbID: 550, mediaKind: MediaKind.movie.rawValue,
+            title: "Fight Club", premiereDate: Date(timeIntervalSince1970: 1_900_000_000),
+            leadDays: 1, notificationID: "premiere-movie-550", dateCreated: .now
+        )
+        let backup = WatchlistBackup(
+            library: [], episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [],
+            premiereReminders: [PremiereReminderRecord(reminder)]
+        )
+
+        let ids = WatchlistImportService.reminderIDsToSchedule(
+            from: backup,
+            existingReminderIDs: [reminder.stableID]
+        )
+
+        XCTAssertTrue(ids.isEmpty)
+    }
+
     func testPreviewCountsNewAndMatchingLibraryRecords() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
