@@ -6,21 +6,27 @@ struct ProgressDashboardView: View {
     @Query private var episodeProgress: [EpisodeProgress]
     @State private var selectedFilter = ProgressFilter.watching
     @State private var searchText = ""
+    @State private var sortByTitle = false
 
     private var seriesEntries: [LibraryEntry] {
         entries.filter { $0.mediaKind == "tv" || $0.mediaKind == "television" }
     }
 
     private var filteredEntries: [LibraryEntry] {
-        seriesEntries.filter { entry in
+        let matching = seriesEntries.filter { entry in
             let matchesFilter: Bool
             switch selectedFilter {
             case .watching: matchesFilter = entry.status == .watching
             case .planned: matchesFilter = entry.status == .wantToWatch
             case .watched: matchesFilter = entry.status == .watched
             }
-            return matchesFilter && (searchText.isEmpty || entry.title.localizedCaseInsensitiveContains(searchText))
+            let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return matchesFilter && (term.isEmpty || entry.title.localizedCaseInsensitiveContains(term))
         }
+        if sortByTitle {
+            return matching.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        }
+        return matching.sorted { $0.dateUpdated > $1.dateUpdated }
     }
 
     private var watchedEpisodeCount: Int {
@@ -35,6 +41,7 @@ struct ProgressDashboardView: View {
                     header
                     summary
                     filterBar
+                    listControls
                     if filteredEntries.isEmpty {
                         emptyState
                     } else {
@@ -126,6 +133,33 @@ struct ProgressDashboardView: View {
                 .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var listControls: some View {
+        HStack {
+            Text("\(filteredEntries.count) SERIER")
+                .font(.system(size: 9, weight: .bold))
+                .tracking(1)
+                .foregroundStyle(WatchlistColor.mutedText)
+            Spacer()
+            Menu {
+                Button {
+                    sortByTitle = false
+                } label: {
+                    Label("Senast uppdaterade", systemImage: sortByTitle ? "clock" : "checkmark")
+                }
+                Button {
+                    sortByTitle = true
+                } label: {
+                    Label("Titel A–Ö", systemImage: sortByTitle ? "checkmark" : "textformat")
+                }
+            } label: {
+                Label(sortByTitle ? "Titel A–Ö" : "Senast uppdaterade", systemImage: "arrow.up.arrow.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     private var filterBar: some View {
