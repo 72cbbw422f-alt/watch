@@ -281,7 +281,9 @@ struct PremiereCalendarView: View {
             do {
                 // Persist the new date before replacing the pending notification.
                 try modelContext.save()
-                try await PremiereNotificationService.schedule(reminder)
+                // Reconciliation must not prompt for permission during a background refresh.
+                // Keep the updated premiere date even when notifications are currently unavailable.
+                _ = try await PremiereNotificationService.scheduleIfAuthorized(reminder)
             } catch {
                 reminder.premiereDate = previousDate
                 do {
