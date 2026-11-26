@@ -11,9 +11,24 @@ struct HomeView: View {
     @State private var trendingError: String?
     @State private var personalRecommendations: [MediaItem] = []
     @State private var isLoadingRecommendations = false
+    @State private var recommendationRequestID = UUID()
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
 
     private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
+
+    private var recommendationSeedKey: String {
+        libraryEntries
+            .filter { $0.isFavorite || ($0.personalRating ?? 0) >= 8 }
+            .sorted {
+                let firstScore = ($0.isFavorite ? 100 : 0) + ($0.personalRating ?? 0)
+                let secondScore = ($1.isFavorite ? 100 : 0) + ($1.personalRating ?? 0)
+                if firstScore != secondScore { return firstScore > secondScore }
+                return $0.dateUpdated > $1.dateUpdated
+            }
+            .prefix(3)
+            .map { "\($0.stableID):\($0.isFavorite):\($0.personalRating ?? 0):\($0.dateUpdated.timeIntervalSince1970)" }
+            .joined(separator: "|")
+    }
 
     private var visibleTrendingItems: [MediaItem] {
         switch selectedFilter {
@@ -50,6 +65,8 @@ struct HomeView: View {
         }
         .task {
             await loadTrending()
+        }
+        .task(id: recommendationSeedKey) {
             await loadPersonalRecommendations()
         }
     }
@@ -241,7 +258,15 @@ struct HomeView: View {
 
     @MainActor
     private func loadPersonalRecommendations() async {
-        guard TMDBConfiguration.isConfigured else { return }
+        let requestID = UUID()
+        recommendationRequestID = requestID
+
+        guard TMDBConfiguration.isConfigured else {
+            personalRecommendations = []
+            isLoadingRecommendations = false
+            return
+        }
+
         let seeds = libraryEntries
             .filter { $0.isFavorite || ($0.personalRating ?? 0) >= 8 }
             .sorted {
@@ -252,29 +277,44 @@ struct HomeView: View {
             }
             .prefix(3)
 
-        guard !seeds.isEmpty else { return }
+        guard !seeds.isEmpty else {
+            personalRecommendations = []
+            isLoadingRecommendations = false
+            return
+        }
+
         isLoadingRecommendations = true
-        defer { isLoadingRecommendations = false }
+        defer {
+            if recommendationRequestID == requestID {
+                isLoadingRecommendations = false
+            }
+        }
 
         let client = TMDBConfiguration.makeClient()
-        let savedIDs = Set(libraryEntries.map(\.stableID))
+        let savedIDs = Set(libraryEntries.map(\\.stableID))
         var recommendations: [MediaItem] = []
         var recommendedIDs = Set<String>()
+
         for seed in seeds {
+            guard !Task.isCancelled, recommendationRequestID == requestID else { return }
             do {
-                // TMDB returns similar titles in relevance order; preserve that order
-                // and let higher-priority library seeds contribute first.
+                // Preserve TMDB relevance order and prioritize stronger library seeds.
                 let similar = try await client.similarTitles(to: seed.mediaItem)
+                guard !Task.isCancelled, recommendationRequestID == requestID else { return }
+
                 for item in similar where !savedIDs.contains(item.stableID) && item.id > 0 {
                     guard recommendedIDs.insert(item.stableID).inserted else { continue }
                     recommendations.append(item)
                     if recommendations.count == 12 { break }
                 }
             } catch {
+                guard !Task.isCancelled, recommendationRequestID == requestID else { return }
                 continue
             }
             if recommendations.count == 12 { break }
         }
+
+        guard !Task.isCancelled, recommendationRequestID == requestID else { return }
         personalRecommendations = recommendations
     }
 
