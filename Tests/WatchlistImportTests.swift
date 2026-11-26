@@ -39,6 +39,7 @@ final class WatchlistImportTests: XCTestCase {
 
         XCTAssertEqual(preview.newLibraryItems, 1)
         XCTAssertEqual(preview.matchingLibraryItems, 1)
+        XCTAssertEqual(preview.localOnlyLibraryItems, 0)
     }
 
     func testMergeAddsNewItemsWithoutOverwritingExistingItems() throws {
