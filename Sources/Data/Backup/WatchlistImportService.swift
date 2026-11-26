@@ -27,6 +27,11 @@ enum WatchlistImportError: LocalizedError {
 
 @MainActor
 enum WatchlistImportService {
+    /// Returns only reminder identities absent from the local store before an additive import.
+    static func reminderIDsToSchedule(from backup: WatchlistBackup, existingReminderIDs: Set<String>) -> Set<String> {
+        Set(backup.premiereReminders.map(\.stableID)).subtracting(existingReminderIDs)
+    }
+
     static func preview(_ backup: WatchlistBackup, in context: ModelContext) throws -> WatchlistImportPreview {
         try backup.validate()
         let library = try context.fetch(FetchDescriptor<LibraryEntry>())
