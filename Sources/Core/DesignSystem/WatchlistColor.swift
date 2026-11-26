@@ -6,12 +6,12 @@ enum WatchlistColor {
     static let backgroundElevated = Color(hex: 0x121417)
     static let surface = Color(hex: 0x191C20)
     static let surfaceElevated = Color(hex: 0x24282D)
-    static let accent = Color(hex: 0xD49A68)
-    static let accentPressed = Color(hex: 0xB77A4A)
+    static let accent = Color(hex: 0xF08A36)
+    static let accentPressed = Color(hex: 0xD96B1F)
     static let primaryText = Color(hex: 0xF1EEE9)
     static let secondaryText = Color(hex: 0xB4B0AA)
     static let mutedText = Color(hex: 0x817D77)
-    static let warmHighlight = Color(hex: 0xD8C8B7)
+    static let warmHighlight = Color(hex: 0xF0A35B)
     static let hairline = Color.white.opacity(0.075)
 }
 
