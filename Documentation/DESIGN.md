@@ -136,3 +136,38 @@ A screen is not finished because it compiles. It is finished when:
 - Avoid tiny uppercase labels when a normal-case title communicates better.
 - Use consistent spacing, corner radii and poster ratios across all features.
 - Never use placeholder copy that pretends a feature is live. Clearly communicate what is available.
+
+## Product-design benchmark — established media apps
+
+Use the interaction quality and information architecture of leading film and television products as the benchmark, while keeping WATCHLIST's own visual identity. Do not copy their branding or reproduce their interfaces pixel-for-pixel.
+
+Reference patterns to learn from:
+- **Letterboxd:** poster-led discovery, strong film identity, clear personal ratings and watchlist actions, editorial hierarchy.
+- **Trakt:** practical tracking workflows, clear watched / watching / planned states, season and episode progress, useful activity history.
+- **TV Time:** approachable series tracking, next-episode context, season progress and fast episode completion.
+- **JustWatch:** efficient discovery, clear movie-versus-series distinction, filters and useful metadata density.
+- **Apple TV:** confident full-bleed artwork, restrained typography, native-feeling navigation and polished transitions.
+
+Translate those patterns into one coherent native iOS product:
+- Home is a curated entertainment front page, not a welcome page with a large slogan.
+- Discover opens with real shelves: trending, popular, top rated and upcoming. Search is always easy to reach.
+- Search results use poster artwork, title, year, type, rating and a readable synopsis. Results must not look like web search snippets.
+- Detail pages lead with backdrop and poster, then title, year, runtime/seasons, genres, rating, synopsis and one unmistakable primary library action.
+- Library is a visual collection first: poster grid as the default, compact list as an alternative, fast status and favorite filters.
+- Series tracking makes season and episode progress obvious and quick to update.
+- Calendar and progress views should look like finished product screens, not generic data tables.
+- Navigation stays consistent and native. Avoid redundant navigation levels and oversized empty states.
+
+## Visual quality gates
+
+A screen is not accepted if it resembles a website template or an early-2000s portal. Specifically:
+- No giant empty vertical gaps, oversized decorative icons, or text-only landing screens when artwork is available.
+- No long stacks of bordered rounded rectangles. Use layout, imagery and typography to create hierarchy.
+- No tiny metadata that requires squinting. Secondary information must remain comfortably legible.
+- Poster ratios, image crops, card spacing and typography must be consistent across the app.
+- Primary actions must be obvious and reachable; secondary actions must not compete with them.
+- Loading, no-results, disconnected and error states must be intentionally designed and provide a useful next step.
+- Every screen must be judged with real TMDB artwork and on a physical iPhone, not only in a simulator.
+- Prefer native SwiftUI controls and platform conventions over web-like controls.
+
+The goal is not to make WATCHLIST look like a streaming service. It is to combine the best tracking and discovery patterns of established apps into a polished personal film and TV library.
