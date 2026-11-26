@@ -97,6 +97,47 @@ final class WatchlistImportTests: XCTestCase {
         XCTAssertNotNil(saved.first(where: { $0.stableID == "movie-11" }))
     }
 
+    func testInvalidBackupIsRejectedBeforeAnyRecordsAreInserted() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
+            EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            configurations: configuration)
+        let context = ModelContext(container)
+
+        let list = CustomList(id: "list-invalid", name: "Favoriter",
+            createdAt: .now, updatedAt: .now)
+        let movie = item(id: 550, title: "Fight Club")
+        let membership = CustomListItem(listID: list.id, item: movie)
+        let invalidMembership = CustomListItemRecord(membership)
+        let tamperedMembership = CustomListItemRecord(
+            stableID: "list-invalid::movie-551",
+            listID: invalidMembership.listID,
+            mediaStableID: invalidMembership.mediaStableID,
+            tmdbID: invalidMembership.tmdbID,
+            mediaKind: invalidMembership.mediaKind,
+            title: invalidMembership.title,
+            overview: invalidMembership.overview,
+            posterPath: invalidMembership.posterPath,
+            backdropPath: invalidMembership.backdropPath,
+            releaseDate: invalidMembership.releaseDate,
+            voteAverage: invalidMembership.voteAverage,
+            dateAdded: invalidMembership.dateAdded
+        )
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(LibraryEntry(item: item(id: 99, title: "Should not import")))],
+            episodeProgress: [],
+            episodeHistory: [],
+            customLists: [CustomListRecord(list)],
+            customListItems: [tamperedMembership],
+            premiereReminders: []
+        )
+
+        XCTAssertThrowsError(try WatchlistImportService.merge(backup, into: context))
+        XCTAssertTrue(try context.fetch(FetchDescriptor<LibraryEntry>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<CustomList>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<CustomListItem>()).isEmpty)
+    }
+
     func testRepeatedImportIsIdempotent() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: LibraryEntry.self, EpisodeProgress.self,
