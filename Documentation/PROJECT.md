@@ -175,3 +175,8 @@ Backup metadata validation now rejects catalogue vote averages outside the 0–1
 
 
 Episode-history backup regression coverage now explicitly tests duplicate event UUIDs and invalid series identity. The validator already rejects both cases before encoding or import; these tests lock that contract in place so an event cannot silently collide with another viewing or reference an invalid series. CI build-for-testing is pending.
+
+
+## Library usability (2026-11-26)
+
+The personal library now includes an inline search that matches title and personal notes, alongside a compact sort menu for recently added or alphabetical order. Status and favorites filters continue to compose with the search, and the default ordering remains newest additions first. This is a local SwiftData presentation feature and does not require a network request.
