@@ -6,6 +6,7 @@ struct DiscoverView: View {
     @State private var results: [MediaItem] = []
     @State private var isSearching = false
     @State private var errorMessage: String?
+    @State private var searchRequestID = UUID()
     @FocusState private var searchFocused: Bool
 
     private let client = TMDBConfiguration.makeClient()
@@ -88,6 +89,8 @@ struct DiscoverView: View {
 
             if !query.isEmpty {
                 Button {
+                    searchRequestID = UUID()
+                    isSearching = false
                     query = ""
                     results = []
                     errorMessage = nil
@@ -126,6 +129,8 @@ struct DiscoverView: View {
 
     private func kindButton(_ kind: MediaKind, title: String, symbol: String) -> some View {
         Button {
+            searchRequestID = UUID()
+            isSearching = false
             selectedKind = kind
             results = []
             errorMessage = nil
@@ -175,15 +180,29 @@ struct DiscoverView: View {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty else { return }
 
+        let requestID = UUID()
+        let requestedKind = selectedKind
+        searchRequestID = requestID
         isSearching = true
         errorMessage = nil
-        defer { isSearching = false }
+
+        defer {
+            if searchRequestID == requestID {
+                isSearching = false
+            }
+        }
 
         do {
-            results = selectedKind == .movie
+            let fetchedResults = requestedKind == .movie
                 ? try await client.searchMovies(query: term)
                 : try await client.searchTelevision(query: term)
+
+            // Ignore stale responses if the user cleared the query, changed media type,
+            // or started a newer search while this request was in flight.
+            guard searchRequestID == requestID else { return }
+            results = fetchedResults
         } catch {
+            guard searchRequestID == requestID else { return }
             errorMessage = error.localizedDescription
         }
     }
