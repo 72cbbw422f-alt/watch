@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-unsigned-ipa:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_sha == github.sha)
     runs-on: macos-15
     steps:
       - name: Checkout
