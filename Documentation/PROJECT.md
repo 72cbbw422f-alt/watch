@@ -213,3 +213,8 @@ Premiere reminder backup validation accepts only the supported lead times (same 
 ## Premiere date reconciliation and notification permissions (2026-11-26)
 
 When TMDB publishes a changed premiere date for a saved reminder, the calendar now persists the updated date and attempts to replace the pending notification only if notification authorization already exists. Reconciliation no longer prompts for notification permission during a calendar refresh. If permission is not determined or has been denied, the saved premiere date still stays current; the reminder record remains available, but no notification is scheduled. Explicitly creating/updating a reminder from the calendar retains the normal authorization request flow. CI verification for this behavior is pending.
+
+
+## Premiere reminder daylight-saving coverage (2026-11-26)
+
+The reminder schedule tests now include a Stockholm time-zone case across the spring daylight-saving transition. A reminder seven calendar days before a 29 March 2027 premiere must still be scheduled at 09:00 local time on 22 March. This complements the existing same-day, one-day, seven-day, past-date and unsupported-lead-time tests. GitHub Actions run #293 passed the simulator build and XCTest suite after the notification-permission reconciliation change. Run #294 is validating the new daylight-saving regression test; physical-device notification delivery remains unverified.
