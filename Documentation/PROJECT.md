@@ -183,3 +183,8 @@ The personal library now includes an inline search that matches title and person
 
 
 Library search empty state: when a query has no matches, the library now explains that neither titles nor personal notes matched and offers a one-tap clear action. This avoids presenting the first-use onboarding message while the library already contains items.
+
+
+## Similar titles on detail pages (2026-11-26)
+
+Media detail pages now request TMDB's similar-title endpoint for the current movie or television series, using the Swedish locale. Up to ten results are shown in a horizontal poster shelf. The current title and items already present in the local library are excluded. Selecting a recommendation opens its normal detail page. Network failure is non-blocking: the recommendation shelf remains hidden rather than interrupting the primary title details. This is catalogue similarity from TMDB, not a claim of personalized machine-learning recommendations.
