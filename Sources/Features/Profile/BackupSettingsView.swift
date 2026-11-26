@@ -155,7 +155,9 @@ struct BackupSettingsView: View {
     private func performImport() {
         guard let pendingImport else { return }
         do {
+            let existingReminderIDs = Set(try modelContext.fetch(FetchDescriptor<PremiereReminder>()).map(\.stableID))
             let reminderIDs = Set(pendingImport.premiereReminders.map(\.stableID))
+                .subtracting(existingReminderIDs)
             let summary = try WatchlistImportService.merge(pendingImport, into: modelContext)
             self.pendingImport = nil
             importPreview = nil
