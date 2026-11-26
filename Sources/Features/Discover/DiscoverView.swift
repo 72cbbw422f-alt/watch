@@ -22,20 +22,20 @@ struct DiscoverView: View {
                     mediaPicker
 
                     if let errorMessage {
-                    ContentUnavailableView(
-                        "Sökningen kunde inte genomföras",
-                        systemImage: "wifi.exclamationmark",
-                        description: Text(errorMessage)
-                    )
-                    .foregroundStyle(WatchlistColor.secondaryText)
-                    Spacer()
-                } else if isSearching {
-                    ProgressView("Söker hos TMDB…")
-                        .tint(WatchlistColor.accent)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if results.isEmpty {
-                    emptyState
-                    Spacer()
+                        ContentUnavailableView(
+                            "Sökningen kunde inte genomföras",
+                            systemImage: "wifi.exclamationmark",
+                            description: Text(errorMessage)
+                        )
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        Spacer()
+                    } else if isSearching {
+                        ProgressView("Söker hos TMDB…")
+                            .tint(WatchlistColor.accent)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if results.isEmpty {
+                        emptyState
+                        Spacer()
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(results) { item in
@@ -53,7 +53,6 @@ struct DiscoverView: View {
                 .padding(.top, 16)
             }
             .scrollDismissesKeyboard(.interactively)
-            .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
         }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar {
