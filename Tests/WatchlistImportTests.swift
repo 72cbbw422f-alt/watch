@@ -137,14 +137,38 @@ final class WatchlistImportTests: XCTestCase {
             EpisodeWatchEvent.self, MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration)
         let context = ModelContext(container)
+        let viewedAt = Date(timeIntervalSince1970: 1_700_000_000)
         let movieEvent = MovieWatchEvent(
             tmdbID: 22,
             title: "Once",
-            watchedAt: Date(timeIntervalSince1970: 1_700_000_000)
+            watchedAt: viewedAt
+        )
+        let episode = TVEpisode(
+            id: 101,
+            name: "Pilot",
+            overview: "",
+            episodeNumber: 1,
+            seasonNumber: 1,
+            airDate: "2026-01-10",
+            runtime: 45,
+            stillPath: nil,
+            voteAverage: 8
+        )
+        let episodeProgress = EpisodeProgress(seriesID: 1396, episode: episode, isWatched: true)
+        let episodeEvent = EpisodeWatchEvent(
+            id: UUID(),
+            seriesID: 1396,
+            episodeID: 101,
+            seasonNumber: 1,
+            episodeNumber: 1,
+            episodeTitle: "Pilot",
+            watchedAt: viewedAt,
+            source: "manual"
         )
         let backup = WatchlistBackup(
             library: [LibraryRecord(LibraryEntry(item: item(id: 22, title: "Once")))],
-            episodeProgress: [], episodeHistory: [],
+            episodeProgress: [EpisodeProgressRecord(episodeProgress)],
+            episodeHistory: [EpisodeHistoryRecord(episodeEvent)],
             movieHistory: [MovieHistoryRecord(movieEvent)],
             customLists: [], customListItems: [], premiereReminders: []
         )
@@ -152,13 +176,23 @@ final class WatchlistImportTests: XCTestCase {
         let first = try WatchlistImportService.merge(backup, into: context)
         let second = try WatchlistImportService.merge(backup, into: context)
         let saved = try context.fetch(FetchDescriptor<LibraryEntry>())
+        let savedProgress = try context.fetch(FetchDescriptor<EpisodeProgress>())
+        let savedEpisodeEvents = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
         let savedMovieEvents = try context.fetch(FetchDescriptor<MovieWatchEvent>())
 
         XCTAssertEqual(first.newLibraryItems, 1)
+        XCTAssertEqual(first.newEpisodeStates, 1)
+        XCTAssertEqual(first.newHistoryEvents, 1)
         XCTAssertEqual(first.newMovieHistoryEvents, 1)
         XCTAssertEqual(second.newLibraryItems, 0)
+        XCTAssertEqual(second.newEpisodeStates, 0)
+        XCTAssertEqual(second.newHistoryEvents, 0)
         XCTAssertEqual(second.newMovieHistoryEvents, 0)
         XCTAssertEqual(saved.count, 1)
+        XCTAssertEqual(savedProgress.count, 1)
+        XCTAssertEqual(savedProgress.first?.stableID, episodeProgress.stableID)
+        XCTAssertEqual(savedEpisodeEvents.count, 1)
+        XCTAssertEqual(savedEpisodeEvents.first?.id, episodeEvent.id)
         XCTAssertEqual(savedMovieEvents.count, 1)
         XCTAssertEqual(savedMovieEvents.first?.id, movieEvent.id)
     }
