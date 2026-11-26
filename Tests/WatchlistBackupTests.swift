@@ -178,6 +178,48 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
     }
 
+    func testRejectsCatalogueRatingOutsideZeroToTen() throws {
+        let item = MediaItem(
+            id: 550,
+            kind: .movie,
+            title: "Fight Club",
+            overview: "",
+            posterPath: nil,
+            backdropPath: nil,
+            releaseDate: nil,
+            voteAverage: 10.1
+        )
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(LibraryEntry(item: item))],
+            episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [], premiereReminders: []
+        )
+
+        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+    }
+
+    func testRejectsNegativeEpisodeTotalCount() throws {
+        let item = MediaItem(
+            id: 550,
+            kind: .movie,
+            title: "Fight Club",
+            overview: "",
+            posterPath: nil,
+            backdropPath: nil,
+            releaseDate: nil,
+            voteAverage: 8
+        )
+        let entry = LibraryEntry(item: item)
+        entry.episodeTotalCount = -1
+        let backup = WatchlistBackup(
+            library: [LibraryRecord(entry)],
+            episodeProgress: [], episodeHistory: [], customLists: [],
+            customListItems: [], premiereReminders: []
+        )
+
+        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+    }
+
     func testRejectsReminderStableIDThatDoesNotMatchTMDBIdentity() throws {
         let reminder = PremiereReminder(
             stableID: "movie-550",
