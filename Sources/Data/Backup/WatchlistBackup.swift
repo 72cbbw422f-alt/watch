@@ -43,9 +43,12 @@ struct WatchlistBackup: Codable {
             throw WatchlistBackupError.invalidLibraryRecord
         }
         guard library.allSatisfy({
-            MediaKind(rawValue: $0.mediaKind) != nil &&
-            LibraryStatus(rawValue: $0.statusRawValue) != nil &&
-            ($0.personalRating.map { (1...10).contains($0) } ?? true)
+            guard let kind = MediaKind(rawValue: $0.mediaKind),
+                  LibraryStatus(rawValue: $0.statusRawValue) != nil,
+                  ($0.personalRating.map { (1...10).contains($0) } ?? true) else {
+                return false
+            }
+            return $0.stableID == "\(kind.rawValue)-\($0.tmdbID)"
         }) else {
             throw WatchlistBackupError.invalidLibraryRecord
         }
