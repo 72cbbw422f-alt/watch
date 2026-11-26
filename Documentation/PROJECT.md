@@ -172,3 +172,6 @@ Premiere-reminder backup validation now also checks the notification identifier 
 
 
 Backup metadata validation now rejects catalogue vote averages outside the 0–10 range (including non-finite values) and negative episode totals. Custom-list catalogue snapshots receive the same vote-average validation. Regression tests cover an out-of-range catalogue rating and a negative episode total. These checks run during both backup encoding and decoding, before import preview or merge.
+
+
+Episode-history backup regression coverage now explicitly tests duplicate event UUIDs and invalid series identity. The validator already rejects both cases before encoding or import; these tests lock that contract in place so an event cannot silently collide with another viewing or reference an invalid series. CI build-for-testing is pending.
