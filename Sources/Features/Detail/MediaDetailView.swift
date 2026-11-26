@@ -18,6 +18,8 @@ struct MediaDetailView: View {
     @State private var isLoadingSeasons = false
     @State private var loadingSeasonNumber: Int?
     @State private var seasonError: String?
+    @State private var similarItems: [MediaItem] = []
+    @State private var isLoadingSimilar = false
     private let tmdbClient = TMDBConfiguration.makeClient()
 
     var body: some View {
@@ -49,6 +51,7 @@ struct MediaDetailView: View {
                         }
                     }
                     televisionSeasonsSection
+                    similarTitlesSection
                     sourceNote
                 }
                 .padding(.bottom, 36)
@@ -61,6 +64,7 @@ struct MediaDetailView: View {
         .navigationBarBackButtonHidden(false)
         .task {
             await loadTelevisionSeasons()
+            await loadSimilarTitles()
         }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
@@ -176,6 +180,50 @@ struct MediaDetailView: View {
             }
     }
 
+
+    @ViewBuilder
+    private var similarTitlesSection: some View {
+        if isLoadingSimilar || !similarItems.isEmpty {
+            VStack(alignment: .leading, spacing: 13) {
+                sectionLabel("DU KANSKE OCKSÅ GILLAR")
+                if isLoadingSimilar && similarItems.isEmpty {
+                    ProgressView()
+                        .tint(WatchlistColor.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(similarItems.prefix(10)) { recommendation in
+                                NavigationLink(value: recommendation) {
+                                    SimilarTitleTile(item: recommendation)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .contentMargins(.horizontal, -20, for: .scrollContent)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @MainActor
+    private func loadSimilarTitles() async {
+        isLoadingSimilar = true
+        defer { isLoadingSimilar = false }
+        do {
+            let results = try await tmdbClient.similarTitles(to: item)
+            let savedIDs = Set(libraryEntries.map(\\.stableID))
+            similarItems = results.filter {
+                $0.id > 0 && !savedIDs.contains($0.stableID)
+            }
+        } catch {
+            similarItems = []
+        }
+    }
 
     private var libraryEntry: LibraryEntry? {
         libraryEntries.first { $0.stableID == item.stableID }
@@ -709,5 +757,50 @@ struct MediaDetailView: View {
             .font(.system(size: 9, weight: .bold))
             .tracking(1.7)
             .foregroundStyle(WatchlistColor.accent)
+    }
+}
+
+
+private struct SimilarTitleTile: View {
+    let item: MediaItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Group {
+                if let url = item.posterURL {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            placeholder
+                        }
+                    }
+                } else {
+                    placeholder
+                }
+            }
+            .frame(width: 112, height: 158)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Text(item.title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .lineLimit(2)
+                .frame(width: 112, alignment: .leading)
+            if item.voteAverage > 0 {
+                Label(String(format: "%.1f", item.voteAverage), systemImage: "star.fill")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(WatchlistColor.secondaryText)
+            }
+        }
+        .frame(width: 112, alignment: .leading)
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: item.kind == .movie ? "film" : "tv")
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
     }
 }
