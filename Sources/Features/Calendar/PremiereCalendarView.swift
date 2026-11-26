@@ -352,6 +352,14 @@ struct PremiereCalendarView: View {
             try modelContext.save()
             PremiereNotificationService.cancel(reminder)
         } catch {
+            // Restore the model if persistence failed; do not leave the reminder deleted locally.
+            modelContext.insert(reminder)
+            do {
+                try modelContext.save()
+            } catch {
+                reminderError = "Påminnelsen kunde inte återställas: \(error.localizedDescription)"
+                return
+            }
             reminderError = error.localizedDescription
         }
     }
