@@ -79,4 +79,28 @@ final class PremiereNotificationScheduleTests: XCTestCase {
             if case .invalidLeadDays = error { } else { XCTFail("Expected invalidLeadDays, got \\(error)") }
         }
     }
+
+    func testSevenDayReminderKeepsNineLocalTimeAcrossDaylightSavingChange() throws {
+        var stockholm = Calendar(identifier: .gregorian)
+        stockholm.timeZone = TimeZone(identifier: "Europe/Stockholm")!
+        let premiereDate = stockholm.date(from: DateComponents(
+            year: 2027, month: 3, day: 29, hour: 12
+        ))!
+        let now = stockholm.date(from: DateComponents(
+            year: 2027, month: 3, day: 1, hour: 12
+        ))!
+
+        let scheduled = try PremiereNotificationSchedule.scheduledDate(
+            premiereDate: premiereDate,
+            leadDays: 7,
+            now: now,
+            calendar: stockholm
+        )
+
+        let components = stockholm.dateComponents([.year, .month, .day, .hour], from: scheduled)
+        XCTAssertEqual(components.year, 2027)
+        XCTAssertEqual(components.month, 3)
+        XCTAssertEqual(components.day, 22)
+        XCTAssertEqual(components.hour, 9)
+    }
 }
