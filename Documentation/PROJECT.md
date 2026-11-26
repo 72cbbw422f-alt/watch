@@ -161,3 +161,5 @@ Backup validation now also verifies that each custom-list membership's media ide
 Library backup validation now also requires each stable ID to match its media type and TMDB ID (for example, movie-550). A regression test rejects a tampered library identity before restore.
 
 The import integration tests now also assert that a backup with a tampered custom-list membership is rejected before any library, list or membership records are inserted into the context. This covers the preflight validation boundary of the transactional merge.
+
+Premiere-reminder backup validation now also requires its stable ID to match its media type and TMDB ID. A regression test rejects mismatched reminder identity. The invalid-import integration test fixture was corrected to decode a tampered JSON payload directly, ensuring the service itself performs the rejection before mutating the context.
