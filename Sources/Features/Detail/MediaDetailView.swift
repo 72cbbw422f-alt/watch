@@ -203,8 +203,8 @@ struct MediaDetailView: View {
                         }
                         .padding(.horizontal, 20)
                     }
-                    .contentMargins(.horizontal, -20, for: .scrollContent)
                 }
+                .padding(.horizontal, -20)
             }
             .padding(.horizontal, 20)
         }
