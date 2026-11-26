@@ -2,12 +2,17 @@ name: Prepare unsigned iOS IPA
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["iOS Build"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   build-unsigned-ipa:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: macos-15
     steps:
       - name: Checkout
