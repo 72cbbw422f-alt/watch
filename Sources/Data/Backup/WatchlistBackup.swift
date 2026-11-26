@@ -75,7 +75,15 @@ struct WatchlistBackup: Codable {
         guard customLists.allSatisfy({ !$0.id.isEmpty && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             throw WatchlistBackupError.invalidCustomList
         }
-        guard customListItems.allSatisfy({ !$0.stableID.isEmpty && !$0.listID.isEmpty && !$0.mediaStableID.isEmpty && $0.tmdbID > 0 && MediaKind(rawValue: $0.mediaKind) != nil }) else {
+        guard customListItems.allSatisfy({
+            guard !$0.listID.isEmpty, $0.tmdbID > 0,
+                  let kind = MediaKind(rawValue: $0.mediaKind) else {
+                return false
+            }
+            let expectedMediaID = "\(kind.rawValue)-\($0.tmdbID)"
+            return $0.mediaStableID == expectedMediaID &&
+                $0.stableID == "\($0.listID)::\(expectedMediaID)"
+        }) else {
             throw WatchlistBackupError.invalidCustomListItem
         }
         guard premiereReminders.allSatisfy({ !$0.stableID.isEmpty && $0.tmdbID > 0 && MediaKind(rawValue: $0.mediaKind) != nil && !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (0...7).contains($0.leadDays) }) else {
