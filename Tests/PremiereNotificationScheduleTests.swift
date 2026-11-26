@@ -63,7 +63,8 @@ final class PremiereNotificationScheduleTests: XCTestCase {
             now: date(2026, 12, 1, hour: 10),
             calendar: calendar
         )) { error in
-            guard let error = error as? PremiereNotificationError else { return XCTFail("Unexpected error: \\(error)") }\n            if case .reminderTooLate = error { } else { XCTFail("Expected reminderTooLate, got \\(error)") }
+            guard let error = error as? PremiereNotificationError else { return XCTFail("Unexpected error: \\(error)") }
+            if case .reminderTooLate = error { } else { XCTFail("Expected reminderTooLate, got \\(error)") }
         }
     }
 
@@ -74,7 +75,8 @@ final class PremiereNotificationScheduleTests: XCTestCase {
             now: date(2026, 12, 1),
             calendar: calendar
         )) { error in
-            guard let error = error as? PremiereNotificationError else { return XCTFail("Unexpected error: \\(error)") }\n            if case .invalidLeadDays = error { } else { XCTFail("Expected invalidLeadDays, got \\(error)") }
+            guard let error = error as? PremiereNotificationError else { return XCTFail("Unexpected error: \\(error)") }
+            if case .invalidLeadDays = error { } else { XCTFail("Expected invalidLeadDays, got \\(error)") }
         }
     }
 }
