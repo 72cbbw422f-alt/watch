@@ -5,12 +5,24 @@ struct LibraryView: View {
     @Query(sort: \LibraryEntry.dateAdded, order: .reverse) private var entries: [LibraryEntry]
     @State private var selectedStatus: LibraryStatus?
     @State private var favoritesOnly = false
+    @State private var searchText = ""
+    @State private var sortAlphabetically = false
 
     private var filteredEntries: [LibraryEntry] {
-        entries.filter { entry in
+        let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let matching = entries.filter { entry in
             (selectedStatus == nil || entry.status == selectedStatus)
                 && (!favoritesOnly || entry.isFavorite)
+                && (term.isEmpty ||
+                    entry.title.localizedCaseInsensitiveContains(term) ||
+                    entry.personalNotes.localizedCaseInsensitiveContains(term))
         }
+        if sortAlphabetically {
+            return matching.sorted {
+                $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }
+        }
+        return matching.sorted { $0.dateAdded > $1.dateAdded }
     }
 
     private var watchedCount: Int {
@@ -31,6 +43,7 @@ struct LibraryView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     header
+                    searchAndSort
                     NavigationLink {
                         CustomListsView()
                     } label: {
@@ -100,6 +113,54 @@ struct LibraryView: View {
     }
 
     
+    private var searchAndSort: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(WatchlistColor.accent)
+                TextField("Sök i ditt bibliotek", text: $searchText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(WatchlistColor.mutedText)
+                    }
+                    .accessibilityLabel("Rensa sökning")
+                }
+            }
+            .padding(.horizontal, 13)
+            .frame(height: 44)
+            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(WatchlistColor.hairline, lineWidth: 1))
+
+            Menu {
+                Button {
+                    sortAlphabetically = false
+                } label: {
+                    Label("Senast tillagda", systemImage: sortAlphabetically ? "clock" : "checkmark")
+                }
+                Button {
+                    sortAlphabetically = true
+                } label: {
+                    Label("Titel A–Ö", systemImage: sortAlphabetically ? "checkmark" : "textformat")
+                }
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                    .frame(width: 44, height: 44)
+                    .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(WatchlistColor.hairline, lineWidth: 1))
+            }
+            .accessibilityLabel("Sortera bibliotek")
+        }
+        .padding(.horizontal, 18)
+    }
+
     private var collectionStats: some View {
         HStack(alignment: .center, spacing: 0) {
             statistic(value: watchedCount, label: "SEDDA")
