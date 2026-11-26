@@ -98,7 +98,7 @@ struct WatchlistBackup: Codable {
             guard $0.tmdbID > 0,
                   let kind = MediaKind(rawValue: $0.mediaKind),
                   !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  (0...7).contains($0.leadDays) else {
+                  [0, 1, 7].contains($0.leadDays) else {
                 return false
             }
             return $0.stableID == "\(kind.rawValue)-\($0.tmdbID)" &&
