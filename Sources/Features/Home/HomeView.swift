@@ -222,7 +222,7 @@ struct HomeView: View {
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: 13) {
-                                ForEach(personalRecommendations, id: \\.stableID) { item in
+                                ForEach(personalRecommendations, id: \.stableID) { item in
                                     NavigationLink(value: item) {
                                         MediaPosterTile(item: item, rank: (personalRecommendations.firstIndex(of: item) ?? 0) + 1)
                                     }
@@ -255,7 +255,7 @@ struct HomeView: View {
         defer { isLoadingRecommendations = false }
 
         let client = TMDBConfiguration.makeClient()
-        let savedIDs = Set(libraryEntries.map(\\.stableID))
+        let savedIDs = Set(libraryEntries.map(\.stableID))
         var candidates: [String: MediaItem] = [:]
         for seed in seeds {
             do {
