@@ -169,3 +169,6 @@ The repeated-import idempotency integration test now covers the full viewing-sta
 
 
 Premiere-reminder backup validation now also checks the notification identifier against the reminder's stable media identity (`premiere-<media-stable-id>`). This prevents a structurally valid reminder from being restored with an unrelated notification identifier, which could otherwise make later notification reconciliation unreliable. A focused tampering test covers the notification identifier independently of the reminder stable ID. CI build-for-testing is pending.
+
+
+Backup metadata validation now rejects catalogue vote averages outside the 0–10 range (including non-finite values) and negative episode totals. Custom-list catalogue snapshots receive the same vote-average validation. Regression tests cover an out-of-range catalogue rating and a negative episode total. These checks run during both backup encoding and decoding, before import preview or merge.
