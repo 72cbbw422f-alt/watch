@@ -229,21 +229,37 @@ struct LibraryView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "books.vertical")
+        let searching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let title = searching
+            ? "Inga matchningar"
+            : selectedStatus == nil && !favoritesOnly
+                ? "Ditt bibliotek börjar här"
+                : favoritesOnly ? "Inga favoriter ännu" : "Inga titlar i den här kategorin"
+        let message = searching
+            ? "Vi hittar ingen titel eller anteckning som matchar ”\\(searchText)”. Prova ett annat sökord."
+            : selectedStatus == nil && !favoritesOnly
+                ? "Sök efter filmer och serier och lägg till dem i din personliga samling."
+                : favoritesOnly ? "Tryck på hjärtat på en titel för att spara den som favorit."
+                : "När du ändrar status på en titel visas den här."
+
+        return VStack(spacing: 12) {
+            Image(systemName: searching ? "magnifyingglass" : "books.vertical")
                 .font(.system(size: 35, weight: .light))
                 .foregroundStyle(WatchlistColor.accent)
-            Text(selectedStatus == nil && !favoritesOnly ? "Ditt bibliotek börjar här" : favoritesOnly ? "Inga favoriter ännu" : "Inga titlar i den här kategorin")
+            Text(title)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(WatchlistColor.primaryText)
-            Text(selectedStatus == nil && !favoritesOnly
-                 ? "Sök efter filmer och serier och lägg till dem i din personliga samling."
-                 : favoritesOnly ? "Tryck på hjärtat på en titel för att spara den som favorit."
-                 : "När du ändrar status på en titel visas den här.")
+            Text(message)
                 .font(.system(size: 12))
                 .foregroundStyle(WatchlistColor.secondaryText)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
+            if searching {
+                Button("Rensa sökning") { searchText = "" }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                    .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 38)
