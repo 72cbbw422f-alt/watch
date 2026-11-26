@@ -175,17 +175,29 @@ struct BackupSettingsView: View {
                 .filter { stableIDs.contains($0.stableID) }
             Task {
                 var scheduledCount = 0
+                var unavailableCount = 0
                 for reminder in reminders {
                     do {
                         if try await PremiereNotificationService.scheduleIfAuthorized(reminder) {
                             scheduledCount += 1
+                        } else {
+                            unavailableCount += 1
                         }
                     } catch {
-                        // Keep the imported reminder record even if its date cannot be scheduled.
+                        // The reminder record remains imported; explain that its notification was skipped.
+                        unavailableCount += 1
                     }
                 }
+
+                var notificationSummary: [String] = []
                 if scheduledCount > 0 {
-                    importedSummary = (importedSummary ?? "Import klar.") + " \(scheduledCount) notiser schemalagda."
+                    notificationSummary.append("\(scheduledCount) notiser schemalagda")
+                }
+                if unavailableCount > 0 {
+                    notificationSummary.append("\(unavailableCount) påminnelser sparade utan aktiv notis. Kontrollera notisbehörighet och premiärdatum.")
+                }
+                if !notificationSummary.isEmpty {
+                    importedSummary = (importedSummary ?? "Import klar.") + " " + notificationSummary.joined(separator: ". ") + "."
                 }
             }
         } catch {
