@@ -84,7 +84,7 @@ final class PremiereNotificationScheduleTests: XCTestCase {
         var stockholm = Calendar(identifier: .gregorian)
         stockholm.timeZone = TimeZone(identifier: "Europe/Stockholm")!
         let premiereDate = stockholm.date(from: DateComponents(
-            year: 2027, month: 3, day: 29, hour: 12
+            year: 2027, month: 4, day: 5, hour: 12
         ))!
         let now = stockholm.date(from: DateComponents(
             year: 2027, month: 3, day: 1, hour: 12
@@ -100,7 +100,8 @@ final class PremiereNotificationScheduleTests: XCTestCase {
         let components = stockholm.dateComponents([.year, .month, .day, .hour], from: scheduled)
         XCTAssertEqual(components.year, 2027)
         XCTAssertEqual(components.month, 3)
-        XCTAssertEqual(components.day, 22)
+        XCTAssertEqual(components.day, 29)
         XCTAssertEqual(components.hour, 9)
+        XCTAssertEqual(stockholm.timeZone.secondsFromGMT(for: scheduled), 7_200)
     }
 }
