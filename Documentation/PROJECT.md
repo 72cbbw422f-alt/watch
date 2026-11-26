@@ -192,9 +192,14 @@ Media detail pages now request TMDB's similar-title endpoint for the current mov
 
 ## Library-informed home recommendations (2026-11-26)
 
-The home screen now builds a lightweight personal recommendation shelf from up to three seed titles in the local library: favorites and titles with a personal rating of 8/10 or higher. Seeds are prioritized by favorite status, then personal rating, then recent update. Similar titles are fetched through the existing TMDB endpoint, deduplicated by media stable ID, and filtered against all titles already saved locally. The resulting candidates are ordered by TMDB vote average and capped at twelve. If the library has no qualifying seeds, or requests fail, the shelf is omitted; the rest of the home screen remains available. This is a transparent heuristic based on explicit library signals, not a trained recommendation model.
+The home screen now builds a lightweight personal recommendation shelf from up to three seed titles in the local library: favorites and titles with a personal rating of 8/10 or higher. Seeds are prioritized by favorite status, then personal rating, then recent update. Similar titles are fetched through the existing TMDB endpoint, deduplicated by media stable ID, and filtered against all titles already saved locally. The results preserve TMDB's similarity relevance order. Higher-priority seed titles contribute first; duplicates are removed and the shelf is capped at twelve. If the library has no qualifying seeds, or requests fail, the shelf is omitted; the rest of the home screen remains available. This is a transparent heuristic based on explicit library signals, not a trained recommendation model.
 
 
 ## Recommendation build verification (2026-11-26)
 
 GitHub Actions run #270 passed the generic iOS Simulator `build-for-testing` step after correcting the recommendation view state declarations and the modifier placement in the similar-titles shelf. The run compiled the app and test targets successfully. No workflow artifact was produced, and this workflow does not execute simulator tests or create a signed device IPA. Physical-device behavior and TMDB-backed recommendation results still require runtime verification.
+
+
+## CI simulator test execution (2026-11-26)
+
+The iOS workflow now runs the unit-test scheme on an iPhone 16 simulator after the generic simulator build-for-testing step. This adds runtime XCTest execution to the existing compile check. The first run after this workflow change must confirm that the selected simulator is available on the GitHub macOS runner and that all tests pass. This remains simulator validation, not physical-device validation or a signed IPA build.
