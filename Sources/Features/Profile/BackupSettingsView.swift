@@ -32,6 +32,31 @@ struct BackupSettingsView: View {
                             .foregroundStyle(WatchlistColor.secondaryText)
                     }
 
+                    NavigationLink {
+                        TMDBSettingsView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "film.stack")
+                                .font(.system(size: 18))
+                                .foregroundStyle(WatchlistColor.accent)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Film- och seriedatabas")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                Text(TMDBConfiguration.isConfigured ? "TMDB är anslutet" : "Anslut TMDB för att aktivera sökningen")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(WatchlistColor.mutedText)
+                        }
+                        .padding(15)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+
                     VStack(alignment: .leading, spacing: 12) {
                         backupRow("Bibliotek", detail: "Status, favoriter, betyg och anteckningar")
                         backupRow("Avsnittsprogress", detail: "Vilka avsnitt som är markerade som sedda")
