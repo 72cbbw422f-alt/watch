@@ -122,18 +122,44 @@ struct CustomListsView: View {
 
     private func listRow(_ list: CustomList) -> some View {
         let count = memberships.filter { $0.listID == list.id }.count
+        let previews = memberships.filter { $0.listID == list.id }.sorted { $0.dateAdded < $1.dateAdded }.prefix(3)
         return HStack(spacing: 13) {
-            Image(systemName: "rectangle.stack")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(WatchlistColor.accent)
-                .frame(width: 48, height: 48)
-                .background(WatchlistColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: -15) {
+                ForEach(Array(previews)) { entry in
+                    Group {
+                        if let url = entry.mediaItem.posterURL {
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable().scaledToFill()
+                                } else {
+                                    previewPlaceholder(entry)
+                                }
+                            }
+                        } else {
+                            previewPlaceholder(entry)
+                        }
+                    }
+                    .frame(width: 42, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(WatchlistColor.background, lineWidth: 2))
+                }
+                if previews.isEmpty {
+                    Image(systemName: "rectangle.stack")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(width: 48, height: 60)
+                        .background(WatchlistColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 9))
+                }
+            }
+            .frame(width: 82, alignment: .leading)
+            VStack(alignment: .leading, spacing: 5) {
                 Text(list.name)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(WatchlistColor.primaryText)
-                Text("\(count) titlar")
-                    .font(.system(size: 10))
+                    .lineLimit(2)
+                Text("\(count) TITLAR")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.8)
                     .foregroundStyle(WatchlistColor.secondaryText)
             }
             Spacer()
@@ -143,6 +169,17 @@ struct CustomListsView: View {
         }
         .padding(13)
         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    @ViewBuilder
+    private func previewPlaceholder(_ entry: CustomListItem) -> some View {
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: entry.mediaKind == "movie" ? "film" : "tv")
+                    .font(.system(size: 13, weight: .light))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
     }
 
     private func createList() {
