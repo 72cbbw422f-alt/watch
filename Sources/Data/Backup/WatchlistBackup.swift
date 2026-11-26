@@ -45,7 +45,10 @@ struct WatchlistBackup: Codable {
         guard library.allSatisfy({
             guard let kind = MediaKind(rawValue: $0.mediaKind),
                   LibraryStatus(rawValue: $0.statusRawValue) != nil,
-                  ($0.personalRating.map { (1...10).contains($0) } ?? true) else {
+                  ($0.personalRating.map { (1...10).contains($0) } ?? true),
+                  $0.voteAverage.isFinite,
+                  (0...10).contains($0.voteAverage),
+                  ($0.episodeTotalCount.map { $0 >= 0 } ?? true) else {
                 return false
             }
             return $0.stableID == "\(kind.rawValue)-\($0.tmdbID)"
@@ -85,7 +88,9 @@ struct WatchlistBackup: Codable {
             }
             let expectedMediaID = "\(kind.rawValue)-\($0.tmdbID)"
             return $0.mediaStableID == expectedMediaID &&
-                $0.stableID == "\($0.listID)::\(expectedMediaID)"
+                $0.stableID == "\($0.listID)::\(expectedMediaID)" &&
+                $0.voteAverage.isFinite &&
+                (0...10).contains($0.voteAverage)
         }) else {
             throw WatchlistBackupError.invalidCustomListItem
         }
