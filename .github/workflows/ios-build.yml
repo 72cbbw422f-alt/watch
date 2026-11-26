@@ -25,3 +25,6 @@ jobs:
 
       - name: Build for iOS Simulator
         run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build-for-testing
+
+      - name: Run unit tests on iPhone Simulator
+        run: xcodebuild -project WATCHLIST.xcodeproj -scheme WATCHLIST -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
