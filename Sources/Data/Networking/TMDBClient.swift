@@ -77,6 +77,18 @@ actor TMDBClient: MediaSearching {
         return response.results
     }
 
+    func similarTitles(to item: MediaItem) async throws -> [MediaItem] {
+        let response = try await fetch(
+            path: "/\(item.kind.tmdbPath)/\(item.id)/similar",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        return response.results.filter { $0.id != item.id }
+    }
+
     func televisionDetails(id: Int) async throws -> TVSeriesDetails {
         try await fetch(
             path: "/tv/\(id)",
