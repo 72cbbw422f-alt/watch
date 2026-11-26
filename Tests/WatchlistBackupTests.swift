@@ -220,6 +220,57 @@ final class WatchlistBackupTests: XCTestCase {
         XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
     }
 
+    func testRejectsDuplicateEpisodeHistoryEventIDs() throws {
+        let eventID = UUID()
+        let first = EpisodeWatchEvent(
+            id: eventID,
+            seriesID: 1396,
+            episodeID: 101,
+            seasonNumber: 1,
+            episodeNumber: 1,
+            episodeTitle: "Pilot",
+            watchedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            source: "manual"
+        )
+        let second = EpisodeWatchEvent(
+            id: eventID,
+            seriesID: 1396,
+            episodeID: 101,
+            seasonNumber: 1,
+            episodeNumber: 1,
+            episodeTitle: "Pilot",
+            watchedAt: Date(timeIntervalSince1970: 1_700_000_100),
+            source: "manual"
+        )
+        let backup = WatchlistBackup(
+            library: [], episodeProgress: [],
+            episodeHistory: [EpisodeHistoryRecord(first), EpisodeHistoryRecord(second)],
+            customLists: [], customListItems: [], premiereReminders: []
+        )
+
+        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+    }
+
+    func testRejectsInvalidEpisodeHistoryIdentity() throws {
+        let event = EpisodeWatchEvent(
+            id: UUID(),
+            seriesID: 0,
+            episodeID: 101,
+            seasonNumber: 1,
+            episodeNumber: 1,
+            episodeTitle: "Pilot",
+            watchedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            source: "manual"
+        )
+        let backup = WatchlistBackup(
+            library: [], episodeProgress: [],
+            episodeHistory: [EpisodeHistoryRecord(event)],
+            customLists: [], customListItems: [], premiereReminders: []
+        )
+
+        XCTAssertThrowsError(try WatchlistBackupService.encode(backup))
+    }
+
     func testRejectsReminderStableIDThatDoesNotMatchTMDBIdentity() throws {
         let reminder = PremiereReminder(
             stableID: "movie-550",
