@@ -1,27 +1,30 @@
 # Testdistribution – Watchlist
 
-## Mål
-Skapa en fysisk iOS Release-build i GitHub Actions, paketera den som en IPA och göra den tillgänglig som ett kortlivat byggartefakt.
+## Automatisk byggkedja
+Efter att **iOS Build** har slutförts med resultatet success på `main`, startas **Prepare iOS IPA** automatiskt. Jobbet kontrollerar att CI-körningen avser den senaste committen på `main`, så äldre körningar inte ska skapa inaktuella paket.
 
-## Automatisk IPA-byggning
-Efter att workflow **iOS Build** har slutförts med resultatet success på grenen `main`, startas **Prepare unsigned iOS IPA** automatiskt. IPA-jobbet kontrollerar dessutom att den lyckade körningens commit fortfarande är den senaste committen på `main`. Äldre, inaktuella CI-körningar ska därför inte skapa extra IPA-byggen.
+Workflow-filen är `.github/workflows/unsigned-ipa.yml`. Den bygger först en osignerad Release-IPA och laddar upp artefakten `watchlist-unsigned-ipa` i 14 dagar.
 
-Workflow-filen är `.github/workflows/unsigned-ipa.yml`. Den kan även startas manuellt via workflow_dispatch vid behov.
+## Automatisk signering (valfri)
+Om samtliga tre GitHub Actions-secrets finns konfigurerade försöker samma workflow även skapa och verifiera en signerad IPA. Signeringen sker lokalt på GitHub Actions macOS-runnern; P12 och provisioning-profil skickas inte till någon extern signeringstjänst.
 
-Byggsteget:
-- genererar Xcode-projektet med XcodeGen
-- bygger Release för `generic/platform=iOS` med `CODE_SIGNING_ALLOWED=NO`
-- paketerar `WATCHLIST.app` i en IPA
-- laddar upp artefakten `watchlist-unsigned-ipa` i 14 dagar
+Lägg till följande repository secrets under **Settings → Secrets and variables → Actions**:
 
-## Viktigt om installation
-Den här IPA-filen är **osignerad**. Den är ett bygg- och paketeringstest, inte en installationsklar app. iOS kräver giltig signering och en distributionsmetod som enheten accepterar.
+| Secret | Innehåll |
+|---|---|
+| `IOS_P12_BASE64` | P12-filen kodad som Base64 |
+| `IOS_P12_PASSWORD` | Lösenordet till P12-filen |
+| `IOS_PROVISION_PROFILE_BASE64` | Mobile Provision-profilen kodad som Base64 |
 
-Innan installation behöver vi välja och konfigurera en signeringsväg:
-- Apple Developer-signering med giltigt certifikat och provisioning profile, eller
-- en separat signeringstjänst som FlareStore, om den erbjuder ett giltigt certifikat/provisioning för aktuell enhet och appens bundle identifier.
+Base64 kan skapas på macOS/Linux med `base64 -i fil.p12` och `base64 -i fil.mobileprovision`. På Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("fil.p12"))` respektive motsvarande profilfil. Klistra in hela resultatet i respektive secret. Ladda aldrig upp certifikaten eller lösenordet i repot, issues eller vanlig chatt.
 
-Lägg aldrig certifikat, privata nycklar, provisioning-profiler eller tokens i repot. Om signering automatiseras ska känsliga värden lagras som skyddade GitHub Actions secrets.
+Workflowet importerar P12 i en temporär låst keychain, läser profilens UUID och Team ID, väljer exportmetod utifrån profilen (Ad Hoc eller Enterprise), arkiverar och exporterar appen och verifierar signaturen. Den temporära keychainen och lokala signeringsfiler tas bort efter jobbet.
+
+Om secrets saknas produceras fortfarande den osignerade IPA-filen. Om signeringen misslyckas ska vi kontrollera att:
+- P12-certifikatet är giltigt och inte återkallat.
+- Mobile Provision-profilen är giltig och matchar appens bundle ID `se.niklas.watchlist`.
+- Profilen omfattar Niklas iPhones UDID om det är en Ad Hoc-profil.
+- P12-lösenordet är korrekt och certifikatet innehåller en användbar privat nyckel.
 
 ## Appidentitet
 - Bundle identifier: `se.niklas.watchlist`
@@ -33,7 +36,8 @@ Lägg aldrig certifikat, privata nycklar, provisioning-profiler eller tokens i r
 - Simulatorbygge och enhetstester ska vara gröna.
 - Enhetsbygget ska lyckas.
 - IPA-artefakten ska finnas och vara icke-tom.
-- Signerad IPA ska installeras och starta på fysisk iPhone innan vi kallar den en användbar testversion.
+- Signerad IPA ska passera codesign-verifiering.
+- Appen ska installeras och starta på fysisk iPhone innan vi kallar den en fungerande testversion.
 
-## Nuvarande begränsning
-CI bygger och testar simulatorversionen. Därefter skapas en osignerad fysisk Release-IPA automatiskt. Ingen signering eller fysisk enhetsverifiering ingår ännu.
+## Viktig begränsning
+En lyckad codesign-verifiering garanterar inte att iOS accepterar OTA-installation eller att appen fungerar på enheten. Det sista steget måste verifieras på den faktiska iPhonen.
