@@ -236,7 +236,7 @@ struct LibraryView: View {
                 ? "Ditt bibliotek börjar här"
                 : favoritesOnly ? "Inga favoriter ännu" : "Inga titlar i den här kategorin"
         let message = searching
-            ? "Vi hittar ingen titel eller anteckning som matchar ”\\(searchText)”. Prova ett annat sökord."
+            ? "Vi hittar ingen titel eller anteckning som matchar ”\(searchText)”. Prova ett annat sökord."
             : selectedStatus == nil && !favoritesOnly
                 ? "Sök efter filmer och serier och lägg till dem i din personliga samling."
                 : favoritesOnly ? "Tryck på hjärtat på en titel för att spara den som favorit."
