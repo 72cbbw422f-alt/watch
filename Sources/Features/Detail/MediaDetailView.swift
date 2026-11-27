@@ -542,7 +542,7 @@ struct MediaDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                 } else if let error = seasonEpisodeErrors[season.seasonNumber] {
-                    Text("Kunde inte hämta avsnitten. Tryck på säsongen för att försöka igen.\\n\\(error)")
+                    Text("Kunde inte hämta avsnitten. Tryck på säsongen för att försöka igen.\n\(error)")
                         .font(.system(size: 10))
                         .foregroundStyle(WatchlistColor.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
