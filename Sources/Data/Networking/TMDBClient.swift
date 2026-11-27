@@ -268,7 +268,7 @@ actor TMDBClient: MediaSearching {
     }
 
     private func allowed(_ items: [MediaItem]) -> [MediaItem] {
-        items.filter(\\.isAllowedForDiscovery)
+        items.filter(\.isAllowedForDiscovery)
     }
 
     private func search(query: String, kind: MediaKind) async throws -> [MediaItem] {
