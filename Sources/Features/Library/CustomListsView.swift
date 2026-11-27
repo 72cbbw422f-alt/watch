@@ -222,6 +222,8 @@ private struct CustomListDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allMemberships: [CustomListItem]
     @State private var errorMessage: String?
+    @State private var showingRename = false
+    @State private var renamedListName = ""
 
     private var entries: [CustomListItem] {
         allMemberships.filter { $0.listID == list.id }.sorted { $0.dateAdded > $1.dateAdded }
@@ -291,6 +293,45 @@ private struct CustomListDetailView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    renamedListName = list.name
+                    showingRename = true
+                } label: {
+                    Image(systemName: "pencil").foregroundStyle(WatchlistColor.accent)
+                }
+                .accessibilityLabel("Byt listans namn")
+            }
+        }
+        .sheet(isPresented: $showingRename) {
+            NavigationStack {
+                ZStack {
+                    WatchlistColor.background.ignoresSafeArea()
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Ge listan ett nytt namn")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                        TextField("Listans namn", text: $renamedListName)
+                            .textFieldStyle(.roundedBorder)
+                        Spacer()
+                    }
+                    .padding(22)
+                }
+                .navigationTitle("Byt namn")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Avbryt") { showingRename = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Spara") { renameList() }
+                            .disabled(renamedListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
         .navigationDestination(for: MediaItem.self) { item in
             MediaDetailView(item: item)
         }
@@ -329,6 +370,28 @@ private struct CustomListDetailView: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             }
             .frame(width: 48, height: 68)
+    }
+
+    private func renameList() {
+        let newName = renamedListName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newName.isEmpty else { return }
+        let previousName = list.name
+        list.name = newName
+        list.updatedAt = .now
+        do {
+            try modelContext.save()
+            errorMessage = nil
+            showingRename = false
+        } catch {
+            list.name = previousName
+            do {
+                try modelContext.save()
+            } catch {
+                errorMessage = "Listans namn kunde inte återställas: \\(error.localizedDescription)"
+                return
+            }
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func save() {
