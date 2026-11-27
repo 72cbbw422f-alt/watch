@@ -66,8 +66,9 @@ struct HomeView: View {
     }
 
     private var hiddenGems: [MediaItem] {
-        hiddenGemItems
-            .filter { !savedStableIDs.contains($0.stableID) }
+        let trendingIDs = Set(trendingItems.map(\.stableID))
+        return hiddenGemItems
+            .filter { !savedStableIDs.contains($0.stableID) && !trendingIDs.contains($0.stableID) }
             .prefix(10)
             .map { $0 }
     }
@@ -93,7 +94,6 @@ struct HomeView: View {
                         homeUpNext
                         tonightPicks
                         continueWatching
-                        recommendations
                         watchlistMixSection
                         hiddenGemsSection
                         trending
@@ -609,11 +609,12 @@ struct HomeView: View {
                     .foregroundStyle(WatchlistColor.secondaryText)
                     .padding(.horizontal, 20)
             } else {
+                let discoveryItems = visibleTrendingItems.filter { $0.stableID != trendingItems.first?.stableID }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 13) {
-                        ForEach(visibleTrendingItems.prefix(12), id: \.stableID) { item in
+                        ForEach(discoveryItems.prefix(12), id: \.stableID) { item in
                             NavigationLink(value: item) {
-                                MediaPosterTile(item: item, rank: (visibleTrendingItems.firstIndex(of: item) ?? 0) + 1)
+                                MediaPosterTile(item: item, rank: (discoveryItems.firstIndex(of: item) ?? 0) + 2)
                             }
                             .buttonStyle(.plain)
                         }
