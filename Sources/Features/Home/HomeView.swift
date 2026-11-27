@@ -106,6 +106,11 @@ struct HomeView: View {
                     .padding(.bottom, 34)
                 }
                 .frame(width: geometry.size.width, alignment: .leading)
+                .refreshable {
+                    await loadTrending()
+                    await loadPersonalRecommendations()
+                    await loadHomeUpNext()
+                }
                 .scrollClipDisabled(false)
             }
         }
