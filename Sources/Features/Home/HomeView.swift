@@ -73,8 +73,9 @@ struct HomeView: View {
     }
 
     private var watchlistMix: [MediaItem] {
-        var seen = Set<String>()
-        return (personalRecommendations + hiddenGems + trendingItems).filter {
+        // Keep this carousel distinct from the immediately preceding "Ikväll kanske?" section.
+        var seen = Set(tonightItems.map(\.stableID))
+        return (hiddenGems + personalRecommendations + trendingItems).filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(12).map { $0 }
     }
