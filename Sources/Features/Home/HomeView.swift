@@ -22,6 +22,12 @@ struct HomeView: View {
 
     private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
 
+    private var savedForLaterEntries: [LibraryEntry] {
+        libraryEntries
+            .filter { $0.status == .wantToWatch || $0.status == .monitoring }
+            .sorted { $0.dateAdded > $1.dateAdded }
+    }
+
     private var followedSeries: [LibraryEntry] {
         libraryEntries.filter { $0.mediaKind == MediaKind.television.rawValue && $0.status != .watched }
     }
@@ -816,31 +822,43 @@ struct HomeView: View {
 
     private var comingSoon: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Din lista", eyebrow: "SPARAT FÖR SENARE", trailing: "Bibliotek")
-            HStack(spacing: 12) {
-                Image(systemName: "bookmark")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(WatchlistColor.accent)
-                    .frame(width: 38, height: 38)
-                    .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Dina favoriter, samlade")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(WatchlistColor.primaryText)
-                    Text("Spara filmer och serier du vill se senare.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(WatchlistColor.secondaryText)
+            sectionHeading("Din lista", eyebrow: "SPARAT FÖR SENARE", trailing: "\(savedForLaterEntries.count) SPARADE")
+            if savedForLaterEntries.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "bookmark")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(width: 38, height: 38)
+                        .background(WatchlistColor.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Din lista väntar på innehåll")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                        Text("Spara filmer och serier som du vill se senare så samlas de här.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(WatchlistColor.mutedText)
+                .padding(14)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+                .padding(.horizontal, 20)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 13) {
+                        ForEach(Array(savedForLaterEntries.prefix(12).enumerated()), id: \.element.stableID) { index, entry in
+                            NavigationLink(value: entry.mediaItem) {
+                                MediaPosterTile(item: entry.mediaItem, rank: index + 1)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
             }
-            .padding(14)
-            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
         }
-        .padding(.horizontal, 20)
     }
 
     private func sectionHeading(_ title: String, eyebrow: String, trailing: String) -> some View {
