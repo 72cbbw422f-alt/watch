@@ -32,6 +32,10 @@ struct MediaDetailView: View {
     @State private var reviewPage = 1
     @State private var totalReviewPages = 1
     @State private var expandedReviewIDs: Set<String> = []
+    @State private var watchProviderResult: TMDBWatchProviderResult?
+    @State private var isLoadingWatchProviders = false
+    @State private var watchProvidersError: String?
+    @State private var hasLoadedWatchProviders = false
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -40,6 +44,7 @@ struct MediaDetailView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     artworkHeader
                     metadata
+                    watchProvidersSection
                     libraryActions
                     movieHistorySection
                     PersonalReviewSection(
@@ -79,6 +84,7 @@ struct MediaDetailView: View {
             await loadSimilarTitles()
             await loadReviews()
             await loadVideos()
+            await loadWatchProviders()
         }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
@@ -196,6 +202,140 @@ struct MediaDetailView: View {
 
 
 
+
+
+    @ViewBuilder
+    private var watchProvidersSection: some View {
+        if isLoadingWatchProviders && watchProviderResult == nil {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionLabel("VAR DU KAN STREAMA")
+                ProgressView().tint(WatchlistColor.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .padding(.horizontal, 20)
+        } else if hasLoadedWatchProviders || watchProvidersError != nil {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack {
+                    sectionLabel("VAR DU KAN STREAMA")
+                    Spacer()
+                    Text("SVERIGE")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+
+                if let result = watchProviderResult, result.hasAnyProvider {
+                    providerGroup(title: "STREAMING", providers: result.flatrate ?? [], link: result.link)
+                    providerGroup(title: "GRATIS", providers: result.free ?? [], link: result.link)
+                    providerGroup(title: "MED REKLAM", providers: result.ads ?? [], link: result.link)
+                    providerGroup(title: "HYR", providers: result.rent ?? [], link: result.link)
+                    providerGroup(title: "KÖP", providers: result.buy ?? [], link: result.link)
+                    if let link = result.link {
+                        Link(destination: link) {
+                            HStack(spacing: 6) {
+                                Text("Visa alla alternativ")
+                                Image(systemName: "arrow.up.right")
+                            }
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
+                        }
+                    }
+                } else if watchProvidersError == nil {
+                    Text("Vi hittar inga aktuella streamingalternativ i Sverige för den här titeln.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                }
+
+                if let watchProvidersError {
+                    Text(watchProvidersError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                    Button("Försök igen") {
+                        Task { await loadWatchProviders() }
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                }
+                Text("Tillgänglighet kan ändras. Uppgifterna kommer från TMDB.")
+                    .font(.system(size: 9))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder
+    private func providerGroup(title: String, providers: [TMDBWatchProvider], link: URL?) -> some View {
+        if !providers.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.2)
+                    .foregroundStyle(WatchlistColor.secondaryText)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(providers) { provider in
+                            VStack(spacing: 5) {
+                                Group {
+                                    if let logoURL = provider.logoURL {
+                                        AsyncImage(url: logoURL) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().scaledToFit()
+                                            } else {
+                                                providerLogoPlaceholder
+                                            }
+                                        }
+                                    } else {
+                                        providerLogoPlaceholder
+                                    }
+                                }
+                                .frame(width: 48, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 11))
+                                Text(provider.providerName)
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 66)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var providerLogoPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 11)
+            .fill(WatchlistColor.surfaceElevated)
+            .overlay {
+                Image(systemName: "play.rectangle")
+                    .font(.system(size: 17))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+    }
+
+    @MainActor
+    private func loadWatchProviders() async {
+        guard !isLoadingWatchProviders else { return }
+        guard TMDBConfiguration.isConfigured else {
+            watchProvidersError = "Lägg till din TMDB-token för att visa streamingtjänster."
+            return
+        }
+        isLoadingWatchProviders = true
+        watchProvidersError = nil
+        defer { isLoadingWatchProviders = false }
+        do {
+            watchProviderResult = try await TMDBConfiguration.makeClient().watchProviders(for: item)
+            hasLoadedWatchProviders = true
+        } catch {
+            watchProvidersError = "Streaminginformationen kunde inte hämtas just nu."
+        }
+    }
 
     @ViewBuilder
     private var trailersSection: some View {
