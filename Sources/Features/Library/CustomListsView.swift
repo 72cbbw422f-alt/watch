@@ -183,9 +183,15 @@ struct CustomListsView: View {
     }
 
     private func createList() {
-        let list = CustomList(name: newListName)
+        let name = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+
+        let list = CustomList(name: name)
         modelContext.insert(list)
-        save()
+        guard save() else {
+            modelContext.delete(list)
+            return
+        }
         newListName = ""
         showingCreate = false
     }
@@ -198,12 +204,15 @@ struct CustomListsView: View {
         save()
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
         do {
             try modelContext.save()
             errorMessage = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 }
