@@ -476,7 +476,7 @@ private struct LibraryRow: View {
 private struct LibraryPosterTile: View {
     let entry: LibraryEntry
 
-    @Environment(\\.modelContext) private var modelContext
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
