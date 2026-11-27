@@ -107,7 +107,8 @@ actor TMDBClient: MediaSearching {
             queryItems: [
                 URLQueryItem(name: "language", value: "sv-SE"),
                 URLQueryItem(name: "sort_by", value: "vote_average.desc"),
-                URLQueryItem(name: "vote_count.gte", value: "150"),
+                URLQueryItem(name: "vote_count.gte", value: "100"),
+                URLQueryItem(name: "vote_count.lte", value: "1200"),
                 URLQueryItem(name: "vote_average.gte", value: "7.5"),
                 URLQueryItem(name: "page", value: "1")
             ]
@@ -118,7 +119,8 @@ actor TMDBClient: MediaSearching {
             queryItems: [
                 URLQueryItem(name: "language", value: "sv-SE"),
                 URLQueryItem(name: "sort_by", value: "vote_average.desc"),
-                URLQueryItem(name: "vote_count.gte", value: "150"),
+                URLQueryItem(name: "vote_count.gte", value: "100"),
+                URLQueryItem(name: "vote_count.lte", value: "1200"),
                 URLQueryItem(name: "vote_average.gte", value: "7.5"),
                 URLQueryItem(name: "page", value: "1")
             ]
