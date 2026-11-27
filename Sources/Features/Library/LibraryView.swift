@@ -476,6 +476,8 @@ private struct LibraryRow: View {
 private struct LibraryPosterTile: View {
     let entry: LibraryEntry
 
+    @Environment(\\.modelContext) private var modelContext
+
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             ZStack(alignment: .topTrailing) {
@@ -529,6 +531,34 @@ private struct LibraryPosterTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                entry.isFavorite.toggle()
+                entry.dateUpdated = .now
+                try? modelContext.save()
+            } label: {
+                Label(entry.isFavorite ? "Ta bort favorit" : "Lägg till i favoriter",
+                      systemImage: entry.isFavorite ? "heart.slash" : "heart")
+            }
+
+            Menu("Ändra status") {
+                ForEach(LibraryStatus.allCases) { status in
+                    Button {
+                        entry.status = status
+                        try? modelContext.save()
+                    } label: {
+                        Label(status.title, systemImage: status.symbol)
+                    }
+                }
+            }
+
+            Button(role: .destructive) {
+                modelContext.delete(entry)
+                try? modelContext.save()
+            } label: {
+                Label("Ta bort från biblioteket", systemImage: "trash")
+            }
+        }
     }
 
     private var placeholder: some View {
