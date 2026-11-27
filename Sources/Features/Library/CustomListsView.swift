@@ -387,7 +387,7 @@ private struct CustomListDetailView: View {
             do {
                 try modelContext.save()
             } catch {
-                errorMessage = "Listans namn kunde inte återställas: \\(error.localizedDescription)"
+                errorMessage = "Listans namn kunde inte återställas: \(error.localizedDescription)"
                 return
             }
             errorMessage = error.localizedDescription
