@@ -7,6 +7,7 @@ struct HomeView: View {
 
     @State private var selectedFilter = "För dig"
     @State private var trendingItems: [MediaItem] = []
+    @State private var hiddenGemItems: [MediaItem] = []
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
     @State private var personalRecommendations: [MediaItem] = []
@@ -65,9 +66,8 @@ struct HomeView: View {
     }
 
     private var hiddenGems: [MediaItem] {
-        trendingItems
-            .filter { $0.voteAverage >= 7.5 && !savedStableIDs.contains($0.stableID) }
-            .sorted { $0.voteAverage > $1.voteAverage }
+        hiddenGemItems
+            .filter { !savedStableIDs.contains($0.stableID) }
             .prefix(10)
             .map { $0 }
     }
@@ -622,10 +622,20 @@ struct HomeView: View {
         trendingError = nil
         defer { isLoadingTrending = false }
 
+        let client = TMDBConfiguration.makeClient()
+        async let trending = client.trendingThisWeek()
+        async let gems = client.hiddenGems()
+
         do {
-            trendingItems = try await TMDBConfiguration.makeClient().trendingThisWeek()
+            trendingItems = try await trending
         } catch {
             trendingError = error.localizedDescription
+        }
+
+        do {
+            hiddenGemItems = try await gems
+        } catch {
+            hiddenGemItems = []
         }
     }
 
