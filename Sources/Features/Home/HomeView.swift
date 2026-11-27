@@ -12,7 +12,10 @@ struct HomeView: View {
     @State private var personalRecommendations: [MediaItem] = []
     @State private var isLoadingRecommendations = false
     @State private var recommendationRequestID = UUID()
+    @State private var homeUpNextItems: [HomeUpNextItem] = []
+    @State private var isLoadingHomeUpNext = false
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
+    @Query private var episodeProgressEntries: [EpisodeProgress]
 
     private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
 
