@@ -44,7 +44,6 @@ struct MediaDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 25) {
                     artworkHeader
-                    metadata
                     libraryActions
                     watchProvidersSection
                     movieHistorySection
@@ -73,8 +72,10 @@ struct MediaDetailView: View {
                     similarTitlesSection
                     sourceNote
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 36)
             }
+            .frame(maxWidth: .infinity)
             .ignoresSafeArea(edges: .top)
         }
         .toolbar(.visible, for: .navigationBar)
@@ -209,9 +210,9 @@ struct MediaDetailView: View {
                     posterPlaceholder
                 }
             }
-            .frame(width: 104, height: 154)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.14), lineWidth: 1))
+            .frame(width: 126, height: 188)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(.white.opacity(0.16), lineWidth: 1))
             .shadow(color: .black.opacity(0.35), radius: 18, y: 8)
         } else {
             posterPlaceholder
@@ -226,7 +227,7 @@ struct MediaDetailView: View {
                     .font(.system(size: 25, weight: .light))
                     .foregroundStyle(WatchlistColor.mutedText)
             }
-            .frame(width: 104, height: 154)
+            .frame(width: 126, height: 188)
     }
 
     private var backdropPlaceholder: some View {
