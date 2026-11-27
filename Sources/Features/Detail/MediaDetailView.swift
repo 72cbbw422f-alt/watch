@@ -610,8 +610,16 @@ struct MediaDetailView: View {
                 }
             }
         }
-        .padding(14)
-        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+        .padding(15)
+        .background(
+            LinearGradient(
+                colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
     }
 
     @MainActor
@@ -1231,7 +1239,15 @@ struct MediaDetailView: View {
             }
         }
         .padding(.horizontal, 14)
-        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            LinearGradient(
+                colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
     }
 
     private func episodeRow(_ episode: TVEpisode) -> some View {
