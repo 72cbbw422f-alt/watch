@@ -676,9 +676,13 @@ struct MediaDetailView: View {
             if let entry = libraryEntry {
                 HStack(spacing: 10) {
                     Label(entry.status.title, systemImage: entry.status.symbol)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(WatchlistColor.accent)
                     Spacer()
+                    Text("I MITT BIBLIOTEK")
+                        .font(.system(size: 8, weight: .heavy))
+                        .tracking(1.3)
+                        .foregroundStyle(WatchlistColor.mutedText)
                     Menu {
                         ForEach(LibraryStatus.allCases) { status in
                             Button {
@@ -727,8 +731,17 @@ struct MediaDetailView: View {
                             .foregroundStyle(WatchlistColor.secondaryText)
                     }
                 }
-                .padding(15)
-                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
                 favoriteButton(isFavorite: entry.isFavorite)
             } else {
                 Menu {
@@ -740,12 +753,28 @@ struct MediaDetailView: View {
                         }
                     }
                 } label: {
-                    Label("Lägg till i min lista", systemImage: "plus")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(WatchlistColor.background)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(WatchlistColor.accent, in: RoundedRectangle(cornerRadius: 15))
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .heavy))
+                        Text("LÄGG TILL I MIN LISTA")
+                            .font(.system(size: 11, weight: .heavy))
+                            .tracking(1.1)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundStyle(WatchlistColor.background)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [WatchlistColor.accent, Color(hex: 0xD96B27)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(.white.opacity(0.16), lineWidth: 1))
                 }
                 favoriteButton(isFavorite: false)
             }
