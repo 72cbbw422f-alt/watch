@@ -637,9 +637,34 @@ struct HomeView: View {
         }
 
         let client = TMDBConfiguration.makeClient()
-        let savedIDs = Set(libraryEntries.map(\.stableID))
-        var seedResults: [[MediaItem]] = []
+        let savedIDs = Set(libraryEntries.map(\\.stableID))
+        // Snapshot SwiftData-backed values before crossing task boundaries.
+        let seedItems = seeds.map { $0.mediaItem }
+        var seedResults = Array(repeating: [MediaItem](), count: seedItems.count)
 
+        await withTaskGroup(of: (Int, [MediaItem]).self) { group in
+            for (index, seedItem) in seedItems.enumerated() {
+                group.addTask {
+                    let results = (try? await client.similarTitles(to: seedItem)) ?? []
+                    let filtered = results.filter {
+                        !savedIDs.contains($0.stableID) && $0.id > 0
+                    }
+                    return (index, filtered)
+                }
+            }
+
+            for await (index, results) in group {
+                guard !Task.isCancelled, recommendationRequestID == requestID else {
+                    group.cancelAll()
+                    return
+                }
+                seedResults[index] = results
+            }
+        }
+
+        guard !Task.isCancelled, recommendationRequestID == requestID else { return }
+
+        // Interleave the strongest matches from each seed so one favorite cannot dominate the feed.
         for seed in seeds {
             guard !Task.isCancelled, recommendationRequestID == requestID else { return }
             do {
