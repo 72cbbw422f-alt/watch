@@ -91,10 +91,9 @@ struct MediaDetailView: View {
                     sourceNote
                 }
                     .frame(width: geometry.size.width, alignment: .leading)
-                    .padding(.bottom, 36)
+                    .padding(.bottom, 120)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                .ignoresSafeArea(edges: .top)
                 .clipped()
             }
         }
@@ -124,25 +123,30 @@ struct MediaDetailView: View {
 
     private var artworkHeader: some View {
         ZStack(alignment: .bottomLeading) {
-            Group {
-                if let url = item.backdropURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image.resizable().scaledToFill()
-                        case .empty, .failure:
-                            backdropPlaceholder
-                        @unknown default:
-                            backdropPlaceholder
+            GeometryReader { proxy in
+                Group {
+                    if let url = item.backdropURL {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable()
+                                    .scaledToFill()
+                                    .frame(width: proxy.size.width, height: proxy.size.height)
+                                    .clipped()
+                            case .empty, .failure:
+                                backdropPlaceholder
+                            @unknown default:
+                                backdropPlaceholder
+                            }
                         }
+                    } else {
+                        backdropPlaceholder
                     }
-                } else {
-                    backdropPlaceholder
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipped()
             }
-            .frame(maxWidth: .infinity)
             .frame(height: 440)
-            .clipped()
 
             LinearGradient(
                 stops: [
