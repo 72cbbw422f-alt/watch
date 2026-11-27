@@ -10,6 +10,12 @@ private struct ViewingHistoryRow: Identifiable {
     let source: String
 }
 
+private struct ViewingHistorySection: Identifiable {
+    let date: Date
+    let rows: [ViewingHistoryRow]
+    var id: Date { date }
+}
+
 struct EpisodeHistoryView: View {
     @Query(sort: \EpisodeWatchEvent.watchedAt, order: .reverse)
     private var events: [EpisodeWatchEvent]
@@ -47,6 +53,24 @@ struct EpisodeHistoryView: View {
         return (episodeRows + filmRows).sorted { $0.date > $1.date }
     }
 
+    private var historySections: [ViewingHistorySection] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: historyRows) { calendar.startOfDay(for: $0.date) }
+        return grouped.keys.sorted(by: >).map { day in
+            ViewingHistorySection(
+                date: day,
+                rows: (grouped[day] ?? []).sorted { $0.date > $1.date }
+            )
+        }
+    }
+
+    private func sectionTitle(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "IDAG" }
+        if calendar.isDateInYesterday(date) { return "IGÅR" }
+        return date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).uppercased()
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -54,31 +78,33 @@ struct EpisodeHistoryView: View {
                 emptyState
             } else {
                 List {
-                    Section("SENASTE VISNINGAR") {
-                        ForEach(historyRows) { row in
-                            HStack(spacing: 12) {
-                                Image(systemName: row.symbol)
-                                    .foregroundStyle(WatchlistColor.accent)
-                                    .frame(width: 28)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(row.title)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(WatchlistColor.primaryText)
-                                    Text(row.detail)
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(WatchlistColor.secondaryText)
-                                        .lineLimit(2)
-                                    Text(row.date.formatted(date: .long, time: .shortened))
-                                        .font(.system(size: 10))
-                                        .foregroundStyle(WatchlistColor.mutedText)
+                    ForEach(historySections) { section in
+                        Section(sectionTitle(for: section.date)) {
+                            ForEach(section.rows) { row in
+                                HStack(spacing: 12) {
+                                    Image(systemName: row.symbol)
+                                        .foregroundStyle(WatchlistColor.accent)
+                                        .frame(width: 28)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(row.title)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(WatchlistColor.primaryText)
+                                        Text(row.detail)
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(WatchlistColor.secondaryText)
+                                            .lineLimit(2)
+                                        Text(row.date.formatted(date: .omitted, time: .shortened))
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(WatchlistColor.mutedText)
+                                    }
+                                    Spacer()
+                                    Text(row.source == "manual" ? "MANUELL" : row.source.uppercased())
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(WatchlistColor.accent)
                                 }
-                                Spacer()
-                                Text(row.source == "manual" ? "MANUELL" : row.source.uppercased())
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(WatchlistColor.accent)
+                                .padding(.vertical, 6)
+                                .listRowBackground(WatchlistColor.surface)
                             }
-                            .padding(.vertical, 6)
-                            .listRowBackground(WatchlistColor.surface)
                         }
                     }
                 }
