@@ -60,9 +60,8 @@ struct HomeView: View {
     private var savedStableIDs: Set<String> { Set(libraryEntries.map(\.stableID)) }
 
     private var tonightItems: [MediaItem] {
-        let candidates = personalRecommendations + trendingItems
         var seen = Set<String>()
-        return candidates.filter {
+        return trendingItems.filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(10).map { $0 }
     }
@@ -76,9 +75,10 @@ struct HomeView: View {
     }
 
     private var watchlistMix: [MediaItem] {
-        // Keep this carousel distinct from the immediately preceding "Ikväll kanske?" section.
-        var seen = Set(tonightItems.map(\.stableID))
-        return (hiddenGems + personalRecommendations + trendingItems).filter {
+        // Keep this carousel distinct from the personal and "Ikväll kanske?" shelves.
+        var seen = Set(tonightItems.map(\\.stableID))
+        seen.formUnion(personalRecommendations.map(\\.stableID))
+        return (hiddenGems + trendingItems).filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(12).map { $0 }
     }
@@ -94,6 +94,7 @@ struct HomeView: View {
                         featured
                         quickFilters
                         homeUpNext
+                        recommendations
                         tonightPicks
                         continueWatching
                         watchlistMixSection
