@@ -21,6 +21,10 @@ struct MediaDetailView: View {
     @State private var seasonEpisodeErrors: [Int: String] = [:]
     @State private var similarItems: [MediaItem] = []
     @State private var isLoadingSimilar = false
+    @State private var tmdbVideos: [TMDBVideo] = []
+    @State private var isLoadingVideos = false
+    @State private var videosError: String?
+    @State private var hasLoadedVideos = false
     @State private var tmdbReviews: [TMDBReview] = []
     @State private var isLoadingReviews = false
     @State private var reviewsError: String?
@@ -56,6 +60,7 @@ struct MediaDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    trailersSection
                     tmdbReviewsSection
                     televisionSeasonsSection
                     similarTitlesSection
@@ -73,6 +78,7 @@ struct MediaDetailView: View {
             await loadTelevisionSeasons()
             await loadSimilarTitles()
             await loadReviews()
+            await loadVideos()
         }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
@@ -189,6 +195,93 @@ struct MediaDetailView: View {
     }
 
 
+
+
+    @ViewBuilder
+    private var trailersSection: some View {
+        if isLoadingVideos && tmdbVideos.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionLabel("TRAILERS & VIDEOKLIPP")
+                ProgressView().tint(WatchlistColor.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+            }
+            .padding(.horizontal, 20)
+        } else if hasLoadedVideos || videosError != nil {
+            VStack(alignment: .leading, spacing: 13) {
+                sectionLabel("TRAILERS & VIDEOKLIPP")
+                if tmdbVideos.isEmpty && videosError == nil {
+                    Text("Ingen trailer finns tillgänglig för den här titeln ännu.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                }
+                ForEach(tmdbVideos) { video in
+                    if let url = video.playbackURL {
+                        Link(destination: url) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(WatchlistColor.surfaceElevated)
+                                        .frame(width: 76, height: 54)
+                                    Image(systemName: video.type == "Trailer" ? "play.fill" : "video")
+                                        .font(.system(size: 19, weight: .semibold))
+                                        .foregroundStyle(WatchlistColor.accent)
+                                }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(video.name)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(WatchlistColor.primaryText)
+                                        .lineLimit(2)
+                                    Text("\(video.type) · \(video.site)\(video.official ? " · Officiell" : "")")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(WatchlistColor.secondaryText)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.mutedText)
+                            }
+                            .padding(11)
+                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 13))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                if let videosError {
+                    Text(videosError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                    Button("Försök igen") {
+                        Task { await loadVideos() }
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @MainActor
+    private func loadVideos() async {
+        guard !isLoadingVideos else { return }
+        guard TMDBConfiguration.isConfigured else {
+            videosError = "Lägg till din TMDB-token för att visa trailers."
+            return
+        }
+        isLoadingVideos = true
+        videosError = nil
+        defer { isLoadingVideos = false }
+        do {
+            tmdbVideos = try await TMDBConfiguration.makeClient().videos(for: item)
+            hasLoadedVideos = true
+        } catch {
+            videosError = "Videoklippen kunde inte hämtas just nu."
+        }
+    }
 
     @ViewBuilder
     private var tmdbReviewsSection: some View {
