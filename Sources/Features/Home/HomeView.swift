@@ -5,7 +5,7 @@ struct HomeView: View {
     let onExplore: () -> Void
     let onCalendar: () -> Void
 
-    @State private var selectedFilter = "För dig"
+    @State private var selectedFilter = "Alla"
     @State private var trendingItems: [MediaItem] = []
     @State private var hiddenGemItems: [MediaItem] = []
     @State private var isLoadingTrending = false
@@ -61,7 +61,7 @@ struct HomeView: View {
         }
     }
 
-    private let filters = ["För dig", "Filmer", "Serier"]
+    private let filters = ["Alla", "Filmer", "Serier"]
 
     private var savedStableIDs: Set<String> { Set(libraryEntries.map(\.stableID)) }
 
