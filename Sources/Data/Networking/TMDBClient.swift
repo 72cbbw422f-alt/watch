@@ -123,8 +123,9 @@ actor TMDBClient: MediaSearching {
                 URLQueryItem(name: "page", value: "1")
             ]
         )
-        let results = try await (movies.results + series.results)
-        return results.sorted { $0.voteAverage > $1.voteAverage }
+        let moviePage = try await movies
+        let seriesPage = try await series
+        return (moviePage.results + seriesPage.results).sorted { $0.voteAverage > $1.voteAverage }
     }
 
     func similarTitles(to item: MediaItem) async throws -> [MediaItem] {
