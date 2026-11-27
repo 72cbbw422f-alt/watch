@@ -190,6 +190,7 @@ struct LibraryView: View {
                         .frame(width: 36, height: 44)
                 }
                 .accessibilityLabel("Visa affischrutnät")
+                .accessibilityValue(usesPosterGrid ? "Vald" : "Inte vald")
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { usesPosterGrid = false }
                 } label: {
@@ -198,6 +199,7 @@ struct LibraryView: View {
                         .frame(width: 32, height: 44)
                 }
                 .accessibilityLabel("Visa listvy")
+                .accessibilityValue(!usesPosterGrid ? "Vald" : "Inte vald")
             }
             .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(WatchlistColor.hairline, lineWidth: 1))
@@ -291,6 +293,7 @@ struct LibraryView: View {
                 .overlay(Capsule().stroke(selectedKind == kind ? WatchlistColor.accent.opacity(0.45) : WatchlistColor.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
     }
 
     private var statusFilters: some View {
@@ -325,6 +328,7 @@ struct LibraryView: View {
                 .overlay(Capsule().stroke(isSelected ? WatchlistColor.accent.opacity(0.38) : WatchlistColor.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var noResultsState: some View {
