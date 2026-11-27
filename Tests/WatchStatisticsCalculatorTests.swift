@@ -65,6 +65,29 @@ final class WatchStatisticsCalculatorTests: XCTestCase {
         XCTAssertEqual(counts.reduce(0, +), 5)
     }
 
+    func testMostActiveMonthUsesFirstMonthWhenThereIsATie() {
+        XCTAssertEqual(
+            WatchStatisticsCalculator.mostActiveMonthIndex([0, 3, 1, 3]),
+            1
+        )
+    }
+
+    func testMostActiveMonthIsNilWhenThereAreNoEvents() {
+        XCTAssertNil(WatchStatisticsCalculator.mostActiveMonthIndex([0, 0, 0]))
+    }
+
+    func testAveragePerActiveMonthIgnoresMonthsWithoutEvents() {
+        XCTAssertEqual(
+            WatchStatisticsCalculator.averagePerActiveMonth([4, 0, 2, 0, 6]),
+            4.0,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            WatchStatisticsCalculator.averagePerActiveMonth([0, 0, 0]),
+            0
+        )
+    }
+
     private func date(_ value: String) -> Date {
         ISO8601DateFormatter().date(from: value)!
     }
