@@ -54,6 +54,31 @@ struct HomeView: View {
 
     private let filters = ["För dig", "Filmer", "Serier"]
 
+    private var savedStableIDs: Set<String> { Set(libraryEntries.map(\.stableID)) }
+
+    private var tonightItems: [MediaItem] {
+        let candidates = personalRecommendations + trendingItems
+        var seen = Set<String>()
+        return candidates.filter {
+            seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
+        }.prefix(10).map { $0 }
+    }
+
+    private var hiddenGems: [MediaItem] {
+        trendingItems
+            .filter { $0.voteAverage >= 7.5 && !savedStableIDs.contains($0.stableID) }
+            .sorted { $0.voteAverage > $1.voteAverage }
+            .prefix(10)
+            .map { $0 }
+    }
+
+    private var watchlistMix: [MediaItem] {
+        var seen = Set<String>()
+        return (personalRecommendations + hiddenGems + trendingItems).filter {
+            seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
+        }.prefix(12).map { $0 }
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -65,8 +90,11 @@ struct HomeView: View {
                         featured
                         quickFilters
                         homeUpNext
+                        tonightPicks
                         continueWatching
                         recommendations
+                        watchlistMixSection
+                        hiddenGemsSection
                         trending
                         premieres
                         comingSoon
@@ -411,6 +439,54 @@ struct HomeView: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+
+
+    private var tonightPicks: some View {
+        posterCarousel(
+            title: "Ikväll kanske?",
+            eyebrow: "NÅGOT ATT SE",
+            trailing: "För dig",
+            items: tonightItems
+        )
+    }
+
+    private var watchlistMixSection: some View {
+        posterCarousel(
+            title: "Watchlist Mix",
+            eyebrow: "DIN PERSONLIGA MIX",
+            trailing: "Blandat",
+            items: watchlistMix
+        )
+    }
+
+    private var hiddenGemsSection: some View {
+        posterCarousel(
+            title: "Dolda pärlor",
+            eyebrow: "HÖGA BETYG · VÄRDA ATT UPPTÄCKA",
+            trailing: "Upptäck",
+            items: hiddenGems
+        )
+    }
+
+    @ViewBuilder
+    private func posterCarousel(title: String, eyebrow: String, trailing: String, items: [MediaItem]) -> some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionHeading(title, eyebrow: eyebrow, trailing: trailing)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 13) {
+                        ForEach(Array(items.enumerated()), id: \.element.stableID) { index, item in
+                            NavigationLink(value: item) {
+                                MediaPosterTile(item: item, rank: index + 1)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
     }
 
     private var recommendations: some View {
