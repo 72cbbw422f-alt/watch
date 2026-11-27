@@ -802,29 +802,65 @@ struct MediaDetailView: View {
     }
 
     private func updatePersonalRating(_ rating: Int?) {
-        let entry: LibraryEntry
-        if let existing = libraryEntry {
-            entry = existing
-        } else {
-            entry = LibraryEntry(item: item)
+        let existingEntry = libraryEntry
+        let previousRating = existingEntry?.personalRating
+        let previousUpdatedAt = existingEntry?.dateUpdated
+        let entry = existingEntry ?? LibraryEntry(item: item)
+        if existingEntry == nil {
             modelContext.insert(entry)
         }
         entry.personalRating = rating
         entry.dateUpdated = .now
-        saveChanges()
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            if let previousUpdatedAt {
+                entry.personalRating = previousRating
+                entry.dateUpdated = previousUpdatedAt
+            } else {
+                modelContext.delete(entry)
+            }
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Betyget kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func updatePersonalNotes(_ notes: String) {
-        let entry: LibraryEntry
-        if let existing = libraryEntry {
-            entry = existing
-        } else {
-            entry = LibraryEntry(item: item)
+        let existingEntry = libraryEntry
+        let previousNotes = existingEntry?.personalNotes
+        let previousUpdatedAt = existingEntry?.dateUpdated
+        let entry = existingEntry ?? LibraryEntry(item: item)
+        if existingEntry == nil {
             modelContext.insert(entry)
         }
         entry.personalNotes = notes
         entry.dateUpdated = .now
-        saveChanges()
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            if let previousUpdatedAt {
+                entry.personalNotes = previousNotes ?? ""
+                entry.dateUpdated = previousUpdatedAt
+            } else {
+                modelContext.delete(entry)
+            }
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Anteckningen kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func saveChanges() {
