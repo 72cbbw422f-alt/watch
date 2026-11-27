@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var hiddenGemItems: [MediaItem] = []
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
+    @State private var trendingRequestID = UUID()
     @State private var personalRecommendations: [MediaItem] = []
     @State private var isLoadingRecommendations = false
     @State private var recommendationRequestID = UUID()
@@ -656,23 +657,36 @@ struct HomeView: View {
     @MainActor
     private func loadTrending() async {
         guard TMDBConfiguration.isConfigured else { return }
+
+        let requestID = UUID()
+        trendingRequestID = requestID
         isLoadingTrending = true
         trendingError = nil
-        defer { isLoadingTrending = false }
+        defer {
+            if trendingRequestID == requestID {
+                isLoadingTrending = false
+            }
+        }
 
         let client = TMDBConfiguration.makeClient()
         async let trending = client.trendingThisWeek()
         async let gems = client.hiddenGems()
 
         do {
-            trendingItems = try await trending
+            let results = try await trending
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
+            trendingItems = results
         } catch {
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
             trendingError = error.localizedDescription
         }
 
         do {
-            hiddenGemItems = try await gems
+            let results = try await gems
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
+            hiddenGemItems = results
         } catch {
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
             hiddenGemItems = []
         }
     }
