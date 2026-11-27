@@ -106,7 +106,7 @@ struct PremiereCalendarView: View {
         VStack(spacing: 14) {
             HStack {
                 Button {
-                    displayedMonth = Calendar.current.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
+                    shiftDisplayedMonth(by: -1)
                 } label: { Image(systemName: "chevron.left") }
                 Spacer()
                 Text(displayedMonth.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).month(.wide).year()).capitalized)
@@ -114,7 +114,7 @@ struct PremiereCalendarView: View {
                     .foregroundStyle(WatchlistColor.primaryText)
                 Spacer()
                 Button {
-                    displayedMonth = Calendar.current.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
+                    shiftDisplayedMonth(by: 1)
                 } label: { Image(systemName: "chevron.right") }
             }
             .font(.system(size: 13, weight: .semibold))
@@ -158,6 +158,19 @@ struct PremiereCalendarView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
+    }
+
+    private func shiftDisplayedMonth(by offset: Int) {
+        guard let month = Calendar.current.date(byAdding: .month, value: offset, to: displayedMonth),
+              let interval = Calendar.current.dateInterval(of: .month, for: month) else { return }
+
+        displayedMonth = interval.start
+        selectedDate = events
+            .filter { $0.date >= interval.start && $0.date < interval.end }
+            .map(\.date)
+            .sorted()
+            .first
+            .map { Calendar.current.startOfDay(for: $0) } ?? interval.start
     }
 
     private var selectedDayContent: some View {
