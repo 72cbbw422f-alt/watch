@@ -10,6 +10,7 @@ struct DiscoverView: View {
     @State private var trendingItems: [MediaItem] = []
     @State private var isLoadingTrending = false
     @State private var trendingError: String?
+    @State private var trendingRequestID = UUID()
     @FocusState private var searchFocused: Bool
 
     private var visibleTrendingItems: [MediaItem] {
@@ -258,12 +259,24 @@ struct DiscoverView: View {
     @MainActor
     private func loadTrending() async {
         guard TMDBConfiguration.isConfigured else { return }
+
+        let requestID = UUID()
+        trendingRequestID = requestID
         isLoadingTrending = true
         trendingError = nil
-        defer { isLoadingTrending = false }
+
+        defer {
+            if trendingRequestID == requestID {
+                isLoadingTrending = false
+            }
+        }
+
         do {
-            trendingItems = try await TMDBConfiguration.makeClient().trendingThisWeek()
+            let results = try await TMDBConfiguration.makeClient().trendingThisWeek()
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
+            trendingItems = results
         } catch {
+            guard !Task.isCancelled, trendingRequestID == requestID else { return }
             trendingError = error.localizedDescription
         }
     }
