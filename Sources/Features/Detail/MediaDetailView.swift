@@ -13,6 +13,7 @@ struct MediaDetailView: View {
     @State private var persistenceError: String?
     @State private var televisionSeasons: [TVSeason] = []
     @State private var nextEpisodeToAir: TVNextEpisode?
+    @State private var lastEpisodeToAir: TVNextEpisode?
     @State private var episodesBySeason: [Int: [TVEpisode]] = [:]
     @State private var expandedSeason: Int?
     @State private var isLoadingSeasons = false
@@ -67,6 +68,7 @@ struct MediaDetailView: View {
                     }
                     trailersSection
                     tmdbReviewsSection
+                    upNextSection
                     televisionSeasonsSection
                     similarTitlesSection
                     sourceNote
@@ -938,6 +940,78 @@ struct MediaDetailView: View {
         .padding(.horizontal, 20)
     }
 
+
+    @ViewBuilder
+    private var upNextSection: some View {
+        if item.kind == .television,
+           let lastEpisode = lastEpisodeToAir,
+           let nextEpisode = nextEpisodeToAir,
+           let nextDate = premiereDate(from: nextEpisode.airDate),
+           nextDate >= Calendar.current.startOfDay(for: .now),
+           episodeProgressEntries.contains(where: {
+               $0.seriesID == item.id &&
+               $0.seasonNumber == lastEpisode.seasonNumber &&
+               $0.episodeNumber == lastEpisode.episodeNumber &&
+               $0.isWatched
+           }) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "forward.end.fill")
+                        .foregroundStyle(WatchlistColor.accent)
+                    sectionLabel("UP NEXT")
+                    Spacer()
+                    Text("NÄSTA AVSNITT")
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(1.1)
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+
+                HStack(spacing: 13) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(WatchlistColor.accent.opacity(0.12))
+                            .frame(width: 54, height: 62)
+                        Image(systemName: "tv")
+                            .font(.system(size: 22, weight: .light))
+                            .foregroundStyle(WatchlistColor.accent)
+                    }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(nextEpisode.displayCode)
+                            .font(.system(size: 9, weight: .bold))
+                            .tracking(1)
+                            .foregroundStyle(WatchlistColor.accent)
+                        Text(nextEpisode.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.primaryText)
+                            .lineLimit(2)
+                        Text("Släpps " + nextDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.wide)).capitalized)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(13)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+
+                Text("Du har markerat det senast släppta avsnittet som sett.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(WatchlistColor.mutedText)
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private func premiereDate(from value: String?) -> Date? {
+        guard let value else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: value)
+    }
+
     @ViewBuilder
     private var televisionSeasonsSection: some View {
         if item.kind == .television {
@@ -1220,6 +1294,7 @@ struct MediaDetailView: View {
             let details = try await TMDBConfiguration.makeClient().televisionDetails(id: item.id)
             televisionSeasons = details.regularSeasons
             nextEpisodeToAir = details.nextEpisodeToAir
+            lastEpisodeToAir = details.lastEpisodeToAir
             if let entry = libraryEntry {
                 entry.episodeTotalCount = details.regularSeasons.reduce(0) { $0 + $1.episodeCount }
                 if let next = details.nextEpisodeToAir {
