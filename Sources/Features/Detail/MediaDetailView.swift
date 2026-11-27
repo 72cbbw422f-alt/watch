@@ -856,10 +856,20 @@ struct MediaDetailView: View {
                         Text(viewingCount == 0 ? "Har du sett filmen?" : "Sedd \(viewingCount) gånger")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(WatchlistColor.primaryText)
-                        if let latestViewing = viewingEvents.first {
-                            Text("Senast sedd \(latestViewing.watchedAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day().month(.abbreviated).year()))")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(WatchlistColor.accent)
+                        if !viewingEvents.isEmpty {
+                            VStack(alignment: .leading, spacing: 3) {
+                                ForEach(Array(viewingEvents.prefix(3).enumerated()), id: \.offset) { index, event in
+                                    HStack(spacing: 5) {
+                                        Image(systemName: index == 0 ? "clock.fill" : "arrow.uturn.backward")
+                                            .font(.system(size: 8, weight: .semibold))
+                                        Text(index == 0 ? "Senast" : "Tidigare")
+                                            .font(.system(size: 9, weight: .medium))
+                                        Text(event.watchedAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day().month(.abbreviated).year()))
+                                            .font(.system(size: 9, weight: .medium))
+                                    }
+                                    .foregroundStyle(index == 0 ? WatchlistColor.accent : WatchlistColor.mutedText)
+                                }
+                            }
                         } else {
                             Text("Ingen visning registrerad ännu.")
                                 .font(.system(size: 10))
