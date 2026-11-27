@@ -633,8 +633,22 @@ struct MediaDetailView: View {
     }
 
     private func registerEpisodeRewatch(_ episode: TVEpisode) {
-        modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
-        saveChanges()
+        let event = EpisodeWatchEvent(seriesID: item.id, episode: episode)
+        modelContext.insert(event)
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            modelContext.delete(event)
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Omtittningen kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func seasonProgressLabel(for season: TVSeason) -> String {
@@ -661,17 +675,52 @@ struct MediaDetailView: View {
             seasonNumber: episode.seasonNumber,
             episodeNumber: episode.episodeNumber
         )
-        if let progress = episodeProgressEntries.first(where: { $0.stableID == id }) {
-            let shouldMarkWatched = !progress.isWatched
-            progress.setWatched(shouldMarkWatched)
-            if shouldMarkWatched {
-                modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
-            }
+        let existingProgress = episodeProgressEntries.first { $0.stableID == id }
+        let previousWatched = existingProgress?.isWatched
+        let previousWatchedAt = existingProgress?.watchedAt
+        let previousUpdatedAt = existingProgress?.dateUpdated
+        let shouldMarkWatched = !(existingProgress?.isWatched ?? false)
+        let progress = existingProgress ?? EpisodeProgress(
+            seriesID: item.id,
+            episode: episode,
+            isWatched: true
+        )
+        let event = shouldMarkWatched
+            ? EpisodeWatchEvent(seriesID: item.id, episode: episode)
+            : nil
+
+        if existingProgress == nil {
+            modelContext.insert(progress)
         } else {
-            modelContext.insert(EpisodeProgress(seriesID: item.id, episode: episode, isWatched: true))
-            modelContext.insert(EpisodeWatchEvent(seriesID: item.id, episode: episode))
+            progress.setWatched(shouldMarkWatched)
         }
-        saveChanges()
+        if let event {
+            modelContext.insert(event)
+        }
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            if let event {
+                modelContext.delete(event)
+            }
+            if let previousWatched, let previousUpdatedAt {
+                progress.isWatched = previousWatched
+                progress.watchedAt = previousWatchedAt
+                progress.dateUpdated = previousUpdatedAt
+            } else {
+                modelContext.delete(progress)
+            }
+
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Avsnittsstatusen kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     @MainActor
