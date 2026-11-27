@@ -257,17 +257,21 @@ struct PremiereCalendarView: View {
             // Resolve the client at request time so a token saved after this view was created is picked up.
             let client = TMDBConfiguration.makeClient()
             async let movies = client.upcomingMovies()
+            async let digital = client.upcomingDigitalMovies()
             async let television = client.upcomingTelevisionPremieres()
-            let fetched = try await (movies, television)
+            let fetched = try await (movies, digital, television)
             let today = Calendar.current.startOfDay(for: .now)
 
             let movieEvents: [PremiereEvent] = fetched.0.compactMap { item in
-                PremiereEvent(item: item)
+                PremiereEvent(item: item, category: .cinema)
             }
-            let televisionEvents: [PremiereEvent] = fetched.1.compactMap { item in
-                PremiereEvent(item: item)
+            let digitalEvents: [PremiereEvent] = fetched.1.compactMap { item in
+                PremiereEvent(item: item, category: .digital)
             }
-            let datedEvents = movieEvents + televisionEvents
+            let televisionEvents: [PremiereEvent] = fetched.2.compactMap { item in
+                PremiereEvent(item: item, category: .series)
+            }
+            let datedEvents = movieEvents + digitalEvents + televisionEvents
             events = datedEvents
                 .filter { event in event.date >= today }
                 .sorted { first, second in first.date < second.date }
@@ -402,13 +406,29 @@ struct PremiereCalendarView: View {
     }
 }
 
+private enum PremiereCategory: String {
+    case cinema
+    case digital
+    case series
+
+    var title: String {
+        switch self {
+        case .cinema: "Bio"
+        case .digital: "Digitalt"
+        case .series: "Serie"
+        }
+    }
+}
+
 private struct PremiereEvent: Identifiable {
     let item: MediaItem
     let date: Date
+    let category: PremiereCategory
 
-    var id: String { item.stableID }
+    var id: String { item.stableID + "-" + category.rawValue }
 
-    init?(item: MediaItem) {
+    init?(item: MediaItem, category: PremiereCategory = .cinema) {
+        self.category = category
         guard
             let rawDate = item.releaseDate,
             let parsedDate = Self.parseDate(rawDate)
@@ -464,7 +484,7 @@ private struct PremiereCalendarRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(WatchlistColor.primaryText)
                     .lineLimit(2)
-                Text(event.item.kind.displayName.uppercased())
+                Text("\(event.item.kind.displayName.uppercased()) · \(event.category.title.uppercased())")
                     .font(.system(size: 8, weight: .bold))
                     .tracking(1)
                     .foregroundStyle(WatchlistColor.mutedText)
