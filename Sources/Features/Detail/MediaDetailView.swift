@@ -100,11 +100,14 @@ struct MediaDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
         .task {
-            await loadTelevisionSeasons()
-            await loadSimilarTitles()
-            await loadReviews()
-            await loadVideos()
-            await loadWatchProviders()
+            // These TMDB requests are independent. Load them concurrently so
+            // the detail page can populate each section as soon as it is ready.
+            async let seasons: Void = loadTelevisionSeasons()
+            async let similar: Void = loadSimilarTitles()
+            async let reviews: Void = loadReviews()
+            async let videos: Void = loadVideos()
+            async let providers: Void = loadWatchProviders()
+            _ = await (seasons, similar, reviews, videos, providers)
         }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
