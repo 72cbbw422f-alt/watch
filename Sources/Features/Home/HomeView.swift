@@ -274,7 +274,7 @@ struct HomeView: View {
 
     private var homeUpNext: some View {
         Group {
-            if isLoadingHomeUpNext || !homeUpNextItems.isEmpty {
+            if !followedSeries.isEmpty {
                 VStack(alignment: .leading, spacing: 13) {
                     sectionHeading("Up Next", eyebrow: "NÄSTA AVSNITT I DINA SERIER", trailing: "\(homeUpNextItems.count) KOMMANDE")
                     if isLoadingHomeUpNext && homeUpNextItems.isEmpty {
@@ -282,6 +282,21 @@ struct HomeView: View {
                             .tint(WatchlistColor.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
+                    } else if homeUpNextItems.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(WatchlistColor.accent)
+                            Text("Inga nya avsnitt är schemalagda just nu. Vi håller koll på dina serier.")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(WatchlistColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(14)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
+                        .padding(.horizontal, 20)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: 10) {
