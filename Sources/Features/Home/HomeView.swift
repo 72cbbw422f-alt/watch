@@ -359,7 +359,8 @@ struct HomeView: View {
             }
         }
         let client = TMDBConfiguration.makeClient()
-        let calendar = Calendar.current
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
         let today = calendar.startOfDay(for: .now)
         var upcoming: [HomeUpNextItem] = []
 
