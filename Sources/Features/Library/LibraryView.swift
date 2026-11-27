@@ -28,17 +28,28 @@ struct LibraryView: View {
         }
         switch sortOrder {
         case .recentlyAdded:
-            return matching.sorted { $0.dateAdded > $1.dateAdded }
+            return matching.sorted {
+                if $0.dateAdded != $1.dateAdded { return $0.dateAdded > $1.dateAdded }
+                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }
         case .title:
             return matching.sorted {
-                $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+                let comparison = $0.title.localizedCaseInsensitiveCompare($1.title)
+                if comparison != .orderedSame { return comparison == .orderedAscending }
+                return $0.dateAdded > $1.dateAdded
             }
         case .highestRated:
             return matching.sorted {
-                let firstRating = $0.personalRating ?? 0
-                let secondRating = $1.personalRating ?? 0
-                if firstRating != secondRating { return firstRating > secondRating }
-                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+                switch ($0.personalRating, $1.personalRating) {
+                case let (first?, second?) where first != second:
+                    return first > second
+                case (_?, nil):
+                    return true
+                case (nil, _?):
+                    return false
+                default:
+                    return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+                }
             }
         }
     }
