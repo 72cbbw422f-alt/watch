@@ -275,9 +275,7 @@ private struct CustomListDetailView: View {
                                 .buttonStyle(.plain)
                                 .contextMenu {
                                     Button(role: .destructive) {
-                                        modelContext.delete(entry)
-                                        list.updatedAt = .now
-                                        save()
+                                        removeEntry(entry)
                                     } label: {
                                         Label("Ta bort från listan", systemImage: "minus.circle")
                                     }
@@ -370,6 +368,26 @@ private struct CustomListDetailView: View {
                     .foregroundStyle(WatchlistColor.mutedText)
             }
             .frame(width: 48, height: 68)
+    }
+
+    private func removeEntry(_ entry: CustomListItem) {
+        let previousUpdatedAt = list.updatedAt
+        modelContext.delete(entry)
+        list.updatedAt = .now
+        do {
+            try modelContext.save()
+            errorMessage = nil
+        } catch {
+            modelContext.insert(entry)
+            list.updatedAt = previousUpdatedAt
+            do {
+                try modelContext.save()
+            } catch {
+                errorMessage = "Titeln kunde inte återställas efter ett sparfel: \\(error.localizedDescription)"
+                return
+            }
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func renameList() {
