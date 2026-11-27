@@ -665,7 +665,6 @@ struct MediaDetailView: View {
                     entry.nextEpisodeCode = nil
                     entry.nextEpisodeAirDate = nil
                 }
-                entry.dateUpdated = .now
                 saveChanges()
             }
         } catch {
