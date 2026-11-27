@@ -56,6 +56,29 @@ actor TMDBClient: MediaSearching {
         return response.results
     }
 
+
+    func upcomingDigitalMovies(from date: Date = .now) async throws -> [MediaItem] {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        let response = try await fetch(
+            path: "/discover/movie",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "region", value: "SE"),
+                URLQueryItem(name: "with_release_type", value: "4"),
+                URLQueryItem(name: "release_date.gte", value: formatter.string(from: date)),
+                URLQueryItem(name: "sort_by", value: "release_date.asc"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        return response.results
+    }
+
     func upcomingTelevisionPremieres(from date: Date = .now) async throws -> [MediaItem] {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
