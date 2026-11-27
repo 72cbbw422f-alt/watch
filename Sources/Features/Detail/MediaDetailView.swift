@@ -41,8 +41,9 @@ struct MediaDetailView: View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 25) {
+            GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 25) {
                     artworkHeader
                     libraryActions
                     watchProvidersSection
@@ -89,11 +90,13 @@ struct MediaDetailView: View {
                     similarTitlesSection
                     sourceNote
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 36)
+                    .frame(width: geometry.size.width, alignment: .leading)
+                    .padding(.bottom, 36)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .ignoresSafeArea(edges: .top)
+                .clipped()
             }
-            .frame(maxWidth: .infinity)
-            .ignoresSafeArea(edges: .top)
         }
         .toolbar(.visible, for: .navigationBar)
         .navigationTitle("")
