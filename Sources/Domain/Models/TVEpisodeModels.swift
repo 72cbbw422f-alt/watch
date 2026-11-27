@@ -4,10 +4,12 @@ struct TVSeriesDetails: Decodable, Sendable {
     let id: Int
     let seasons: [TVSeason]
     let nextEpisodeToAir: TVNextEpisode?
+    let lastEpisodeToAir: TVNextEpisode?
 
     enum CodingKeys: String, CodingKey {
         case id, seasons
         case nextEpisodeToAir = "next_episode_to_air"
+        case lastEpisodeToAir = "last_episode_to_air"
     }
 
     var regularSeasons: [TVSeason] {
