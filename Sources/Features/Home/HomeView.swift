@@ -925,7 +925,7 @@ private struct MediaPosterTile: View {
     let item: MediaItem
     let rank: Int
 
-    @Environment(\\.modelContext) private var modelContext
+    @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
 
     private var savedEntry: LibraryEntry? {
