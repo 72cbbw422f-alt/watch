@@ -415,7 +415,7 @@ private struct MediaSearchRow: View {
 private struct DiscoverPosterTile: View {
     let item: MediaItem
 
-    @Environment(\\.modelContext) private var modelContext
+    @Environment(\.modelContext) private var modelContext
     @Query private var libraryEntries: [LibraryEntry]
 
     private var savedEntry: LibraryEntry? {
