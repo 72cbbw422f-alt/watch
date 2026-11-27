@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WebKit
 
 struct MediaDetailView: View {
     let item: MediaItem
@@ -33,6 +34,7 @@ struct MediaDetailView: View {
     @State private var reviewPage = 1
     @State private var totalReviewPages = 1
     @State private var expandedReviewIDs: Set<String> = []
+    @State private var selectedTrailerID: String?
     @State private var watchProviderResult: TMDBWatchProviderResult?
     @State private var isLoadingWatchProviders = false
     @State private var watchProvidersError: String?
@@ -436,43 +438,38 @@ struct MediaDetailView: View {
                         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
                 }
                 ForEach(tmdbVideos) { video in
-                    if let url = video.playbackURL {
-                        Link(destination: url) {
+                    if video.site == "YouTube" {
+                        Button {
+                            withAnimation(.snappy(duration: 0.25)) {
+                                selectedTrailerID = selectedTrailerID == video.id ? nil : video.id
+                            }
+                        } label: {
                             HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(WatchlistColor.surfaceElevated)
-                                        .frame(width: 76, height: 54)
-                                    Image(systemName: video.type == "Trailer" ? "play.fill" : "video")
-                                        .font(.system(size: 19, weight: .semibold))
-                                        .foregroundStyle(WatchlistColor.accent)
-                                }
+                                Image(systemName: selectedTrailerID == video.id ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 19, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.accent)
+                                    .frame(width: 76, height: 54)
+                                    .background(WatchlistColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 10))
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(video.name)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(WatchlistColor.primaryText)
-                                        .lineLimit(2)
-                                    Text("\(video.type) · \(video.site)\(video.official ? " · Officiell" : "")")
-                                        .font(.system(size: 10))
-                                        .foregroundStyle(WatchlistColor.secondaryText)
+                                    Text(video.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(WatchlistColor.primaryText).lineLimit(2)
+                                    Text("\(video.type) · YouTube · \(video.official ? "Officiell" : "Video")").font(.system(size: 10)).foregroundStyle(WatchlistColor.secondaryText)
                                 }
-                                Spacer(minLength: 0)
-                                Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(WatchlistColor.mutedText)
+                                Spacer()
+                                Image(systemName: "chevron.down").foregroundStyle(WatchlistColor.mutedText)
                             }
                             .padding(12)
-                            .background(
-                                LinearGradient(
-                                    colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            )
-                            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15))
                         }
                         .buttonStyle(.plain)
+                        if selectedTrailerID == video.id {
+                            InlineYouTubePlayer(videoKey: video.key)
+                                .frame(height: 215)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                    } else if let url = video.playbackURL {
+                        Link(video.name, destination: url)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WatchlistColor.accent)
                     }
                 }
                 if let videosError {
@@ -538,8 +535,15 @@ struct MediaDetailView: View {
                         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
                 }
 
-                ForEach(tmdbReviews) { review in
-                    reviewCard(review)
+                if !tmdbReviews.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(tmdbReviews) { review in
+                                reviewCard(review).frame(width: 300)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
                 }
 
                 if let reviewsError {
@@ -1290,15 +1294,39 @@ struct MediaDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
     }
 
+    private func episodeStill(_ episode: TVEpisode) -> some View {
+        Group {
+            if let path = episode.stillPath, !path.isEmpty,
+               let url = URL(string: "https://image.tmdb.org/t/p/w300\(path)") {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image { image.resizable().scaledToFill() }
+                    else { episodeStillPlaceholder }
+                }
+            } else {
+                episodeStillPlaceholder
+            }
+        }
+        .frame(width: 104, height: 62)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private var episodeStillPlaceholder: some View {
+        ZStack {
+            WatchlistColor.surfaceElevated
+            Image(systemName: "play.rectangle")
+                .font(.system(size: 18, weight: .light))
+                .foregroundStyle(WatchlistColor.mutedText)
+        }
+    }
+
     private func episodeRow(_ episode: TVEpisode) -> some View {
         HStack(alignment: .top, spacing: 11) {
-            Text(episode.displayCode)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundStyle(WatchlistColor.accent)
-                .frame(width: 58, alignment: .leading)
-                .padding(.top, 2)
+            episodeStill(episode)
 
             VStack(alignment: .leading, spacing: 4) {
+                Text(episode.displayCode)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundStyle(WatchlistColor.accent)
                 Text(episode.name.isEmpty ? "Avsnitt \(episode.episodeNumber)" : episode.name)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(WatchlistColor.primaryText)
@@ -1636,5 +1664,31 @@ private struct SimilarTitleTile: View {
                 Image(systemName: item.kind == .movie ? "film" : "tv")
                     .foregroundStyle(WatchlistColor.mutedText)
             }
+    }
+}
+
+private struct InlineYouTubePlayer: UIViewRepresentable {
+    let videoKey: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.isOpaque = false
+        webView.backgroundColor = .black
+        webView.scrollView.isScrollEnabled = false
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let safeKey = videoKey.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+        <body style="margin:0;background:#000;overflow:hidden">
+        <iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/\(safeKey)?playsinline=1&rel=0"
+        frameborder="0" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </body></html>
+        """
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com"))
     }
 }
