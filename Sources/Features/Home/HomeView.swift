@@ -554,24 +554,32 @@ struct HomeView: View {
 
         let client = TMDBConfiguration.makeClient()
         let savedIDs = Set(libraryEntries.map(\.stableID))
-        var recommendations: [MediaItem] = []
-        var recommendedIDs = Set<String>()
+        var seedResults: [[MediaItem]] = []
 
         for seed in seeds {
             guard !Task.isCancelled, recommendationRequestID == requestID else { return }
             do {
-                // Preserve TMDB relevance order and prioritize stronger library seeds.
                 let similar = try await client.similarTitles(to: seed.mediaItem)
                 guard !Task.isCancelled, recommendationRequestID == requestID else { return }
-
-                for item in similar where !savedIDs.contains(item.stableID) && item.id > 0 {
-                    guard recommendedIDs.insert(item.stableID).inserted else { continue }
-                    recommendations.append(item)
-                    if recommendations.count == 12 { break }
-                }
+                seedResults.append(similar.filter {
+                    !savedIDs.contains($0.stableID) && $0.id > 0
+                })
             } catch {
                 guard !Task.isCancelled, recommendationRequestID == requestID else { return }
-                continue
+                seedResults.append([])
+            }
+        }
+
+        // Interleave the strongest matches from each seed so one favorite cannot dominate the feed.
+        var recommendations: [MediaItem] = []
+        var recommendedIDs = Set<String>()
+        let longestResult = seedResults.map(\.count).max() ?? 0
+        for index in 0..<longestResult {
+            for results in seedResults where index < results.count {
+                let item = results[index]
+                guard recommendedIDs.insert(item.stableID).inserted else { continue }
+                recommendations.append(item)
+                if recommendations.count == 12 { break }
             }
             if recommendations.count == 12 { break }
         }
