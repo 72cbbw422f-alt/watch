@@ -517,7 +517,7 @@ struct MediaDetailView: View {
                 try modelContext.save()
                 persistenceError = saveError
             } catch {
-                persistenceError = "Titeln kunde inte tas bort från samlingen efter ett sparfel: \(error.localizedDescription)"
+                persistenceError = "Titeln kunde inte läggas till i samlingen efter ett sparfel: \(error.localizedDescription)"
             }
         }
     }
