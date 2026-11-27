@@ -24,7 +24,7 @@ WATCHLIST ska vara en komplett, personlig film- och serietjänst: upptäckt, bib
 - Balansera filmer och serier i alla rekommendationsytor.
 - Sektioner: Fortsätt titta, Pågående serier, Up Next, Ikväll kanske?, Trendande, Populärt, För dig, Dolda pärlor, Nya på streaming, Kommande premiärer och Din lista.
 - Varje hylla ska kunna öppnas via Visa alla till en egen fullständig lista med relevant sortering och filter.
-- Pågående serier ska automatiskt innehålla titlar vars bibliotekstatus är Tittar på.
+- Pågående serier ska automatiskt innehålla titlar vars bibliotekstatus är Tittar på. Up Next ska även omfatta uttryckligen bevakade serier (Bevakar), men inte serier som bara ligger under Vill se.
 - Visa nästa avsnitt, avsnittsdatum och progress där uppgifterna finns.
 - Fortsätt titta ska kunna återuppta rätt serie/avsnitt.
 - Hero och rekommendationshyllor ska länka till detaljsidan.
@@ -119,3 +119,4 @@ Bygg en rik men tydligt strukturerad detaljsida. Undvik en enda oändlig vy; anv
 - Commit: `7fd4a5eb1cb4249ec054e5b1a276b18c71d68d57`.
 - iOS Build #441 startad; simulatorbygget har passerat och enhetstester körs.
 - Tidigare rapporterat fel `default.store` är ännu inte verifierat löst och ska felsökas separat utan risk för användardata.
+\n\n## Senaste status – 2026-11-28\n\n- IPA #140 byggd och verifierad för commit `ae9aaa334c627eda1603b6003019c3102c5a04c1`. Bulkmarkering av säsong skapar historikhändelser utan dubbletter.\n- Up Next på startsidan begränsas nu till serier med status `Tittar på` eller `Bevakar`. Serier som enbart har status `Vill se` ska inte räknas som aktivt följda.\n
