@@ -633,76 +633,12 @@ struct MediaDetailView: View {
                     Spacer()
                     Menu {
                         ForEach(LibraryStatus.allCases) { status in
-                            Button {
-                                let previousStatus = entry.statusRawValue
-                                let previousUpdatedAt = entry.dateUpdated
-                                entry.status = status
-                                do {
-                                    try modelContext.save()
-                                    persistenceError = nil
-                                } catch {
-                                    let saveError = error.localizedDescription
-                                    entry.statusRawValue = previousStatus
-                                    entry.dateUpdated = previousUpdatedAt
-                                    do {
-                                        try modelContext.save()
-                                        persistenceError = saveError
-                                    } catch {
-                                        persistenceError = "Biblioteksstatusen kunde inte återställas: \(error.localizedDescription)"
-                                    }
-                                }
-                            } label: {
-                                Label(status.title, systemImage: status.symbol)
-                            }
-                        }
-                        Button(role: .destructive) {
-                            modelContext.delete(entry)
-                            do {
-                                try modelContext.save()
-                                persistenceError = nil
-                            } catch {
-                                let saveError = error.localizedDescription
-                                modelContext.insert(entry)
-                                do {
-                                    try modelContext.save()
-                                    persistenceError = saveError
-                                } catch {
-                                    persistenceError = "Biblioteksposten kunde inte återställas: \(error.localizedDescription)"
-                                }
-                            }
+                            Menu {
+                    ForEach(LibraryStatus.allCases) { status in
+                        Button {
+                            addToLibrary(status: status)
                         } label: {
-                            Label("Ta bort från bibliotek", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle.fill")
-                            .font(.system(size: 21))
-                            .foregroundStyle(WatchlistColor.secondaryText)
-                    }
-                }
-                .padding(15)
-                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
-                favoriteButton(isFavorite: entry.isFavorite)
-            } else {
-                Button {
-                    let entry = LibraryEntry(item: item)
-                    if item.kind == .television && !televisionSeasons.isEmpty {
-                        entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
-                        entry.nextEpisodeTitle = nextEpisodeToAir?.name
-                        entry.nextEpisodeCode = nextEpisodeToAir?.displayCode
-                        entry.nextEpisodeAirDate = nextEpisodeToAir?.airDate
-                    }
-                    modelContext.insert(entry)
-                    do {
-                        try modelContext.save()
-                        persistenceError = nil
-                    } catch {
-                        let saveError = error.localizedDescription
-                        modelContext.delete(entry)
-                        do {
-                            try modelContext.save()
-                            persistenceError = saveError
-                        } catch {
-                            persistenceError = "Biblioteksposten kunde inte återställas: \(error.localizedDescription)"
+                            Label(status.title, systemImage: status.symbol)
                         }
                     }
                 } label: {
@@ -713,11 +649,35 @@ struct MediaDetailView: View {
                         .padding(.vertical, 15)
                         .background(WatchlistColor.accent, in: RoundedRectangle(cornerRadius: 15))
                 }
-                .buttonStyle(.plain)
                 favoriteButton(isFavorite: false)
             }
         }
         .padding(.horizontal, 20)
+    }
+
+
+    private func addToLibrary(status: LibraryStatus) {
+        let entry = LibraryEntry(item: item, status: status)
+        if item.kind == .television && !televisionSeasons.isEmpty {
+            entry.episodeTotalCount = televisionSeasons.reduce(0) { $0 + $1.episodeCount }
+            entry.nextEpisodeTitle = nextEpisodeToAir?.name
+            entry.nextEpisodeCode = nextEpisodeToAir?.displayCode
+            entry.nextEpisodeAirDate = nextEpisodeToAir?.airDate
+        }
+        modelContext.insert(entry)
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            modelContext.delete(entry)
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Biblioteksposten kunde inte återställas: \\(error.localizedDescription)"
+            }
+        }
     }
 
     @ViewBuilder
