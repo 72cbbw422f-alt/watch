@@ -102,7 +102,11 @@ struct LibraryView: View {
                     mediaKindFilters
                     statusFilters
                     if filteredEntries.isEmpty {
-                        emptyState
+                        if entries.isEmpty {
+                            emptyState
+                        } else {
+                            noResultsState
+                        }
                     } else if usesPosterGrid {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], alignment: .leading, spacing: 18) {
                             ForEach(filteredEntries) { entry in
@@ -321,6 +325,37 @@ struct LibraryView: View {
                 .overlay(Capsule().stroke(isSelected ? WatchlistColor.accent.opacity(0.38) : WatchlistColor.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    private var noResultsState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 35, weight: .light))
+                .foregroundStyle(WatchlistColor.accent)
+            Text("Inga titlar hittades")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+            Text("Prova att ändra sökning eller filter. Dina sparade titlar finns kvar i biblioteket.")
+                .font(.system(size: 12))
+                .foregroundStyle(WatchlistColor.secondaryText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+            Button {
+                searchText = ""
+                selectedStatus = nil
+                favoritesOnly = false
+                selectedKind = .all
+            } label: {
+                Text("Rensa sökning och filter")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                    .padding(.top, 4)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 38)
+        .padding(.vertical, 65)
     }
 
     private var emptyState: some View {
