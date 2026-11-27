@@ -100,6 +100,33 @@ actor TMDBClient: MediaSearching {
         return response.results
     }
 
+    func hiddenGems() async throws -> [MediaItem] {
+        async let movies: TMDBPagedMediaResponse = fetch(
+            path: "/discover/movie",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "sort_by", value: "vote_average.desc"),
+                URLQueryItem(name: "vote_count.gte", value: "150"),
+                URLQueryItem(name: "vote_average.gte", value: "7.5"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        async let series: TMDBPagedMediaResponse = fetch(
+            path: "/discover/tv",
+            as: TMDBPagedMediaResponse.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE"),
+                URLQueryItem(name: "sort_by", value: "vote_average.desc"),
+                URLQueryItem(name: "vote_count.gte", value: "150"),
+                URLQueryItem(name: "vote_average.gte", value: "7.5"),
+                URLQueryItem(name: "page", value: "1")
+            ]
+        )
+        let results = try await (movies.results + series.results)
+        return results.sorted { $0.voteAverage > $1.voteAverage }
+    }
+
     func similarTitles(to item: MediaItem) async throws -> [MediaItem] {
         let response = try await fetch(
             path: "/\(item.kind.tmdbPath)/\(item.id)/similar",
