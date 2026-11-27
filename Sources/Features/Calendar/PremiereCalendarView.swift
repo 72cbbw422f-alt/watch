@@ -147,9 +147,8 @@ struct PremiereCalendarView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(!hasEvents)
-                        .opacity(hasEvents ? 1 : 0.42)
-                        .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (hasEvents ? ", premiärer" : ""))
+                        .opacity(hasEvents ? 1 : 0.68)
+                        .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (hasEvents ? ", premiärer" : ", inga premiärer"))
                     } else {
                         Color.clear.frame(height: 34)
                     }
