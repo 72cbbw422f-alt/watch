@@ -882,8 +882,13 @@ struct HomeView: View {
             }
             Spacer()
             Text(trailing)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 9, weight: .bold))
+                .tracking(0.65)
                 .foregroundStyle(WatchlistColor.secondaryText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(WatchlistColor.surface, in: Capsule())
+                .overlay(Capsule().stroke(WatchlistColor.hairline, lineWidth: 1))
         }
         .padding(.horizontal, 20)
     }
