@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var recommendationRequestID = UUID()
     @State private var homeUpNextItems: [HomeUpNextItem] = []
     @State private var isLoadingHomeUpNext = false
+    @State private var homeUpNextRequestID = UUID()
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
 
@@ -334,8 +335,14 @@ struct HomeView: View {
             return
         }
 
+        let requestID = UUID()
+        homeUpNextRequestID = requestID
         isLoadingHomeUpNext = true
-        defer { isLoadingHomeUpNext = false }
+        defer {
+            if homeUpNextRequestID == requestID {
+                isLoadingHomeUpNext = false
+            }
+        }
         let client = TMDBConfiguration.makeClient()
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
@@ -368,7 +375,7 @@ struct HomeView: View {
             }
         }
 
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, homeUpNextRequestID == requestID else { return }
         homeUpNextItems = upcoming.sorted { $0.airDate < $1.airDate }
     }
 
