@@ -53,7 +53,7 @@ actor TMDBClient: MediaSearching {
                 URLQueryItem(name: "page", value: "1")
             ]
         )
-        return response.results
+        return allowed(response.results)
     }
 
 
@@ -76,7 +76,7 @@ actor TMDBClient: MediaSearching {
                 URLQueryItem(name: "page", value: "1")
             ]
         )
-        return response.results
+        return allowed(response.results)
     }
 
     func upcomingTelevisionPremieres(from date: Date = .now) async throws -> [MediaItem] {
@@ -97,7 +97,7 @@ actor TMDBClient: MediaSearching {
                 URLQueryItem(name: "page", value: "1")
             ]
         )
-        return response.results
+        return allowed(response.results)
     }
 
     func hiddenGems() async throws -> [MediaItem] {
@@ -127,7 +127,7 @@ actor TMDBClient: MediaSearching {
         )
         let moviePage = try await movies
         let seriesPage = try await series
-        return (moviePage.results + seriesPage.results).sorted { $0.voteAverage > $1.voteAverage }
+        return allowed(moviePage.results + seriesPage.results).sorted { $0.voteAverage > $1.voteAverage }
     }
 
     func similarTitles(to item: MediaItem) async throws -> [MediaItem] {
@@ -139,7 +139,7 @@ actor TMDBClient: MediaSearching {
                 URLQueryItem(name: "page", value: "1")
             ]
         )
-        return response.results.filter { $0.id != item.id }
+        return allowed(response.results.filter { $0.id != item.id })
     }
 
 
@@ -258,13 +258,17 @@ actor TMDBClient: MediaSearching {
 
         do {
             let payload = try JSONDecoder().decode(TMDBSearchResponse.self, from: data)
-            return payload.results.compactMap { result in
+            return allowed(payload.results.compactMap { result in
                 guard let kind = result.mediaKind else { return nil }
                 return result.asMediaItem(kind: kind)
-            }
+            })
         } catch {
             throw TMDBError.decodingFailed
         }
+    }
+
+    private func allowed(_ items: [MediaItem]) -> [MediaItem] {
+        items.filter(\\.isAllowedForDiscovery)
     }
 
     private func search(query: String, kind: MediaKind) async throws -> [MediaItem] {
@@ -301,7 +305,7 @@ actor TMDBClient: MediaSearching {
 
         do {
             let payload = try JSONDecoder().decode(TMDBSearchResponse.self, from: data)
-            return payload.results.map { $0.asMediaItem(kind: kind) }
+            return allowed(payload.results.map { $0.asMediaItem(kind: kind) })
         } catch {
             throw TMDBError.decodingFailed
         }
@@ -327,6 +331,8 @@ private struct TMDBSearchResult: Decodable {
     let firstAirDate: String?
     let voteAverage: Double?
     let mediaType: String?
+    let originalLanguage: String?
+    let isAdult: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, title, name, overview
@@ -336,6 +342,8 @@ private struct TMDBSearchResult: Decodable {
         case firstAirDate = "first_air_date"
         case voteAverage = "vote_average"
         case mediaType = "media_type"
+        case originalLanguage = "original_language"
+        case isAdult = "adult"
     }
 
     var mediaKind: MediaKind? {
@@ -355,7 +363,9 @@ private struct TMDBSearchResult: Decodable {
             posterPath: posterPath,
             backdropPath: backdropPath,
             releaseDate: kind == .movie ? releaseDate : firstAirDate,
-            voteAverage: voteAverage ?? 0
+            voteAverage: voteAverage ?? 0,
+            originalLanguage: originalLanguage,
+            isAdult: isAdult ?? false
         )
     }
 }
