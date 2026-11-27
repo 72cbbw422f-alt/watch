@@ -66,11 +66,14 @@ struct HomeView: View {
     private var savedStableIDs: Set<String> { Set(libraryEntries.map(\.stableID)) }
 
     private var tonightItems: [MediaItem] {
-        // Keep the casual discovery shelf separate from library-based recommendations.
+        // A short, immediate shortlist; the remaining titles can populate the mixed shelf.
         var seen = Set(personalRecommendations.map(\.stableID))
+        if let featuredID = trendingItems.first?.stableID {
+            seen.insert(featuredID)
+        }
         return trendingItems.filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
-        }.prefix(10).map { $0 }
+        }.prefix(8).map { $0 }
     }
 
     private var hiddenGems: [MediaItem] {
@@ -82,11 +85,14 @@ struct HomeView: View {
     }
 
     private var watchlistMix: [MediaItem] {
-        // Keep this carousel distinct from every neighboring discovery shelf.
+        // Fill this shelf with titles not already shown in the hero or adjacent shelves.
         var seen = Set(tonightItems.map(\.stableID))
         seen.formUnion(personalRecommendations.map(\.stableID))
         seen.formUnion(hiddenGems.map(\.stableID))
-        return (hiddenGems + trendingItems).filter {
+        if let featuredID = trendingItems.first?.stableID {
+            seen.insert(featuredID)
+        }
+        return trendingItems.filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(12).map { $0 }
     }
