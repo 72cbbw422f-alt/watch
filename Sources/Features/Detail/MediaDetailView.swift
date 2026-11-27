@@ -42,11 +42,11 @@ struct MediaDetailView: View {
             WatchlistColor.background.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 25) {
                     artworkHeader
                     metadata
-                    watchProvidersSection
                     libraryActions
+                    watchProvidersSection
                     movieHistorySection
                     PersonalReviewSection(
                         rating: libraryEntry?.personalRating,
@@ -116,39 +116,84 @@ struct MediaDetailView: View {
                     backdropPlaceholder
                 }
             }
-            .frame(height: 390)
             .frame(maxWidth: .infinity)
+            .frame(height: 440)
             .clipped()
 
             LinearGradient(
                 stops: [
-                    .init(color: .black.opacity(0.05), location: 0),
-                    .init(color: .black.opacity(0.18), location: 0.42),
+                    .init(color: .black.opacity(0.10), location: 0),
+                    .init(color: .black.opacity(0.12), location: 0.34),
+                    .init(color: .black.opacity(0.72), location: 0.68),
                     .init(color: WatchlistColor.background, location: 1)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
-            HStack(alignment: .bottom, spacing: 16) {
-                poster
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(item.kind.displayName.uppercased())
-                        .font(.system(size: 9, weight: .bold))
-                        .tracking(1.8)
-                        .foregroundStyle(WatchlistColor.accent)
-                    Text(item.title)
-                        .font(.system(size: 27, weight: .bold, design: .rounded))
-                        .tracking(-0.7)
-                        .foregroundStyle(WatchlistColor.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 15) {
+                HStack(alignment: .bottom, spacing: 16) {
+                    poster
+                        .frame(width: 126, height: 188)
+                        .shadow(color: .black.opacity(0.5), radius: 22, y: 10)
+
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text(item.kind == .movie ? "FILM" : "TV-SERIE")
+                            .font(.system(size: 9, weight: .heavy))
+                            .tracking(2.4)
+                            .foregroundStyle(WatchlistColor.accent)
+
+                        Text(item.title)
+                            .font(.system(size: 28, weight: .bold, design: .serif))
+                            .tracking(-0.65)
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(4)
+                            .minimumScaleFactor(0.82)
+
+                        if item.voteAverage > 0 {
+                            HStack(spacing: 6) {
+                                Image(systemName: "star.fill")
+                                    .foregroundStyle(WatchlistColor.accent)
+                                Text(String(format: "%.1f", item.voteAverage))
+                                    .foregroundStyle(.white)
+                                Text("TMDB")
+                                    .foregroundStyle(.white.opacity(0.55))
+                            }
+                            .font(.system(size: 11, weight: .bold))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Spacer(minLength: 0)
+
+                HStack(spacing: 8) {
+                    if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                        heroMetadataChip(String(year))
+                    }
+                    heroMetadataChip(item.kind == .movie ? "LÅNGFILM" : "SERIE")
+                    if item.voteAverage > 0 {
+                        heroMetadataChip("BETYG \(String(format: "%.1f", item.voteAverage))")
+                    }
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 5)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 390)
+        .frame(height: 440)
+        .frame(maxWidth: .infinity)
+        .clipped()
+    }
+
+    private func heroMetadataChip(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 8, weight: .bold))
+            .tracking(1)
+            .foregroundStyle(.white.opacity(0.88))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.white.opacity(0.10), in: Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 1))
     }
 
     @ViewBuilder
