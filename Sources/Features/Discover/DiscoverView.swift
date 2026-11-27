@@ -415,6 +415,13 @@ private struct MediaSearchRow: View {
 private struct DiscoverPosterTile: View {
     let item: MediaItem
 
+    @Environment(\\.modelContext) private var modelContext
+    @Query private var libraryEntries: [LibraryEntry]
+
+    private var savedEntry: LibraryEntry? {
+        libraryEntries.first { $0.stableID == item.stableID }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Group {
@@ -449,6 +456,40 @@ private struct DiscoverPosterTile: View {
             .foregroundStyle(WatchlistColor.secondaryText)
         }
         .frame(width: 126, alignment: .leading)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                let entry = savedEntry ?? LibraryEntry(item: item)
+                if savedEntry == nil { modelContext.insert(entry) }
+                entry.isFavorite.toggle()
+                entry.dateUpdated = .now
+                try? modelContext.save()
+            } label: {
+                Label(savedEntry?.isFavorite == true ? "Ta bort favorit" : "Lägg till i favoriter",
+                      systemImage: savedEntry?.isFavorite == true ? "heart.slash" : "heart")
+            }
+
+            Menu("Ändra status") {
+                ForEach(LibraryStatus.allCases) { status in
+                    Button {
+                        let entry = savedEntry ?? LibraryEntry(item: item, status: status)
+                        if savedEntry == nil { modelContext.insert(entry) }
+                        entry.status = status
+                        try? modelContext.save()
+                    } label: {
+                        Label(status.title, systemImage: status.symbol)
+                    }
+                }
+            }
+
+            if savedEntry != nil {
+                Button(role: .destructive) {
+                    if let savedEntry { modelContext.delete(savedEntry); try? modelContext.save() }
+                } label: {
+                    Label("Ta bort från min lista", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private var placeholder: some View {
