@@ -77,6 +77,15 @@ struct WatchStatsView: View {
 
     private var maxMonthlyCount: Int { max(monthlyCounts.max() ?? 0, 1) }
 
+    private var mostActiveMonth: String? {
+        guard let index = WatchStatisticsCalculator.mostActiveMonthIndex(monthlyCounts) else { return nil }
+        return monthSymbols[index].capitalized
+    }
+
+    private var averagePerActiveMonth: Double {
+        WatchStatisticsCalculator.averagePerActiveMonth(monthlyCounts)
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -87,6 +96,7 @@ struct WatchStatsView: View {
                         emptyState
                     } else {
                         metrics
+                        viewingInsights
                         monthlySection
                         topSeriesSection
                         topMoviesSection
@@ -164,6 +174,42 @@ struct WatchStatsView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var viewingInsights: some View {
+        HStack(spacing: 10) {
+            insight(
+                title: "AKTIVAST MÅNAD",
+                value: mostActiveMonth ?? "—",
+                detail: mostActiveMonth == nil ? "Ingen data ännu" : "\(monthlyCounts.max() ?? 0) visningar"
+            )
+            insight(
+                title: "SNITT / AKTIV MÅNAD",
+                value: String(format: "%.1f", averagePerActiveMonth),
+                detail: "Filmvisningar + avsnitt"
+            )
+        }
+    }
+
+    private func insight(title: String, value: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 8, weight: .bold))
+                .tracking(0.8)
+                .foregroundStyle(WatchlistColor.mutedText)
+            Text(value)
+                .font(.system(size: 19, weight: .semibold, design: .rounded))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(detail)
+                .font(.system(size: 9))
+                .foregroundStyle(WatchlistColor.secondaryText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var monthlySection: some View {
