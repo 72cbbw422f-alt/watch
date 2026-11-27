@@ -65,6 +65,7 @@ final class LibraryEntry {
 
 enum LibraryStatus: String, CaseIterable, Identifiable {
     case wantToWatch
+    case monitoring
     case watching
     case watched
 
@@ -73,6 +74,7 @@ enum LibraryStatus: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .wantToWatch: "Vill se"
+        case .monitoring: "Bevakar"
         case .watching: "Tittar på"
         case .watched: "Sedd"
         }
@@ -81,6 +83,7 @@ enum LibraryStatus: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .wantToWatch: "bookmark"
+        case .monitoring: "bell.badge"
         case .watching: "play.circle"
         case .watched: "checkmark.circle"
         }
