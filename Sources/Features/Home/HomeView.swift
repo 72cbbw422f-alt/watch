@@ -90,7 +90,7 @@ struct HomeView: View {
 
             GeometryReader { geometry in
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 30) {
+                    VStack(alignment: .leading, spacing: 26) {
                         header
                         featured
                         quickFilters
@@ -492,35 +492,37 @@ struct HomeView: View {
                 .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
             } else {
-                VStack(spacing: 10) {
-                    ForEach(inProgressEntries.prefix(3)) { entry in
-                        NavigationLink(value: entry.mediaItem) {
-                            HStack(spacing: 12) {
-                                LibraryHomePoster(entry: entry)
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(entry.title)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(WatchlistColor.primaryText)
-                                        .lineLimit(1)
-                                    Text(entry.mediaKind == "movie" ? "FILM" : "SERIE")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .tracking(1)
-                                        .foregroundStyle(WatchlistColor.mutedText)
-                                    Label("Tittar på", systemImage: "play.circle.fill")
-                                        .font(.system(size: 10, weight: .medium))
-                                        .foregroundStyle(WatchlistColor.accent)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(inProgressEntries.prefix(8)) { entry in
+                            NavigationLink(value: entry.mediaItem) {
+                                HStack(spacing: 10) {
+                                    LibraryHomePoster(entry: entry)
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text(entry.title)
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundStyle(WatchlistColor.primaryText)
+                                            .lineLimit(2)
+                                            .multilineTextAlignment(.leading)
+                                        Text(entry.mediaKind == "movie" ? "FILM" : "SERIE")
+                                            .font(.system(size: 8, weight: .bold))
+                                            .tracking(1)
+                                            .foregroundStyle(WatchlistColor.mutedText)
+                                        Label("Tittar på", systemImage: "play.circle.fill")
+                                            .font(.system(size: 9, weight: .medium))
+                                            .foregroundStyle(WatchlistColor.accent)
+                                    }
+                                    Spacer(minLength: 0)
                                 }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(WatchlistColor.mutedText)
+                                .padding(10)
+                                .frame(width: 205, height: 86, alignment: .leading)
+                                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
                             }
-                            .padding(10)
-                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15))
-                            .overlay(RoundedRectangle(cornerRadius: 15).stroke(WatchlistColor.hairline, lineWidth: 1))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 20)
                 }
             }
         }
