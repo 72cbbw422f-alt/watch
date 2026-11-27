@@ -250,41 +250,47 @@ struct HomeView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
                     } else {
-                        VStack(spacing: 9) {
-                            ForEach(homeUpNextItems) { upcoming in
-                                NavigationLink(value: upcoming.series) {
-                                    HStack(spacing: 11) {
-                                        LibraryHomePoster(entry: upcoming.entry)
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(upcoming.entry.title)
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundStyle(WatchlistColor.primaryText)
-                                                .lineLimit(1)
-                                            Text("\(upcoming.episode.displayCode) · \(upcoming.episode.name)")
-                                                .font(.system(size: 10, weight: .medium))
-                                                .foregroundStyle(WatchlistColor.secondaryText)
-                                                .lineLimit(1)
-                                            Text("Släpps \(upcoming.airDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.abbreviated)).capitalized)")
-                                                .font(.system(size: 9, weight: .semibold))
-                                                .foregroundStyle(WatchlistColor.accent)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(alignment: .top, spacing: 10) {
+                                ForEach(homeUpNextItems) { upcoming in
+                                    NavigationLink(value: upcoming.series) {
+                                        HStack(spacing: 10) {
+                                            LibraryHomePoster(entry: upcoming.entry)
+                                                .frame(width: 48, height: 66)
+                                            VStack(alignment: .leading, spacing: 5) {
+                                                Text(upcoming.entry.title)
+                                                    .font(.system(size: 11, weight: .bold))
+                                                    .foregroundStyle(WatchlistColor.primaryText)
+                                                    .lineLimit(1)
+                                                Text(upcoming.episode.displayCode)
+                                                    .font(.system(size: 9, weight: .bold))
+                                                    .tracking(0.6)
+                                                    .foregroundStyle(WatchlistColor.accent)
+                                                Text(upcoming.episode.name)
+                                                    .font(.system(size: 10, weight: .medium))
+                                                    .foregroundStyle(WatchlistColor.secondaryText)
+                                                    .lineLimit(2)
+                                                Text(upcoming.airDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.abbreviated)).capitalized)
+                                                    .font(.system(size: 9, weight: .semibold))
+                                                    .foregroundStyle(WatchlistColor.accent)
+                                                    .lineLimit(1)
+                                            }
+                                            Spacer(minLength: 0)
                                         }
-                                        Spacer(minLength: 0)
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundStyle(WatchlistColor.mutedText)
+                                        .padding(10)
+                                        .frame(width: 225, height: 88, alignment: .leading)
+                                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
                                     }
-                                    .padding(9)
-                                    .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
             }
         }
-        .padding(.horizontal, 20)
     }
 
     @MainActor
