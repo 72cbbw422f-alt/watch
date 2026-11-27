@@ -92,13 +92,30 @@ actor TMDBClient: MediaSearching {
 
     func reviews(for item: MediaItem, page: Int = 1) async throws -> TMDBReviewPage {
         try await fetch(
-            path: "/\\(item.kind.tmdbPath)/\\(item.id)/reviews",
+            path: "/\(item.kind.tmdbPath)/\(item.id)/reviews",
             as: TMDBReviewPage.self,
             queryItems: [
                 URLQueryItem(name: "language", value: "en-US"),
                 URLQueryItem(name: "page", value: String(max(1, page)))
             ]
         )
+    }
+
+
+    func videos(for item: MediaItem) async throws -> [TMDBVideo] {
+        let response = try await fetch(
+            path: "/\(item.kind.tmdbPath)/\(item.id)/videos",
+            as: TMDBVideoPage.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "sv-SE")
+            ]
+        )
+        return response.results.sorted { lhs, rhs in
+            if lhs.isPreferredTrailer != rhs.isPreferredTrailer {
+                return lhs.isPreferredTrailer
+            }
+            return lhs.publishedAt > rhs.publishedAt
+        }
     }
 
     func televisionDetails(id: Int) async throws -> TVSeriesDetails {
@@ -308,5 +325,40 @@ struct TMDBReview: Decodable, Identifiable, Sendable {
 
     struct AuthorDetails: Decodable, Sendable {
         let rating: Double?
+    }
+}
+
+
+struct TMDBVideoPage: Decodable, Sendable {
+    let results: [TMDBVideo]
+}
+
+struct TMDBVideo: Decodable, Identifiable, Sendable {
+    let id: String
+    let name: String
+    let key: String
+    let site: String
+    let type: String
+    let official: Bool
+    let publishedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, key, site, type, official
+        case publishedAt = "published_at"
+    }
+
+    var isPreferredTrailer: Bool {
+        type == "Trailer" && site == "YouTube"
+    }
+
+    var playbackURL: URL? {
+        switch site {
+        case "YouTube":
+            URL(string: "https://www.youtube.com/watch?v=\(key)")
+        case "Vimeo":
+            URL(string: "https://vimeo.com/\(key)")
+        default:
+            nil
+        }
     }
 }
