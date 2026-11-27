@@ -844,24 +844,36 @@ struct MediaDetailView: View {
     @ViewBuilder
     private var movieHistorySection: some View {
         if item.kind == .movie {
+            let viewingEvents = movieWatchEvents
+                .filter { $0.tmdbID == item.id }
+                .sorted { $0.watchedAt > $1.watchedAt }
+            let viewingCount = viewingEvents.count
+
             VStack(alignment: .leading, spacing: 10) {
                 sectionLabel("TITTARHISTORIK")
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(movieWatchEvents.filter { $0.tmdbID == item.id }.count == 0
-                             ? "Har du sett filmen?"
-                             : "Sedd \(movieWatchEvents.filter { $0.tmdbID == item.id }.count) gånger")
+                        Text(viewingCount == 0 ? "Har du sett filmen?" : "Sedd \(viewingCount) gånger")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(WatchlistColor.primaryText)
+                        if let latestViewing = viewingEvents.first {
+                            Text("Senast sedd \(latestViewing.watchedAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day().month(.abbreviated).year()))")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(WatchlistColor.accent)
+                        } else {
+                            Text("Ingen visning registrerad ännu.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(WatchlistColor.secondaryText)
+                        }
                         Text("Varje registrering sparas separat, även omtittningar.")
                             .font(.system(size: 10))
                             .foregroundStyle(WatchlistColor.secondaryText)
                     }
-                    Spacer()
+                    Spacer(minLength: 4)
                     Button {
                         registerMovieViewing()
                     } label: {
-                        Label("Registrera", systemImage: "checkmark")
+                        Label(viewingCount == 0 ? "Registrera" : "Omtittning", systemImage: "checkmark")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(WatchlistColor.background)
                             .padding(.horizontal, 13)
@@ -871,7 +883,15 @@ struct MediaDetailView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(14)
-                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                .background(
+                    LinearGradient(
+                        colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
             }
             .padding(.horizontal, 20)
         }
