@@ -359,13 +359,15 @@ struct MediaDetailView: View {
                                     }
                                 }
                                 .frame(width: 48, height: 48)
-                                .clipShape(RoundedRectangle(cornerRadius: 11))
+                                .background(Color.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
                                 Text(provider.providerName)
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundStyle(WatchlistColor.secondaryText)
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
                                     .lineLimit(2)
                                     .multilineTextAlignment(.center)
-                                    .frame(width: 66)
+                                    .frame(width: 66, height: 25, alignment: .top)
                             }
                         }
                     }
@@ -449,8 +451,16 @@ struct MediaDetailView: View {
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundStyle(WatchlistColor.mutedText)
                             }
-                            .padding(11)
-                            .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 13))
+                            .padding(12)
+                            .background(
+                                LinearGradient(
+                                    colors: [WatchlistColor.surfaceElevated, WatchlistColor.surface],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
                         }
                         .buttonStyle(.plain)
                     }
