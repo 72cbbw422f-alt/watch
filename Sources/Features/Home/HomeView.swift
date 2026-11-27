@@ -82,9 +82,10 @@ struct HomeView: View {
     }
 
     private var watchlistMix: [MediaItem] {
-        // Keep this carousel distinct from the personal and "Ikväll kanske?" shelves.
+        // Keep this carousel distinct from every neighboring discovery shelf.
         var seen = Set(tonightItems.map(\.stableID))
         seen.formUnion(personalRecommendations.map(\.stableID))
+        seen.formUnion(hiddenGems.map(\.stableID))
         return (hiddenGems + trendingItems).filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(12).map { $0 }
