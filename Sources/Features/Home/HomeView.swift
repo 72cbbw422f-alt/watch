@@ -364,44 +364,98 @@ struct HomeView: View {
                 isLoadingHomeUpNext = false
             }
         }
+
         let client = TMDBConfiguration.makeClient()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
         let today = calendar.startOfDay(for: .now)
-        var upcoming: [HomeUpNextItem] = []
+        let seeds = series.prefix(40).map {
+            HomeUpNextSeed(stableID: $0.stableID, tmdbID: $0.tmdbID)
+        }
+        let watchedEpisodeKeys = Set(episodeProgressEntries.compactMap { progress -> String? in
+            guard progress.isWatched else { return nil }
+            return "\(progress.seriesID):\(progress.seasonNumber):\(progress.episodeNumber)"
+        })
 
-        for entry in series.prefix(40) {
-            guard !Task.isCancelled else { return }
-            do {
-                let details = try await client.televisionDetails(id: entry.tmdbID)
-                guard let last = details.lastEpisodeToAir,
-                      let next = details.nextEpisodeToAir,
-                      let date = homePremiereDate(from: next.airDate),
-                      date >= today,
-                      episodeProgressEntries.contains(where: {
-                          $0.seriesID == entry.tmdbID &&
-                          $0.seasonNumber == last.seasonNumber &&
-                          $0.episodeNumber == last.episodeNumber &&
-                          $0.isWatched
-                      }) else { continue }
+        var candidates: [HomeUpNextCandidate] = []
+        let concurrencyLimit = min(6, seeds.count)
 
-                upcoming.append(HomeUpNextItem(
-                    entry: entry,
-                    series: entry.mediaItem,
-                    episode: next,
-                    airDate: date
-                ))
-            } catch {
-                // A single unavailable series must not prevent the rest from loading.
-                continue
+        await withTaskGroup(of: HomeUpNextCandidate?.self) { group in
+            var nextSeedIndex = 0
+
+            for _ in 0..<concurrencyLimit {
+                let seed = seeds[nextSeedIndex]
+                nextSeedIndex += 1
+                group.addTask {
+                    await Self.fetchHomeUpNextCandidate(
+                        for: seed,
+                        client: client,
+                        watchedEpisodeKeys: watchedEpisodeKeys,
+                        today: today
+                    )
+                }
+            }
+
+            while let candidate = await group.next() {
+                if let candidate {
+                    candidates.append(candidate)
+                }
+
+                guard nextSeedIndex < seeds.count else { continue }
+                let seed = seeds[nextSeedIndex]
+                nextSeedIndex += 1
+                group.addTask {
+                    await Self.fetchHomeUpNextCandidate(
+                        for: seed,
+                        client: client,
+                        watchedEpisodeKeys: watchedEpisodeKeys,
+                        today: today
+                    )
+                }
             }
         }
 
         guard !Task.isCancelled, homeUpNextRequestID == requestID else { return }
-        homeUpNextItems = upcoming.sorted { $0.airDate < $1.airDate }
+        let entriesByID = Dictionary(uniqueKeysWithValues: series.map { ($0.stableID, $0) })
+        homeUpNextItems = candidates.compactMap { candidate in
+            guard let entry = entriesByID[candidate.stableID] else { return nil }
+            return HomeUpNextItem(
+                entry: entry,
+                series: entry.mediaItem,
+                episode: candidate.episode,
+                airDate: candidate.airDate
+            )
+        }.sorted { $0.airDate < $1.airDate }
     }
 
-    private func homePremiereDate(from value: String?) -> Date? {
+    private static func fetchHomeUpNextCandidate(
+        for seed: HomeUpNextSeed,
+        client: TMDBClient,
+        watchedEpisodeKeys: Set<String>,
+        today: Date
+    ) async -> HomeUpNextCandidate? {
+        do {
+            let details = try await client.televisionDetails(id: seed.tmdbID)
+            guard let last = details.lastEpisodeToAir,
+                  let next = details.nextEpisodeToAir,
+                  let date = homePremiereDate(from: next.airDate),
+                  date >= today else { return nil }
+
+            let watchedKey = "\(seed.tmdbID):\(last.seasonNumber):\(last.episodeNumber)"
+            guard watchedEpisodeKeys.contains(watchedKey) else { return nil }
+
+            return HomeUpNextCandidate(
+                stableID: seed.stableID,
+                episode: next,
+                airDate: date
+            )
+        } catch {
+            // A single unavailable series must not prevent the rest from loading.
+            return nil
+        }
+    }
+
+    private static func homePremiereDate(from value: String?) -> Date? {
         guard let value else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -943,6 +997,17 @@ private struct PremiereRow: View {
         }
         .padding(.vertical, 14)
     }
+}
+
+private struct HomeUpNextSeed: Sendable {
+    let stableID: String
+    let tmdbID: Int
+}
+
+private struct HomeUpNextCandidate: Sendable {
+    let stableID: String
+    let episode: TVNextEpisode
+    let airDate: Date
 }
 
 private struct HomeUpNextItem: Identifiable {
