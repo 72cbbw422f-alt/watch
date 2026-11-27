@@ -16,6 +16,15 @@ struct HomeView: View {
 
     private var inProgressEntries: [LibraryEntry] { libraryEntries.filter { $0.status == .watching } }
 
+    private var followedSeries: [LibraryEntry] {
+        libraryEntries.filter { $0.mediaKind == MediaKind.television.rawValue && $0.status != .watched }
+    }
+
+    private var upNextSeedKey: String {
+        followedSeries.map(\\.stableID).sorted().joined(separator: "|") + "#" +
+        episodeProgressEntries.map { "\\($0.stableID):\\($0.isWatched)" }.sorted().joined(separator: "|")
+    }
+
     private var recommendationSeedKey: String {
         libraryEntries
             .filter { $0.isFavorite || ($0.personalRating ?? 0) >= 8 }
@@ -52,6 +61,7 @@ struct HomeView: View {
                         header
                         featured
                         quickFilters
+                        homeUpNext
                         continueWatching
                         recommendations
                         trending
@@ -75,6 +85,9 @@ struct HomeView: View {
         }
         .task(id: recommendationSeedKey) {
             await loadPersonalRecommendations()
+        }
+        .task(id: upNextSeedKey) {
+            await loadHomeUpNext()
         }
     }
 
@@ -224,6 +237,111 @@ struct HomeView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
+    }
+
+    private var homeUpNext: some View {
+        Group {
+            if isLoadingHomeUpNext || !homeUpNextItems.isEmpty {
+                VStack(alignment: .leading, spacing: 13) {
+                    sectionHeading("Up Next", eyebrow: "NÄSTA AVSNITT I DINA SERIER", trailing: "\(homeUpNextItems.count) KOMMANDE")
+                    if isLoadingHomeUpNext && homeUpNextItems.isEmpty {
+                        ProgressView()
+                            .tint(WatchlistColor.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                    } else {
+                        VStack(spacing: 9) {
+                            ForEach(homeUpNextItems) { upcoming in
+                                NavigationLink(value: upcoming.series) {
+                                    HStack(spacing: 11) {
+                                        LibraryHomePoster(entry: upcoming.entry)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(upcoming.entry.title)
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundStyle(WatchlistColor.primaryText)
+                                                .lineLimit(1)
+                                            Text("\(upcoming.episode.displayCode) · \(upcoming.episode.name)")
+                                                .font(.system(size: 10, weight: .medium))
+                                                .foregroundStyle(WatchlistColor.secondaryText)
+                                                .lineLimit(1)
+                                            Text("Släpps \(upcoming.airDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.abbreviated)).capitalized)")
+                                                .font(.system(size: 9, weight: .semibold))
+                                                .foregroundStyle(WatchlistColor.accent)
+                                        }
+                                        Spacer(minLength: 0)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(WatchlistColor.mutedText)
+                                    }
+                                    .padding(9)
+                                    .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @MainActor
+    private func loadHomeUpNext() async {
+        let series = followedSeries
+        guard TMDBConfiguration.isConfigured, !series.isEmpty else {
+            homeUpNextItems = []
+            isLoadingHomeUpNext = false
+            return
+        }
+
+        isLoadingHomeUpNext = true
+        defer { isLoadingHomeUpNext = false }
+        let client = TMDBConfiguration.makeClient()
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        var upcoming: [HomeUpNextItem] = []
+
+        for entry in series.prefix(40) {
+            guard !Task.isCancelled else { return }
+            do {
+                let details = try await client.televisionDetails(id: entry.tmdbID)
+                guard let last = details.lastEpisodeToAir,
+                      let next = details.nextEpisodeToAir,
+                      let date = homePremiereDate(from: next.airDate),
+                      date >= today,
+                      episodeProgressEntries.contains(where: {
+                          $0.seriesID == entry.tmdbID &&
+                          $0.seasonNumber == last.seasonNumber &&
+                          $0.episodeNumber == last.episodeNumber &&
+                          $0.isWatched
+                      }) else { continue }
+
+                upcoming.append(HomeUpNextItem(
+                    entry: entry,
+                    series: entry.mediaItem,
+                    episode: next,
+                    airDate: date
+                ))
+            } catch {
+                // A single unavailable series must not prevent the rest from loading.
+                continue
+            }
+        }
+
+        guard !Task.isCancelled else { return }
+        homeUpNextItems = upcoming.sorted { $0.airDate < $1.airDate }
+    }
+
+    private func homePremiereDate(from value: String?) -> Date? {
+        guard let value else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: value)
     }
 
     private var continueWatching: some View {
@@ -678,4 +796,13 @@ private struct PremiereRow: View {
         }
         .padding(.vertical, 14)
     }
+}
+
+private struct HomeUpNextItem: Identifiable {
+    let entry: LibraryEntry
+    let series: MediaItem
+    let episode: TVNextEpisode
+    let airDate: Date
+
+    var id: String { "\(entry.stableID)-\(episode.id)" }
 }
