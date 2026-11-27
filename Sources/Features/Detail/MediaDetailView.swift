@@ -1411,14 +1411,23 @@ struct MediaDetailView: View {
             return (episode, existing, existing?.isWatched ?? false, existing?.watchedAt, existing?.dateUpdated)
         }
         var inserted: [EpisodeProgress] = []
+        var insertedEvents: [EpisodeWatchEvent] = []
 
-        for (episode, existing, _, _, _) in snapshots {
+        for (episode, existing, wasWatched, _, _) in snapshots {
             if let existing {
                 existing.setWatched(watched)
             } else if watched {
                 let progress = EpisodeProgress(seriesID: item.id, episode: episode, isWatched: true)
                 modelContext.insert(progress)
                 inserted.append(progress)
+            }
+
+            // Bulk marking is still a viewing action: preserve one history event
+            // for each episode that changes from unseen to watched.
+            if watched && !wasWatched {
+                let event = EpisodeWatchEvent(seriesID: item.id, episode: episode)
+                modelContext.insert(event)
+                insertedEvents.append(event)
             }
         }
 
@@ -1428,6 +1437,7 @@ struct MediaDetailView: View {
         } catch {
             let saveError = error.localizedDescription
             inserted.forEach { modelContext.delete($0) }
+            insertedEvents.forEach { modelContext.delete($0) }
             for (_, existing, wasWatched, watchedAt, dateUpdated) in snapshots {
                 guard let existing else { continue }
                 existing.isWatched = wasWatched
