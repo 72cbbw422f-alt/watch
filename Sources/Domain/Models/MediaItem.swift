@@ -28,6 +28,14 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
     let backdropPath: String?
     let releaseDate: String?
     let voteAverage: Double
+    let originalLanguage: String?
+    let isAdult: Bool
+
+    var isAllowedForDiscovery: Bool {
+        guard !isAdult else { return false }
+        let language = (originalLanguage ?? "").lowercased()
+        return language != "ja" && language != "zh"
+    }
 
     var stableID: String { "\(kind.rawValue)-\(id)" }
 
@@ -51,6 +59,8 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
         case releaseDate = "release_date"
         case firstAirDate = "first_air_date"
         case voteAverage = "vote_average"
+        case originalLanguage = "original_language"
+        case isAdult = "adult"
     }
 
     init(
@@ -61,7 +71,9 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
         posterPath: String? = nil,
         backdropPath: String? = nil,
         releaseDate: String? = nil,
-        voteAverage: Double = 0
+        voteAverage: Double = 0,
+        originalLanguage: String? = nil,
+        isAdult: Bool = false
     ) {
         self.id = id
         self.kind = kind
@@ -71,6 +83,8 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
         self.backdropPath = backdropPath
         self.releaseDate = releaseDate
         self.voteAverage = voteAverage
+        self.originalLanguage = originalLanguage
+        self.isAdult = isAdult
     }
 
     init(from decoder: Decoder) throws {
@@ -80,6 +94,8 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
         posterPath = try values.decodeIfPresent(String.self, forKey: .posterPath)
         backdropPath = try values.decodeIfPresent(String.self, forKey: .backdropPath)
         voteAverage = try values.decodeIfPresent(Double.self, forKey: .voteAverage) ?? 0
+        originalLanguage = try values.decodeIfPresent(String.self, forKey: .originalLanguage)
+        isAdult = try values.decodeIfPresent(Bool.self, forKey: .isAdult) ?? false
 
         if let movieTitle = try values.decodeIfPresent(String.self, forKey: .title) {
             kind = .movie
@@ -102,5 +118,7 @@ struct MediaItem: Identifiable, Codable, Hashable, Sendable {
         try values.encodeIfPresent(backdropPath, forKey: .backdropPath)
         try values.encodeIfPresent(releaseDate, forKey: kind == .movie ? .releaseDate : .firstAirDate)
         try values.encode(voteAverage, forKey: .voteAverage)
+        try values.encodeIfPresent(originalLanguage, forKey: .originalLanguage)
+        try values.encode(isAdult, forKey: .isAdult)
     }
 }
