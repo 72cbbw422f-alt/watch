@@ -99,13 +99,13 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 26) {
                         header
                         featured
-                        quickFilters
                         homeUpNext
                         recommendations
                         tonightPicks
                         continueWatching
                         watchlistMixSection
                         hiddenGemsSection
+                        quickFilters
                         trending
                         premieres
                         comingSoon
