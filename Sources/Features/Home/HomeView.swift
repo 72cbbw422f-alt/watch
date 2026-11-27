@@ -24,7 +24,7 @@ struct HomeView: View {
     }
 
     private var upNextSeedKey: String {
-        followedSeries.map(\\.stableID).sorted().joined(separator: "|") + "#" +
+        followedSeries.map(\.stableID).sorted().joined(separator: "|") + "#" +
         episodeProgressEntries.map { "\\($0.stableID):\\($0.isWatched)" }.sorted().joined(separator: "|")
     }
 
