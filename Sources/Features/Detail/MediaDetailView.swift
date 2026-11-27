@@ -21,6 +21,12 @@ struct MediaDetailView: View {
     @State private var seasonEpisodeErrors: [Int: String] = [:]
     @State private var similarItems: [MediaItem] = []
     @State private var isLoadingSimilar = false
+    @State private var tmdbReviews: [TMDBReview] = []
+    @State private var isLoadingReviews = false
+    @State private var reviewsError: String?
+    @State private var reviewPage = 1
+    @State private var totalReviewPages = 1
+    @State private var expandedReviewIDs: Set<String> = []
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -49,6 +55,7 @@ struct MediaDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    tmdbReviewsSection
                     televisionSeasonsSection
                     similarTitlesSection
                     sourceNote
@@ -64,6 +71,7 @@ struct MediaDetailView: View {
         .task {
             await loadTelevisionSeasons()
             await loadSimilarTitles()
+            await loadReviews()
         }
         .alert("Kunde inte spara ändringen", isPresented: Binding(
             get: { persistenceError != nil },
@@ -179,6 +187,151 @@ struct MediaDetailView: View {
             }
     }
 
+
+
+    @ViewBuilder
+    private var tmdbReviewsSection: some View {
+        if isLoadingReviews && tmdbReviews.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionLabel("RECENSIONER FRÅN TMDB")
+                ProgressView()
+                    .tint(WatchlistColor.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+            }
+            .padding(.horizontal, 20)
+        } else if !tmdbReviews.isEmpty || reviewsError != nil {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack {
+                    sectionLabel("RECENSIONER FRÅN TMDB")
+                    Spacer()
+                    Text("\(tmdbReviews.count) hämtade")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+
+                ForEach(tmdbReviews) { review in
+                    reviewCard(review)
+                }
+
+                if let reviewsError {
+                    Text(reviewsError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                    Button("Försök igen") {
+                        Task { await loadReviews() }
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                } else if reviewPage < totalReviewPages {
+                    Button {
+                        Task { await loadMoreReviews() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isLoadingReviews {
+                                ProgressView().tint(WatchlistColor.accent)
+                            }
+                            Text("Visa fler recensioner")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundStyle(WatchlistColor.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isLoadingReviews)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private func reviewCard(_ review: TMDBReview) -> some View {
+        let isExpanded = expandedReviewIDs.contains(review.id)
+        let containsSpoiler = review.content.localizedCaseInsensitiveContains("spoiler")
+            && review.content.localizedCaseInsensitiveContains("spoilers")
+        return VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(review.author.isEmpty ? "TMDB-användare" : review.author)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.primaryText)
+                    Text(String(review.createdAt.prefix(10)))
+                        .font(.system(size: 10))
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+                Spacer()
+                if let rating = review.authorDetails.rating {
+                    Label(String(format: "%.1f", rating), systemImage: "star.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(WatchlistColor.accent)
+                }
+            }
+
+            Text(review.content)
+                .font(.system(size: 12))
+                .foregroundStyle(WatchlistColor.secondaryText)
+                .lineSpacing(4)
+                .lineLimit(isExpanded ? nil : 6)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Button(isExpanded ? "Visa mindre" : "Läs hela recensionen") {
+                    if isExpanded {
+                        expandedReviewIDs.remove(review.id)
+                    } else {
+                        expandedReviewIDs.insert(review.id)
+                    }
+                }
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(WatchlistColor.accent)
+                Spacer()
+                if let url = review.url {
+                    Link("Original hos TMDB", destination: url)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(WatchlistColor.mutedText)
+                }
+            }
+        }
+        .padding(14)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    @MainActor
+    private func loadReviews() async {
+        guard !isLoadingReviews else { return }
+        guard TMDBConfiguration.isConfigured else {
+            reviewsError = "Lägg till din TMDB-token för att läsa recensioner."
+            return
+        }
+        isLoadingReviews = true
+        reviewsError = nil
+        defer { isLoadingReviews = false }
+        do {
+            let page = try await TMDBConfiguration.makeClient().reviews(for: item)
+            tmdbReviews = page.results
+            reviewPage = page.page
+            totalReviewPages = page.totalPages
+        } catch {
+            reviewsError = "Recensionerna kunde inte hämtas just nu."
+        }
+    }
+
+    @MainActor
+    private func loadMoreReviews() async {
+        guard !isLoadingReviews, reviewPage < totalReviewPages else { return }
+        isLoadingReviews = true
+        defer { isLoadingReviews = false }
+        do {
+            let page = try await TMDBConfiguration.makeClient().reviews(for: item, page: reviewPage + 1)
+            tmdbReviews.append(contentsOf: page.results)
+            reviewPage = page.page
+            totalReviewPages = page.totalPages
+        } catch {
+            reviewsError = "Fler recensioner kunde inte hämtas. Försök igen."
+        }
+    }
 
     @ViewBuilder
     private var similarTitlesSection: some View {
