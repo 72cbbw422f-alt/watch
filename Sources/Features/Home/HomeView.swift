@@ -60,7 +60,8 @@ struct HomeView: View {
     private var savedStableIDs: Set<String> { Set(libraryEntries.map(\.stableID)) }
 
     private var tonightItems: [MediaItem] {
-        var seen = Set<String>()
+        // Keep the casual discovery shelf separate from library-based recommendations.
+        var seen = Set(personalRecommendations.map(\.stableID))
         return trendingItems.filter {
             seen.insert($0.stableID).inserted && !savedStableIDs.contains($0.stableID)
         }.prefix(10).map { $0 }
@@ -664,7 +665,6 @@ struct HomeView: View {
 
         guard !Task.isCancelled, recommendationRequestID == requestID else { return }
 
-        // Interleave the strongest matches from each seed so one favorite cannot dominate the feed.
         // Interleave the strongest matches from each seed so one favorite cannot dominate the feed.
         var recommendations: [MediaItem] = []
         var recommendedIDs = Set<String>()
