@@ -1256,6 +1256,30 @@ struct MediaDetailView: View {
 
             if expandedSeason == season.seasonNumber {
                 if let episodes = episodesBySeason[season.seasonNumber] {
+                    HStack(spacing: 10) {
+                        Text("\(episodes.filter { isEpisodeWatched($0) }.count) av \(episodes.count) sedda")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                        Spacer()
+                        Menu {
+                            Button {
+                                setSeasonWatched(episodes, watched: true)
+                            } label: {
+                                Label("Markera hela säsongen som sedd", systemImage: "checkmark.circle")
+                            }
+                            Button(role: .destructive) {
+                                setSeasonWatched(episodes, watched: false)
+                            } label: {
+                                Label("Återställ säsongen", systemImage: "arrow.counterclockwise")
+                            }
+                        } label: {
+                            Label("Säsong", systemImage: "ellipsis.circle")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(WatchlistColor.accent)
+                        }
+                    }
+                    .padding(.vertical, 9)
+
                     VStack(spacing: 0) {
                         ForEach(episodes) { episode in
                             episodeRow(episode)
@@ -1371,6 +1395,52 @@ struct MediaDetailView: View {
             }
         }
         .padding(.vertical, 10)
+    }
+
+    @MainActor
+    private func setSeasonWatched(_ episodes: [TVEpisode], watched: Bool) {
+        guard !episodes.isEmpty else { return }
+
+        let snapshots = episodes.map { episode -> (TVEpisode, EpisodeProgress?, Bool, Date?, Date?) in
+            let id = EpisodeProgress.makeStableID(
+                seriesID: item.id,
+                seasonNumber: episode.seasonNumber,
+                episodeNumber: episode.episodeNumber
+            )
+            let existing = episodeProgressEntries.first { $0.stableID == id }
+            return (episode, existing, existing?.isWatched ?? false, existing?.watchedAt, existing?.dateUpdated)
+        }
+        var inserted: [EpisodeProgress] = []
+
+        for (episode, existing, _, _, _) in snapshots {
+            if let existing {
+                existing.setWatched(watched)
+            } else if watched {
+                let progress = EpisodeProgress(seriesID: item.id, episode: episode, isWatched: true)
+                modelContext.insert(progress)
+                inserted.append(progress)
+            }
+        }
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            inserted.forEach { modelContext.delete($0) }
+            for (_, existing, wasWatched, watchedAt, dateUpdated) in snapshots {
+                guard let existing else { continue }
+                existing.isWatched = wasWatched
+                existing.watchedAt = watchedAt
+                existing.dateUpdated = dateUpdated ?? existing.dateUpdated
+            }
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Säsongens status kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func registerEpisodeRewatch(_ episode: TVEpisode) {
