@@ -287,7 +287,7 @@ struct HomeView: View {
                             Image(systemName: "calendar.badge.clock")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(WatchlistColor.accent)
-                            Text("Inga nya avsnitt är schemalagda just nu. Vi håller koll på dina serier.")
+                            Text(TMDBConfiguration.isConfigured ? "Inga nya avsnitt är schemalagda just nu. Vi håller koll på dina serier." : "Anslut TMDB för att visa kommande avsnitt i dina serier.")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(WatchlistColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
