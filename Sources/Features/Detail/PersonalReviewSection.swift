@@ -45,6 +45,9 @@ struct PersonalReviewSection: View {
                                 .background(rating == value ? WatchlistColor.accent : WatchlistColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 7))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Betyg \\(value) av 10")
+                        .accessibilityHint(rating == value ? "Tryck igen för att ta bort betyget" : "Sätt ditt personliga betyg")
+                        .accessibilityAddTraits(rating == value ? .isSelected : [])
                     }
                 }
             }
