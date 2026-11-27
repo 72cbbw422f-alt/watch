@@ -18,6 +18,7 @@ struct MediaDetailView: View {
     @State private var isLoadingSeasons = false
     @State private var loadingSeasonNumber: Int?
     @State private var seasonError: String?
+    @State private var seasonEpisodeErrors: [Int: String] = [:]
     @State private var similarItems: [MediaItem] = []
     @State private var isLoadingSimilar = false
     var body: some View {
@@ -534,6 +535,18 @@ struct MediaDetailView: View {
                         }
                     }
                     .padding(.bottom, 10)
+                } else if loadingSeasonNumber == season.seasonNumber {
+                    ProgressView("Hämtar avsnitt…")
+                        .tint(WatchlistColor.accent)
+                        .font(.system(size: 11))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                } else if let error = seasonEpisodeErrors[season.seasonNumber] {
+                    Text("Kunde inte hämta avsnitten. Tryck på säsongen för att försöka igen.\\n\\(error)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 12)
                 }
             }
         }
@@ -674,7 +687,8 @@ struct MediaDetailView: View {
 
     @MainActor
     private func toggleSeason(_ season: TVSeason) async {
-        if expandedSeason == season.seasonNumber {
+        if expandedSeason == season.seasonNumber,
+           episodesBySeason[season.seasonNumber] != nil {
             expandedSeason = nil
             return
         }
@@ -682,6 +696,7 @@ struct MediaDetailView: View {
         expandedSeason = season.seasonNumber
         guard episodesBySeason[season.seasonNumber] == nil else { return }
 
+        seasonEpisodeErrors[season.seasonNumber] = nil
         loadingSeasonNumber = season.seasonNumber
         defer { loadingSeasonNumber = nil }
 
@@ -694,7 +709,7 @@ struct MediaDetailView: View {
                 $0.episodeNumber < $1.episodeNumber
             }
         } catch {
-            seasonError = error.localizedDescription
+            seasonEpisodeErrors[season.seasonNumber] = error.localizedDescription
         }
     }
 
