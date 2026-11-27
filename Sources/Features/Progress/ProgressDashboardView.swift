@@ -33,6 +33,14 @@ struct ProgressDashboardView: View {
         episodeProgress.filter(\.isWatched).count
     }
 
+    private var watchedEpisodeCountsBySeries: [Int: Int] {
+        episodeProgress.reduce(into: [:]) { counts, progress in
+            if progress.isWatched {
+                counts[progress.seriesID, default: 0] += 1
+            }
+        }
+    }
+
     var body: some View {
         ZStack {
             WatchlistColor.background.ignoresSafeArea()
@@ -50,7 +58,7 @@ struct ProgressDashboardView: View {
                                 NavigationLink(value: entry.mediaItem) {
                                     ProgressSeriesRow(
                                         entry: entry,
-                                        watchedCount: episodeProgress.filter { $0.seriesID == entry.tmdbID && $0.isWatched }.count
+                                        watchedCount: watchedEpisodeCountsBySeries[entry.tmdbID, default: 0]
                                     )
                                 }
                                 .buttonStyle(.plain)
