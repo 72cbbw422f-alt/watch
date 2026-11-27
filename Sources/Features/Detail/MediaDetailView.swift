@@ -24,6 +24,7 @@ struct MediaDetailView: View {
     @State private var tmdbReviews: [TMDBReview] = []
     @State private var isLoadingReviews = false
     @State private var reviewsError: String?
+    @State private var hasLoadedReviews = false
     @State private var reviewPage = 1
     @State private var totalReviewPages = 1
     @State private var expandedReviewIDs: Set<String> = []
@@ -200,7 +201,7 @@ struct MediaDetailView: View {
                     .padding(.vertical, 18)
             }
             .padding(.horizontal, 20)
-        } else if !tmdbReviews.isEmpty || reviewsError != nil {
+        } else if hasLoadedReviews || reviewsError != nil {
             VStack(alignment: .leading, spacing: 13) {
                 HStack {
                     sectionLabel("RECENSIONER FRÅN TMDB")
@@ -208,6 +209,15 @@ struct MediaDetailView: View {
                     Text("\(tmdbReviews.count) hämtade")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(WatchlistColor.mutedText)
+                }
+
+                if tmdbReviews.isEmpty && reviewsError == nil {
+                    Text("Det finns inga publicerade recensioner för den här titeln ännu.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
                 }
 
                 ForEach(tmdbReviews) { review in
@@ -249,8 +259,6 @@ struct MediaDetailView: View {
 
     private func reviewCard(_ review: TMDBReview) -> some View {
         let isExpanded = expandedReviewIDs.contains(review.id)
-        let containsSpoiler = review.content.localizedCaseInsensitiveContains("spoiler")
-            && review.content.localizedCaseInsensitiveContains("spoilers")
         return VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -311,6 +319,7 @@ struct MediaDetailView: View {
         do {
             let page = try await TMDBConfiguration.makeClient().reviews(for: item)
             tmdbReviews = page.results
+            hasLoadedReviews = true
             reviewPage = page.page
             totalReviewPages = page.totalPages
         } catch {
