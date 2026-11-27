@@ -323,20 +323,43 @@ struct MediaDetailView: View {
     }
 
     private func registerMovieViewing() {
-        modelContext.insert(MovieWatchEvent(
+        let existingEntry = libraryEntry
+        let previousStatus = existingEntry?.statusRawValue
+        let previousUpdatedAt = existingEntry?.dateUpdated
+        let entry = existingEntry ?? LibraryEntry(item: item, status: .watched)
+        let event = MovieWatchEvent(
             tmdbID: item.id,
             title: item.title,
             posterPath: item.posterPath
-        ))
-        let entry: LibraryEntry
-        if let existing = libraryEntry {
-            entry = existing
-        } else {
-            entry = LibraryEntry(item: item, status: .watched)
+        )
+
+        modelContext.insert(event)
+        if existingEntry == nil {
             modelContext.insert(entry)
         }
         entry.status = .watched
-        saveChanges()
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            modelContext.delete(event)
+
+            if let previousStatus, let previousUpdatedAt {
+                entry.statusRawValue = previousStatus
+                entry.dateUpdated = previousUpdatedAt
+            } else {
+                modelContext.delete(entry)
+            }
+
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Visningen kunde inte sparas och ändringen kunde inte återställas: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func favoriteButton(isFavorite: Bool) -> some View {
