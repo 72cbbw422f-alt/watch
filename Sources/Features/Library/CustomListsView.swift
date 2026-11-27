@@ -383,7 +383,7 @@ private struct CustomListDetailView: View {
             do {
                 try modelContext.save()
             } catch {
-                errorMessage = "Titeln kunde inte återställas efter ett sparfel: \\(error.localizedDescription)"
+                errorMessage = "Titeln kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
                 return
             }
             errorMessage = error.localizedDescription
