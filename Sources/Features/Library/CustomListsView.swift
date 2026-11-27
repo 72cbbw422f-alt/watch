@@ -197,11 +197,30 @@ struct CustomListsView: View {
     }
 
     private func delete(_ list: CustomList) {
-        for membership in memberships where membership.listID == list.id {
+        let listMemberships = memberships.filter { $0.listID == list.id }
+
+        for membership in listMemberships {
             modelContext.delete(membership)
         }
         modelContext.delete(list)
-        save()
+
+        do {
+            try modelContext.save()
+            errorMessage = nil
+        } catch {
+            let saveError = error.localizedDescription
+            modelContext.insert(list)
+            for membership in listMemberships {
+                modelContext.insert(membership)
+            }
+
+            do {
+                try modelContext.save()
+                errorMessage = saveError
+            } catch {
+                errorMessage = "Listan kunde inte återställas efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     @discardableResult
