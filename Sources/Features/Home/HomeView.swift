@@ -181,17 +181,27 @@ struct HomeView: View {
                     ZStack(alignment: .bottomLeading) {
                         Rectangle()
                             .fill(WatchlistColor.surfaceElevated)
-                        if let url = item.backdropURL {
-                            AsyncImage(url: url) { phase in
-                                if let image = phase.image {
-                                    image.resizable().scaledToFill()
+                        GeometryReader { proxy in
+                            Group {
+                                if let url = item.backdropURL {
+                                    AsyncImage(url: url) { phase in
+                                        if let image = phase.image {
+                                            image.resizable()
+                                                .scaledToFill()
+                                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                                .clipped()
+                                        } else {
+                                            heroFallback
+                                        }
+                                    }
                                 } else {
                                     heroFallback
                                 }
                             }
-                        } else {
-                            heroFallback
+                            .frame(width: proxy.size.width, height: proxy.size.height)
+                            .clipped()
                         }
+                        .frame(height: 265)
                         LinearGradient(
                             stops: [
                                 .init(color: .black.opacity(0.02), location: 0),
