@@ -56,14 +56,31 @@ struct MediaDetailView: View {
                     .padding(.horizontal, 20)
                     addToCustomListSection
                     if !item.overview.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        VStack(alignment: .leading, spacing: 9) {
-                            sectionLabel("OM TITELN")
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 9) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(WatchlistColor.accent)
+                                    .frame(width: 3, height: 17)
+                                sectionLabel("OM TITELN")
+                            }
                             Text(item.overview)
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .regular))
                                 .foregroundStyle(WatchlistColor.secondaryText)
-                                .lineSpacing(5)
+                                .lineSpacing(6)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .padding(17)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            LinearGradient(
+                                colors: [WatchlistColor.surface, WatchlistColor.background],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 17, style: .continuous)
+                        )
+                        .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+                        .padding(.horizontal, 20)
                     }
                     trailersSection
                     tmdbReviewsSection
