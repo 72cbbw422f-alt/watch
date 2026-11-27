@@ -1,12 +1,18 @@
 import SwiftUI
 import SwiftData
 
+private enum LibrarySortOrder {
+    case recentlyAdded
+    case title
+    case highestRated
+}
+
 struct LibraryView: View {
     @Query(sort: \LibraryEntry.dateAdded, order: .reverse) private var entries: [LibraryEntry]
     @State private var selectedStatus: LibraryStatus?
     @State private var favoritesOnly = false
     @State private var searchText = ""
-    @State private var sortAlphabetically = false
+    @State private var sortOrder = LibrarySortOrder.recentlyAdded
     @State private var usesPosterGrid = true
     @State private var selectedKind: LibraryKindFilter = .all
 
@@ -20,12 +26,21 @@ struct LibraryView: View {
                     entry.title.localizedCaseInsensitiveContains(term) ||
                     entry.personalNotes.localizedCaseInsensitiveContains(term))
         }
-        if sortAlphabetically {
+        switch sortOrder {
+        case .recentlyAdded:
+            return matching.sorted { $0.dateAdded > $1.dateAdded }
+        case .title:
             return matching.sorted {
                 $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
             }
+        case .highestRated:
+            return matching.sorted {
+                let firstRating = $0.personalRating ?? 0
+                let secondRating = $1.personalRating ?? 0
+                if firstRating != secondRating { return firstRating > secondRating }
+                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }
         }
-        return matching.sorted { $0.dateAdded > $1.dateAdded }
     }
 
     private var watchedCount: Int {
@@ -174,14 +189,19 @@ struct LibraryView: View {
 
             Menu {
                 Button {
-                    sortAlphabetically = false
+                    sortOrder = .recentlyAdded
                 } label: {
-                    Label("Senast tillagda", systemImage: sortAlphabetically ? "clock" : "checkmark")
+                    Label("Senast tillagda", systemImage: sortOrder == .recentlyAdded ? "checkmark" : "clock")
                 }
                 Button {
-                    sortAlphabetically = true
+                    sortOrder = .title
                 } label: {
-                    Label("Titel A–Ö", systemImage: sortAlphabetically ? "checkmark" : "textformat")
+                    Label("Titel A–Ö", systemImage: sortOrder == .title ? "checkmark" : "textformat")
+                }
+                Button {
+                    sortOrder = .highestRated
+                } label: {
+                    Label("Högst betyg", systemImage: sortOrder == .highestRated ? "checkmark" : "star")
                 }
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
