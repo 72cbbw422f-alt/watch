@@ -476,9 +476,9 @@ struct HomeView: View {
                 sectionHeading(title, eyebrow: eyebrow, trailing: trailing)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 13) {
-                        ForEach(Array(items.enumerated()), id: \.element.stableID) { index, item in
+                        ForEach(items, id: \.stableID) { item in
                             NavigationLink(value: item) {
-                                MediaPosterTile(item: item, rank: index + 1)
+                                MediaPosterTile(item: item, rank: (items.firstIndex(of: item) ?? 0) + 1)
                             }
                             .buttonStyle(.plain)
                         }
