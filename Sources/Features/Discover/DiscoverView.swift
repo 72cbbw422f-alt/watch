@@ -153,6 +153,9 @@ struct DiscoverView: View {
             selectedKind = kind
             results = []
             errorMessage = nil
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Task { await search() }
+            }
         } label: {
             Label(title, systemImage: symbol)
                 .font(.system(size: 12, weight: .semibold))
