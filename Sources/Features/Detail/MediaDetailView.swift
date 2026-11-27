@@ -633,7 +633,57 @@ struct MediaDetailView: View {
                     Spacer()
                     Menu {
                         ForEach(LibraryStatus.allCases) { status in
-                            Menu {
+                            Button {
+                                let previousStatus = entry.statusRawValue
+                                let previousUpdatedAt = entry.dateUpdated
+                                entry.status = status
+                                do {
+                                    try modelContext.save()
+                                    persistenceError = nil
+                                } catch {
+                                    let saveError = error.localizedDescription
+                                    entry.statusRawValue = previousStatus
+                                    entry.dateUpdated = previousUpdatedAt
+                                    do {
+                                        try modelContext.save()
+                                        persistenceError = saveError
+                                    } catch {
+                                        persistenceError = "Biblioteksstatusen kunde inte återställas: \\(error.localizedDescription)"
+                                    }
+                                }
+                            } label: {
+                                Label(status.title, systemImage: status.symbol)
+                            }
+                        }
+                        Button(role: .destructive) {
+                            modelContext.delete(entry)
+                            do {
+                                try modelContext.save()
+                                persistenceError = nil
+                            } catch {
+                                let saveError = error.localizedDescription
+                                modelContext.insert(entry)
+                                do {
+                                    try modelContext.save()
+                                    persistenceError = saveError
+                                } catch {
+                                    persistenceError = "Biblioteksposten kunde inte återställas: \\(error.localizedDescription)"
+                                }
+                            }
+                        } label: {
+                            Label("Ta bort från bibliotek", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 21))
+                            .foregroundStyle(WatchlistColor.secondaryText)
+                    }
+                }
+                .padding(15)
+                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 16))
+                favoriteButton(isFavorite: entry.isFavorite)
+            } else {
+                Menu {
                     ForEach(LibraryStatus.allCases) { status in
                         Button {
                             addToLibrary(status: status)
@@ -654,7 +704,6 @@ struct MediaDetailView: View {
         }
         .padding(.horizontal, 20)
     }
-
 
     private func addToLibrary(status: LibraryStatus) {
         let entry = LibraryEntry(item: item, status: status)
