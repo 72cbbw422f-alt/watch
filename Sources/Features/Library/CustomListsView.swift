@@ -274,6 +274,7 @@ private struct CustomListDetailView: View {
                                 .contextMenu {
                                     Button(role: .destructive) {
                                         modelContext.delete(entry)
+                                        list.updatedAt = .now
                                         save()
                                     } label: {
                                         Label("Ta bort från listan", systemImage: "minus.circle")
