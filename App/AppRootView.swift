@@ -42,7 +42,7 @@ struct AppRootView: View {
             }
             .tag(4)
             .tabItem {
-                Label("Kalender", systemImage: "calendar")
+                Label("Premiärer", systemImage: "calendar.badge.clock")
             }
 
             NavigationStack {
