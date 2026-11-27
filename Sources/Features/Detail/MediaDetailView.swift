@@ -500,9 +500,26 @@ struct MediaDetailView: View {
     private func add(_ mediaItem: MediaItem, to list: CustomList) {
         let stableID = "\(list.id)::\(mediaItem.stableID)"
         guard !customListItems.contains(where: { $0.stableID == stableID }) else { return }
-        modelContext.insert(CustomListItem(listID: list.id, item: mediaItem))
+
+        let membership = CustomListItem(listID: list.id, item: mediaItem)
+        let previousUpdatedAt = list.updatedAt
+        modelContext.insert(membership)
         list.updatedAt = .now
-        saveChanges()
+
+        do {
+            try modelContext.save()
+            persistenceError = nil
+        } catch {
+            let saveError = error.localizedDescription
+            modelContext.delete(membership)
+            list.updatedAt = previousUpdatedAt
+            do {
+                try modelContext.save()
+                persistenceError = saveError
+            } catch {
+                persistenceError = "Titeln kunde inte tas bort från samlingen efter ett sparfel: \(error.localizedDescription)"
+            }
+        }
     }
 
     private var metadata: some View {
