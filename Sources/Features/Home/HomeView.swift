@@ -925,6 +925,13 @@ private struct MediaPosterTile: View {
     let item: MediaItem
     let rank: Int
 
+    @Environment(\\.modelContext) private var modelContext
+    @Query private var libraryEntries: [LibraryEntry]
+
+    private var savedEntry: LibraryEntry? {
+        libraryEntries.first { $0.stableID == item.stableID }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .bottomLeading) {
@@ -959,6 +966,54 @@ private struct MediaPosterTile: View {
         }
         .frame(width: 132, alignment: .leading)
         .accessibilityElement(children: .combine)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                toggleFavorite()
+            } label: {
+                Label(savedEntry?.isFavorite == true ? "Ta bort favorit" : "Lägg till i favoriter",
+                      systemImage: savedEntry?.isFavorite == true ? "heart.slash" : "heart")
+            }
+
+            Menu("Ändra status") {
+                ForEach(LibraryStatus.allCases) { status in
+                    Button {
+                        setStatus(status)
+                    } label: {
+                        Label(status.title, systemImage: status.symbol)
+                    }
+                }
+            }
+
+            if savedEntry != nil {
+                Button(role: .destructive) {
+                    removeFromLibrary()
+                } label: {
+                    Label("Ta bort från min lista", systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    private func toggleFavorite() {
+        let entry = savedEntry ?? LibraryEntry(item: item)
+        if savedEntry == nil { modelContext.insert(entry) }
+        entry.isFavorite.toggle()
+        entry.dateUpdated = .now
+        try? modelContext.save()
+    }
+
+    private func setStatus(_ status: LibraryStatus) {
+        let entry = savedEntry ?? LibraryEntry(item: item, status: status)
+        if savedEntry == nil { modelContext.insert(entry) }
+        entry.status = status
+        try? modelContext.save()
+    }
+
+    private func removeFromLibrary() {
+        guard let entry = savedEntry else { return }
+        modelContext.delete(entry)
+        try? modelContext.save()
     }
 
     @ViewBuilder
