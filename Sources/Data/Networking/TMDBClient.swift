@@ -89,6 +89,18 @@ actor TMDBClient: MediaSearching {
         return response.results.filter { $0.id != item.id }
     }
 
+
+    func reviews(for item: MediaItem, page: Int = 1) async throws -> TMDBReviewPage {
+        try await fetch(
+            path: "/\\(item.kind.tmdbPath)/\\(item.id)/reviews",
+            as: TMDBReviewPage.self,
+            queryItems: [
+                URLQueryItem(name: "language", value: "en-US"),
+                URLQueryItem(name: "page", value: String(max(1, page)))
+            ]
+        )
+    }
+
     func televisionDetails(id: Int) async throws -> TVSeriesDetails {
         try await fetch(
             path: "/tv/\(id)",
@@ -265,5 +277,36 @@ private struct TMDBSearchResult: Decodable {
             releaseDate: kind == .movie ? releaseDate : firstAirDate,
             voteAverage: voteAverage ?? 0
         )
+    }
+}
+
+
+struct TMDBReviewPage: Decodable, Sendable {
+    let page: Int
+    let results: [TMDBReview]
+    let totalPages: Int
+
+    enum CodingKeys: String, CodingKey {
+        case page, results
+        case totalPages = "total_pages"
+    }
+}
+
+struct TMDBReview: Decodable, Identifiable, Sendable {
+    let id: String
+    let author: String
+    let authorDetails: AuthorDetails
+    let content: String
+    let createdAt: String
+    let url: URL?
+
+    enum CodingKeys: String, CodingKey {
+        case id, author, content, url
+        case authorDetails = "author_details"
+        case createdAt = "created_at"
+    }
+
+    struct AuthorDetails: Decodable, Sendable {
+        let rating: Double?
     }
 }
