@@ -281,7 +281,7 @@ struct LibraryView: View {
     private var statusFilters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                filterChip("Alla", isSelected: selectedStatus == nil) {
+                filterChip("Alla", isSelected: selectedStatus == nil && !favoritesOnly) {
                     selectedStatus = nil
                 }
                 ForEach(LibraryStatus.allCases) { status in
