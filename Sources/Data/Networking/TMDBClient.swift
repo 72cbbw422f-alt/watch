@@ -118,6 +118,16 @@ actor TMDBClient: MediaSearching {
         }
     }
 
+
+    func watchProviders(for item: MediaItem, country: String = "SE") async throws -> TMDBWatchProviderResult? {
+        let response = try await fetch(
+            path: "/\(item.kind.tmdbPath)/\(item.id)/watch/providers",
+            as: TMDBWatchProviderResponse.self,
+            queryItems: []
+        )
+        return response.results[country]
+    }
+
     func televisionDetails(id: Int) async throws -> TVSeriesDetails {
         try await fetch(
             path: "/tv/\(id)",
@@ -360,5 +370,43 @@ struct TMDBVideo: Decodable, Identifiable, Sendable {
         default:
             nil
         }
+    }
+}
+
+
+struct TMDBWatchProviderResponse: Decodable, Sendable {
+    let results: [String: TMDBWatchProviderResult]
+}
+
+struct TMDBWatchProviderResult: Decodable, Sendable {
+    let link: URL?
+    let flatrate: [TMDBWatchProvider]?
+    let free: [TMDBWatchProvider]?
+    let ads: [TMDBWatchProvider]?
+    let rent: [TMDBWatchProvider]?
+    let buy: [TMDBWatchProvider]?
+
+    var hasAnyProvider: Bool {
+        !(flatrate ?? []).isEmpty || !(free ?? []).isEmpty ||
+        !(ads ?? []).isEmpty || !(rent ?? []).isEmpty || !(buy ?? []).isEmpty
+    }
+}
+
+struct TMDBWatchProvider: Decodable, Identifiable, Sendable {
+    let providerID: Int
+    let providerName: String
+    let logoPath: String
+    let displayPriority: Int
+
+    enum CodingKeys: String, CodingKey {
+        case providerID = "provider_id"
+        case providerName = "provider_name"
+        case logoPath = "logo_path"
+        case displayPriority = "display_priority"
+    }
+
+    var id: Int { providerID }
+    var logoURL: URL? {
+        URL(string: "https://image.tmdb.org/t/p/w92\(logoPath)")
     }
 }
