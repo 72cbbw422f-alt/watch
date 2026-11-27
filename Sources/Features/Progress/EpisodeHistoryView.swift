@@ -26,17 +26,17 @@ struct EpisodeHistoryView: View {
     private var historyRows: [ViewingHistoryRow] {
         let episodeRows = events.map { event in
             ViewingHistoryRow(
-                id: "episode-\\(event.id.uuidString)",
+                id: "episode-\(event.id.uuidString)",
                 date: event.watchedAt,
                 title: seriesNames[event.seriesID] ?? "Serie",
-                detail: "S\\(String(format: "%02d", event.seasonNumber))E\\(String(format: "%02d", event.episodeNumber)) · \\(event.episodeTitle)",
+                detail: "S\(String(format: "%02d", event.seasonNumber))E\(String(format: "%02d", event.episodeNumber)) · \(event.episodeTitle)",
                 symbol: "tv",
                 source: event.sourceRawValue
             )
         }
         let filmRows = movieEvents.map { event in
             ViewingHistoryRow(
-                id: "movie-\\(event.id.uuidString)",
+                id: "movie-\(event.id.uuidString)",
                 date: event.watchedAt,
                 title: event.title,
                 detail: "Film",
