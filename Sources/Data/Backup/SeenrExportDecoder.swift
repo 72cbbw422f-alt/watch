@@ -17,6 +17,7 @@ struct SeenrImportPayload {
         let startedAt: Date?
         let completedAt: Date?
         let watchedAt: Date?
+        let dates: [Date]
         let watchCount: Int
     }
 
@@ -110,6 +111,7 @@ enum SeenrExportDecoder {
             favorite: value["favorite"] as? Bool ?? false,
             addedAt: date(value["added_at"]), startedAt: date(value["started_at"]),
             completedAt: date(value["completed_at"]), watchedAt: date(value["watched_at"]),
+            dates: (value["dates"] as? [String] ?? []).compactMap(date),
             watchCount: max(0, integer(value["watch_count"]) ?? integer(value["plays"]) ?? 0)
         )
     }
