@@ -201,11 +201,23 @@ final class SeenrExportDecoderTests: XCTestCase {
             "status": "completed", "watch_count": 2,
             "dates": ["1994-06-23T00:00:00Z"]
           }],
-          "episode_watches": [],
+          "episode_watches": [{
+            "show_tmdb_id": 125988, "show_title": "Silo",
+            "season": 1, "episode": 1, "episode_title": "Freedom Day",
+            "watch_count": 2, "dates": ["2023-05-05T00:00:00Z"]
+          }],
           "viewings": [{
             "type": "movie",
             "work": {"type": "movie", "tmdb_id": 13, "title": "Forrest Gump"},
             "watched_at": "2000-01-01T00:00:00Z"
+          }, {
+            "type": "episode",
+            "work": {
+              "type": "episode", "tmdb_id": 2964686,
+              "show_tmdb_id": 125988, "season": 1, "episode": 1,
+              "title": "Freedom Day", "show_title": "Silo"
+            },
+            "watched_at": "2023-05-06T00:00:00Z"
           }],
           "ratings": []
         }
