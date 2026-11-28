@@ -96,7 +96,7 @@ final class SeenrExportDecoderTests: XCTestCase {
           "episode_watches": [{
             "show_tmdb_id":125988,"show_title":"Silo","season":1,"episode":1,
             "episode_title":"Freedom Day","episode_tmdb_id":2964686,
-            "air_date":"2023-05-04","watched_at":null,"watch_count":2,
+            "air_date":"2023-05-04","watched_at":"2023-05-07T00:00:00Z","watch_count":2,
             "dates":["2023-05-05T00:00:00Z","2023-05-06T00:00:00Z"]
           }],
           "viewings": [{
@@ -128,7 +128,7 @@ final class SeenrExportDecoderTests: XCTestCase {
         let first = try SeenrImportService.merge(payload, into: context)
         XCTAssertEqual(first.newTitles, 2)
         XCTAssertEqual(first.newEpisodeStates, 1)
-        XCTAssertEqual(first.newEpisodeHistory, 2)
+        XCTAssertEqual(first.newEpisodeHistory, 3)
         XCTAssertEqual(first.newMovieHistory, 2)
         XCTAssertEqual(first.newImportedRatings, 1)
 
@@ -141,7 +141,7 @@ final class SeenrExportDecoderTests: XCTestCase {
 
         XCTAssertEqual(try context.fetch(FetchDescriptor<LibraryEntry>()).count, 2)
         XCTAssertEqual(try context.fetch(FetchDescriptor<EpisodeProgress>()).count, 1)
-        XCTAssertEqual(try context.fetch(FetchDescriptor<EpisodeWatchEvent>()).count, 2)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<EpisodeWatchEvent>()).count, 3)
         XCTAssertEqual(try context.fetch(FetchDescriptor<MovieWatchEvent>()).count, 2)
         XCTAssertEqual(try context.fetch(FetchDescriptor<ImportedWorkRating>()).count, 1)
     }
