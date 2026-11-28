@@ -28,7 +28,16 @@ struct HomeView: View {
     }
 
     private var continueWatchingSeedKey: String {
-        inProgressEntries.filter { $0.mediaKind == MediaKind.television.rawValue }.map(\.stableID).sorted().joined(separator: "|")
+        let activeSeries = inProgressEntries
+            .filter { $0.mediaKind == MediaKind.television.rawValue }
+            .map(\.stableID)
+            .sorted()
+            .joined(separator: "|")
+        let progress = episodeProgressEntries
+            .sorted { $0.stableID < $1.stableID }
+            .map { "\($0.stableID):\($0.isWatched)" }
+            .joined(separator: "|")
+        return activeSeries + "#progress:" + progress
     }
 
     private var recommendationSeedKey: String {
