@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import WATCHLIST
 
 final class SeenrExportDecoderTests: XCTestCase {
