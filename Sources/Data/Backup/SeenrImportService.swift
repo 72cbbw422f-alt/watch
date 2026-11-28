@@ -220,7 +220,10 @@ enum SeenrImportService {
             )
         }
         for episode in payload.episodes {
-            let dates = episode.dates.isEmpty ? [episode.watchedAt].compactMap { $0 } : episode.dates
+            var dates = episode.dates
+            if let watchedAt = episode.watchedAt, !dates.contains(watchedAt) {
+                dates.append(watchedAt)
+            }
             for watchedAt in dates {
                 let key = "episode|\(episode.seriesID)|\(episode.season)|\(episode.number)|\(watchedAt.timeIntervalSince1970)"
                 let id = eventID(key)
