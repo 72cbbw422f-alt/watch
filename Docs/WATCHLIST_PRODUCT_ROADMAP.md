@@ -182,4 +182,13 @@ Målet är en separat Seenr-importör som konverterar exportformatet `seenr-expo
 - Added decoder tests and a merge/idempotency test covering duplicate source records and rewatch dates.
 - CI for the first integrated flow at commit `d25ed82` passed. Follow-up history reconciliation and additional merge tests are in the current CI queue; do not mark the importer release-ready until the latest commit's tests pass.
 - Known limitation to resolve before release: Seenr statuses without a direct WATCHLIST equivalent (for example dropped titles) are intentionally skipped and reported. The current WATCHLIST model has no dropped status.
-- The large export should be processed off the main thread before release; the current import UI still reads and decodes the selected file synchronously and needs a responsiveness pass.
+- The Seenr file is now read and decoded in a background task; the security-scoped file access remains active until that work finishes. The existing WATCHLIST backup path is also read off the main thread before its normal decode/preview.
+
+
+### Seenr-import follow-up – 2026-11-28
+
+- Added persistent storage for season- and episode-level Seenr ratings, including score, review, spoiler flag and timestamp. These records are preserved for later presentation in detail pages; they are not yet displayed as rating UI.
+- Added rating fixture data to decoder and merge/idempotency tests. The tests now verify that a rating is imported once and not duplicated by a second import.
+- The import preview and completion summary now include the count of imported season/episode ratings.
+- File reading and Seenr decoding now run in a detached background task. Security-scoped access is held until the task completes, and the existing WATCHLIST backup import remains supported.
+- Latest iOS Build/test runs are queued for the new changes. Do not mark the importer release-ready until the newest accumulated commit passes CI and a migration/startup check is completed.
