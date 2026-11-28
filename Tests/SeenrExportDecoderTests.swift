@@ -83,7 +83,7 @@ final class SeenrExportDecoderTests: XCTestCase {
         XCTAssertEqual(result.totalTitles, 0)
         XCTAssertTrue(result.episodes.isEmpty)
         XCTAssertTrue(result.viewings.isEmpty)
-        XCTAssertEqual(result.warnings.count, 3)
+        XCTAssertEqual(result.warnings.count, 4)
     }
 
     @MainActor
