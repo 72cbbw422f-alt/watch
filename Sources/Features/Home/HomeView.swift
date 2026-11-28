@@ -815,6 +815,46 @@ struct HomeView: View {
 }
 
 
+private struct UpNextEpisodeCard: View {
+    let entry: LibraryEntry
+    let episode: TVEpisode?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            LibraryHomePoster(entry: entry, width: 58, height: 82)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                    .lineLimit(1)
+                if let episode {
+                    Text(episode.displayCode.uppercased())
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(0.9)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text(episode.name)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                        .lineLimit(2)
+                } else {
+                    Text("Nästa avsnitt")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(WatchlistColor.secondaryText)
+                }
+                Label("Visa serie", systemImage: "play.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(11)
+        .frame(width: 245, height: 106, alignment: .leading)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 15).stroke(WatchlistColor.hairline, lineWidth: 1))
+    }
+}
+
+
 private struct ContinueWatchingCard: View {
     let entry: LibraryEntry
     let nextEpisode: TVEpisode?
