@@ -9,6 +9,8 @@ struct BackupSettingsView: View {
     @State private var isImporting = false
     @State private var pendingImport: WatchlistBackup?
     @State private var importPreview: WatchlistImportPreview?
+    @State private var pendingSeenr: SeenrImportPayload?
+    @State private var seenrPreview: SeenrImportPreview?
     @State private var isConfirmingImport = false
     @State private var errorMessage: String?
     @State private var exportedSummary: String?
@@ -127,12 +129,17 @@ struct BackupSettingsView: View {
             isPresented: $isConfirmingImport,
             titleVisibility: .visible
         ) {
-            Button("Slå samman med mitt bibliotek", role: .destructive) {
-                performImport()
+            Button(pendingSeenr == nil ? "Slå samman med mitt bibliotek" : "Importera Seenr-data", role: .destructive) {
+                if pendingSeenr != nil { performSeenrImport() } else { performImport() }
             }
-            Button("Avbryt", role: .cancel) { pendingImport = nil; importPreview = nil }
+            Button("Avbryt", role: .cancel) {
+                pendingImport = nil; importPreview = nil
+                pendingSeenr = nil; seenrPreview = nil
+            }
         } message: {
-            if let importPreview {
+            if let seenrPreview {
+                Text("Seenr-export · \(pendingSeenr?.totalTitles ?? 0) titlar. Nya titlar: \(seenrPreview.newTitles). Befintliga titlar lämnas orörda: \(seenrPreview.matchingTitles). Nya avsnittsstatusar: \(seenrPreview.newEpisodeStates). Avsnittshändelser: \(seenrPreview.newEpisodeHistory). Filmvisningar: \(seenrPreview.newMovieHistory). Överhoppade titlar: \(seenrPreview.skippedTitles).")
+            } else if let importPreview {
                 Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.matchingLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.localOnlyLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Seriehändelser: \(importPreview.newHistoryEvents). Filmhändelser: \(importPreview.newMovieHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
             }
         }
@@ -169,10 +176,23 @@ struct BackupSettingsView: View {
             guard let url = urls.first else { return }
             let hasAccess = url.startAccessingSecurityScopedResource()
             defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-            let backup = try WatchlistBackupService.decode(Data(contentsOf: url))
-            let preview = try WatchlistImportService.preview(backup, in: modelContext)
-            pendingImport = backup
-            importPreview = preview
+            let data = try Data(contentsOf: url)
+            if let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               root["format"] as? String == "seenr-export/2" {
+                let payload = try SeenrExportDecoder.decode(data)
+                let preview = try SeenrImportService.preview(payload, in: modelContext)
+                pendingSeenr = payload
+                seenrPreview = preview
+                pendingImport = nil
+                importPreview = nil
+            } else {
+                let backup = try WatchlistBackupService.decode(data)
+                let preview = try WatchlistImportService.preview(backup, in: modelContext)
+                pendingImport = backup
+                importPreview = preview
+                pendingSeenr = nil
+                seenrPreview = nil
+            }
             isConfirmingImport = true
         } catch { errorMessage = error.localizedDescription }
     }
@@ -190,6 +210,20 @@ struct BackupSettingsView: View {
             importPreview = nil
             importedSummary = "Import klar. \(summary.newLibraryItems) nya titlar och \(summary.newHistoryEvents + summary.newMovieHistoryEvents) historikhändelser har lagts till. Befintliga poster behölls."
             restoreImportedNotifications(withIDs: reminderIDs)
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+
+    private func performSeenrImport() {
+        guard let pendingSeenr else { return }
+        do {
+            let summary = try SeenrImportService.merge(pendingSeenr, into: modelContext)
+            self.pendingSeenr = nil
+            seenrPreview = nil
+            importedSummary = "Seenr-import klar. \(summary.newTitles) nya titlar, \(summary.newEpisodeStates) avsnittsstatusar och \(summary.newEpisodeHistory + summary.newMovieHistory) visningshändelser har lagts till. Befintliga poster behölls."
+            if !summary.warnings.isEmpty {
+                importedSummary? += " Varningar: " + summary.warnings.joined(separator: " ")
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 
