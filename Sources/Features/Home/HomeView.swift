@@ -184,7 +184,7 @@ struct HomeView: View {
             if !featuredItems.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(featuredItems, id: \\.stableID) { item in
+                        ForEach(featuredItems, id: \.stableID) { item in
                             featuredCard(for: item)
                                 .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
                         }
@@ -199,7 +199,7 @@ struct HomeView: View {
                         .font(.system(size: 9, weight: .semibold))
                         .tracking(1.7)
                         .foregroundStyle(WatchlistColor.accent)
-                    Text("Hitta något\\nminnesvärt.")
+                    Text("Hitta något\nminnesvärt.")
                         .font(.system(size: 35, weight: .regular, design: .serif))
                         .tracking(-0.8)
                         .foregroundStyle(WatchlistColor.primaryText)
