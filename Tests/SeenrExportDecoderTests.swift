@@ -34,6 +34,12 @@ final class SeenrExportDecoderTests: XCTestCase {
             },
             "watched_at": "2023-05-05T00:00:00Z",
             "platform": "Apple TV+", "service": null, "memo": "Rewatch"
+          }],
+          "ratings": [{
+            "type": "episode",
+            "work": {"tmdb_id":2964686,"show_tmdb_id":125988,"season":1,"episode":1,"title":"Freedom Day"},
+            "score": 8, "review": "Great episode", "is_spoiler": false,
+            "created_at": "2023-05-06T00:00:00Z"
           }]
         }
         """
@@ -101,6 +107,12 @@ final class SeenrExportDecoderTests: XCTestCase {
             "type":"movie",
             "work":{"type":"movie","tmdb_id":13,"title":"Forrest Gump"},
             "watched_at":"1994-06-23T00:00:00Z"
+          }],
+          "ratings": [{
+            "type":"episode",
+            "work":{"tmdb_id":2964686,"show_tmdb_id":125988,"season":1,"episode":1,"title":"Freedom Day"},
+            "score":8,"review":"Great episode","is_spoiler":false,
+            "created_at":"2023-05-06T00:00:00Z"
           }]
         }
         """
