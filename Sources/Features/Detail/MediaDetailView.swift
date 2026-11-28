@@ -1213,6 +1213,7 @@ struct MediaDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var televisionSeasonsSection: some View {
         if item.kind == .television {
             VStack(alignment: .leading, spacing: 13) {
