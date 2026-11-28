@@ -169,3 +169,17 @@ Målet är en separat Seenr-importör som konverterar exportformatet `seenr-expo
 - Utöka förhandsgranskningen med Seenr-specifika räknare och importvarningar.
 - Koppla importörens resultat till befintlig additiv merge först efter validering.
 - Behåll den befintliga WATCHLIST-backupimporten oförändrad.
+
+
+### Seenr-import – implementation status 2026-11-28
+
+- Added `SeenrExportDecoder` for `seenr-export/2`, with explicit format validation, title/episode/viewing decoding and warnings for malformed records.
+- Added a separate `SeenrImportService` with additive SwiftData merge and deterministic history-event identities.
+- Connected Seenr detection to the existing JSON file-import flow. Existing WATCHLIST backup import remains a separate path.
+- Preview now reports new/matching titles, episode states, episode/movie viewing events, skipped titles and unknown-status warnings.
+- Episode progress is derived from both `episode_watches` and individual episode viewings; duplicate dates across the two sources are collapsed.
+- Movie and episode viewing dates from both `viewings` and title/episode date arrays are merged with stable identities.
+- Added decoder tests and a merge/idempotency test covering duplicate source records and rewatch dates.
+- CI for the first integrated flow at commit `d25ed82` passed. Follow-up history reconciliation and additional merge tests are in the current CI queue; do not mark the importer release-ready until the latest commit's tests pass.
+- Known limitation to resolve before release: Seenr statuses without a direct WATCHLIST equivalent (for example dropped titles) are intentionally skipped and reported. The current WATCHLIST model has no dropped status.
+- The large export should be processed off the main thread before release; the current import UI still reads and decodes the selected file synchronously and needs a responsiveness pass.
