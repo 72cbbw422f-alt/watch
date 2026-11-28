@@ -25,7 +25,7 @@ enum SeenrImportService {
 
         let incomingTitles = (payload.shows + payload.movies).filter { mappedStatus($0.status) != nil }
         let titleIDs = incomingTitles.map { "\($0.kind)-\($0.tmdbID)" }
-        let episodes = payload.episodes.filter { $0.seriesID > 0 && $0.season >= 0 && $0.number > 0 }
+        let episodes = episodeProgressCandidates(payload)
         let episodeEvents = episodeEventCandidates(payload)
         let movieEvents = movieEventCandidates(payload)
 
@@ -76,19 +76,19 @@ enum SeenrImportService {
                 context.insert(entry)
             }
 
-            for record in payload.episodes {
+            for record in episodeProgressCandidates(payload) {
                 let stableID = EpisodeProgress.makeStableID(
                     seriesID: record.seriesID, seasonNumber: record.season, episodeNumber: record.number
                 )
                 guard progressIDs.insert(stableID).inserted else { continue }
                 let episode = TVEpisode(
-                    id: record.tmdbID ?? record.number,
+                    id: record.episodeID,
                     name: record.title, overview: "",
                     episodeNumber: record.number, seasonNumber: record.season,
                     airDate: record.airDate, runtime: nil, stillPath: nil, voteAverage: 0
                 )
                 let state = EpisodeProgress(seriesID: record.seriesID, episode: episode, isWatched: true)
-                state.watchedAt = record.watchedAt ?? record.dates.last
+                state.watchedAt = record.watchedAt
                 context.insert(state)
             }
 
@@ -111,6 +111,38 @@ enum SeenrImportService {
             }
         }
         return summary
+    }
+
+    private struct EpisodeProgressCandidate {
+        let seriesID: Int
+        let season: Int
+        let number: Int
+        let episodeID: Int
+        let title: String
+        let airDate: String?
+        let watchedAt: Date?
+    }
+
+    private static func episodeProgressCandidates(_ payload: SeenrImportPayload) -> [EpisodeProgressCandidate] {
+        var candidates: [String: EpisodeProgressCandidate] = [:]
+        for episode in payload.episodes where episode.seriesID > 0 && episode.season >= 0 && episode.number > 0 {
+            let key = EpisodeProgress.makeStableID(seriesID: episode.seriesID, seasonNumber: episode.season, episodeNumber: episode.number)
+            candidates[key] = EpisodeProgressCandidate(
+                seriesID: episode.seriesID, season: episode.season, number: episode.number,
+                episodeID: episode.tmdbID ?? episode.number, title: episode.title,
+                airDate: episode.airDate, watchedAt: episode.watchedAt ?? episode.dates.last
+            )
+        }
+        for viewing in payload.viewings where viewing.kind == "episode" {
+            guard let seriesID = viewing.seriesID, let season = viewing.season,
+                  let number = viewing.episode, seriesID > 0, season >= 0, number > 0 else { continue }
+            let key = EpisodeProgress.makeStableID(seriesID: seriesID, seasonNumber: season, episodeNumber: number)
+            candidates[key] = candidates[key] ?? EpisodeProgressCandidate(
+                seriesID: seriesID, season: season, number: number, episodeID: viewing.tmdbID,
+                title: viewing.title, airDate: nil, watchedAt: viewing.watchedAt
+            )
+        }
+        return Array(candidates.values)
     }
 
     private struct EpisodeEvent {
