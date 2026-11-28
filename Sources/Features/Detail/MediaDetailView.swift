@@ -1174,7 +1174,7 @@ struct MediaDetailView: View {
             .filter { $0.seriesID == item.id && ["season", "episode"].contains($0.kind) }
             .sorted { ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast) }
 
-        return Group {
+        Group {
             if item.kind == .television && !ratings.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionLabel("IMPORTEDERA SÄSONGS- OCH AVSNITTSBETYG")
@@ -1241,6 +1241,8 @@ struct MediaDetailView: View {
                 }
             }
             .padding(.horizontal, 20)
+        } else {
+            EmptyView()
         }
     }
 
