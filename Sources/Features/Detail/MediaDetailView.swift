@@ -9,6 +9,7 @@ struct MediaDetailView: View {
     @Query private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
     @Query private var movieWatchEvents: [MovieWatchEvent]
+    @Query private var importedWorkRatings: [ImportedWorkRating]
     @Query(sort: \CustomList.name) private var customLists: [CustomList]
     @Query private var customListItems: [CustomListItem]
     @State private var persistenceError: String?
@@ -89,6 +90,7 @@ struct MediaDetailView: View {
                     tmdbReviewsSection
                     upNextSection
                     televisionSeasonsSection
+                    importedWorkRatingsSection
                     similarTitlesSection
                     sourceNote
                 }
@@ -1167,6 +1169,50 @@ struct MediaDetailView: View {
     }
 
     @ViewBuilder
+    private var importedWorkRatingsSection: some View {
+        let ratings = importedWorkRatings
+            .filter { $0.seriesID == item.id && ["season", "episode"].contains($0.kind) }
+            .sorted { ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast) }
+
+        return Group {
+            if item.kind == .television && !ratings.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionLabel("IMPORTEDERA SÄSONGS- OCH AVSNITTSBETYG")
+                    ForEach(ratings, id: \.stableID) { rating in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(rating.kind == "season"
+                                     ? "Säsong \(rating.seasonNumber ?? 0)"
+                                     : "S\(String(format: "%02d", rating.seasonNumber ?? 0))E\(String(format: "%02d", rating.episodeNumber ?? 0)) · \(rating.title)")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                Spacer()
+                                Text(String(format: "%.1f/10", rating.score))
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(WatchlistColor.accent)
+                            }
+                            if let review = rating.review, !review.isEmpty {
+                                Text(review)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            if rating.isSpoiler {
+                                Label("Innehåller spoilers", systemImage: "eye.slash")
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(WatchlistColor.mutedText)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
     private var televisionSeasonsSection: some View {
         if item.kind == .television {
             VStack(alignment: .leading, spacing: 13) {
