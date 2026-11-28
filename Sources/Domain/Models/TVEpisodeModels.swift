@@ -93,3 +93,32 @@ struct TVEpisode: Decodable, Identifiable, Hashable, Sendable {
         String(format: "S%02d:E%02d", seasonNumber, episodeNumber)
     }
 }
+
+
+enum TVEpisodeSelection {
+    /// Returns the earliest regular episode that is not present in the watched-key set.
+    /// Keys use the same series/season/episode identity as EpisodeProgress.
+    static func nextUnwatchedEpisode(
+        in episodes: [TVEpisode],
+        seriesID: Int,
+        watchedKeys: Set<String>
+    ) -> TVEpisode? {
+        episodes
+            .filter { $0.seasonNumber > 0 && $0.episodeNumber > 0 }
+            .sorted {
+                if $0.seasonNumber != $1.seasonNumber {
+                    return $0.seasonNumber < $1.seasonNumber
+                }
+                return $0.episodeNumber < $1.episodeNumber
+            }
+            .first {
+                !watchedKeys.contains(
+                    EpisodeProgress.makeStableID(
+                        seriesID: seriesID,
+                        seasonNumber: $0.seasonNumber,
+                        episodeNumber: $0.episodeNumber
+                    )
+                )
+            }
+    }
+}
