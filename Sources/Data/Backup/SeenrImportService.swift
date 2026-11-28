@@ -146,7 +146,7 @@ enum SeenrImportService {
     private static func ratingCandidates(_ payload: SeenrImportPayload) -> [RatingCandidate] {
         payload.ratings.filter { ["season", "episode"].contains($0.kind) && (0...10).contains($0.score) }
             .map { rating in
-                let identity = "\(rating.kind)|\(rating.tmdbID)|\(rating.seriesID ?? 0)|\(rating.season ?? 0)|\(rating.episode ?? 0)|\(rating.createdAt?.timeIntervalSince1970 ?? 0)"
+                let identity = "\(rating.kind)|\(rating.tmdbID)|\(rating.seriesID ?? 0)|\(rating.season ?? 0)|\(rating.episode ?? 0)|\(rating.createdAt?.timeIntervalSince1970 ?? 0)|\(rating.score)|\(rating.title)|\(rating.review ?? "")|\(rating.isSpoiler)"
                 return RatingCandidate(
                     stableID: identity, kind: rating.kind, tmdbID: rating.tmdbID,
                     seriesID: rating.seriesID, season: rating.season, episode: rating.episode,
