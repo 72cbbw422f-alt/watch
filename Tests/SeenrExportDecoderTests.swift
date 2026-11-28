@@ -51,6 +51,8 @@ final class SeenrExportDecoderTests: XCTestCase {
         XCTAssertEqual(result.viewings.first?.kind, "episode")
         XCTAssertEqual(result.viewings.first?.seriesID, 125988)
         XCTAssertEqual(result.viewings.first?.memo, "Rewatch")
+        XCTAssertEqual(result.ratings.first?.score, 8)
+        XCTAssertEqual(result.ratings.first?.review, "Great episode")
         XCTAssertTrue(result.warnings.isEmpty)
     }
 
@@ -106,7 +108,7 @@ final class SeenrExportDecoderTests: XCTestCase {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
             for: LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
-            MovieWatchEvent.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
+            MovieWatchEvent.self, ImportedWorkRating.self, CustomList.self, CustomListItem.self, PremiereReminder.self,
             configurations: configuration
         )
         let context = ModelContext(container)
@@ -116,17 +118,20 @@ final class SeenrExportDecoderTests: XCTestCase {
         XCTAssertEqual(first.newEpisodeStates, 1)
         XCTAssertEqual(first.newEpisodeHistory, 2)
         XCTAssertEqual(first.newMovieHistory, 2)
+        XCTAssertEqual(first.newImportedRatings, 1)
 
         let second = try SeenrImportService.merge(payload, into: context)
         XCTAssertEqual(second.newTitles, 0)
         XCTAssertEqual(second.newEpisodeStates, 0)
         XCTAssertEqual(second.newEpisodeHistory, 0)
         XCTAssertEqual(second.newMovieHistory, 0)
+        XCTAssertEqual(second.newImportedRatings, 0)
 
         XCTAssertEqual(try context.fetch(FetchDescriptor<LibraryEntry>()).count, 2)
         XCTAssertEqual(try context.fetch(FetchDescriptor<EpisodeProgress>()).count, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<EpisodeWatchEvent>()).count, 2)
         XCTAssertEqual(try context.fetch(FetchDescriptor<MovieWatchEvent>()).count, 2)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<ImportedWorkRating>()).count, 1)
     }
 
 }
