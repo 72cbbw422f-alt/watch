@@ -119,7 +119,13 @@ Bygg en rik men tydligt strukturerad detaljsida. Undvik en enda oändlig vy; anv
 - Commit: `7fd4a5eb1cb4249ec054e5b1a276b18c71d68d57`.
 - iOS Build #441 startad; simulatorbygget har passerat och enhetstester körs.
 - Tidigare rapporterat fel `default.store` är ännu inte verifierat löst och ska felsökas separat utan risk för användardata.
-\n\n## Senaste status – 2026-11-28\n\n- IPA #140 byggd och verifierad för commit `ae9aaa334c627eda1603b6003019c3102c5a04c1`. Bulkmarkering av säsong skapar historikhändelser utan dubbletter.\n- Up Next på startsidan begränsas nu till serier med status `Tittar på` eller `Bevakar`. Serier som enbart har status `Vill se` ska inte räknas som aktivt följda.\n\n\n## Utvecklingsstatus – hero 2026-11-28
+\n\n## Senaste status – 2026-11-28\n\n- IPA #140 byggd och verifierad för commit `ae9aaa334c627eda1603b6003019c3102c5a04c1`. Bulkmarkering av säsong skapar historikhändelser utan dubbletter.\n- Up Next på startsidan begränsas nu till serier med status `Tittar på` eller `Bevakar`. Serier som enbart har status `Vill se` ska inte räknas som aktivt följda.\n\n\n## Progressuppdatering – Fortsätt titta 2026-11-28
+
+- Uppdateringsnyckeln för Fortsätt titta omfattar nu även sparad avsnittsprogress.
+- När användaren markerar eller återställer ett avsnitt ska startsidans nästa-avsnittsinformation laddas om, även om listan över aktiva serier är oförändrad.
+- Ändringen ska verifieras i CI tillsammans med hero-karusellen.
+
+## Utvecklingsstatus – hero 2026-11-28
 
 - Startsidan har nu en första implementation av en horisontell hero-karusell med upp till fem utvalda titlar.
 - Urvalet växlar mellan film och serie när datatillgången tillåter det, med bibehållen starttitel från trendflödet.
