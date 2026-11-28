@@ -108,10 +108,15 @@ enum SeenrExportDecoder {
         if root["episode_watches"] == nil { warnings.append("Exporten saknar episode_watches; avsnittsprogress kan inte återskapas.") }
         if root["viewings"] == nil { warnings.append("Exporten saknar viewings; separat visningshistorik kan inte återskapas.") }
         if root["ratings"] == nil { warnings.append("Exporten saknar ratings; betyg på säsonger och avsnitt kan inte återskapas.") }
+        let malformedTitles = (root["shows"] as? [[String: Any]] ?? []).count - shows.count
+            + (root["movies"] as? [[String: Any]] ?? []).count - movies.count
         let malformedEpisodes = (root["episode_watches"] as? [[String: Any]] ?? []).count - episodes.count
         let malformedViewings = (root["viewings"] as? [[String: Any]] ?? []).count - viewings.count
+        let malformedRatings = (root["ratings"] as? [[String: Any]] ?? []).count - ratings.count
+        if malformedTitles > 0 { warnings.append("\(malformedTitles) film- eller serieposter saknade giltiga grunduppgifter och hoppas över.") }
         if malformedEpisodes > 0 { warnings.append("\(malformedEpisodes) avsnittsposter kunde inte läsas och hoppas över.") }
         if malformedViewings > 0 { warnings.append("\(malformedViewings) visningshändelser kunde inte läsas och hoppas över.") }
+        if malformedRatings > 0 { warnings.append("\(malformedRatings) betygsposter kunde inte läsas och hoppas över.") }
 
         return SeenrImportPayload(shows: shows, movies: movies, episodes: episodes, viewings: viewings, ratings: ratings, warnings: warnings)
     }
