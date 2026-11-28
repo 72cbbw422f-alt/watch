@@ -7,6 +7,7 @@ struct SeenrImportPreview {
     let newEpisodeStates: Int
     let newEpisodeHistory: Int
     let newMovieHistory: Int
+    let newImportedRatings: Int
     let skippedTitles: Int
     let warnings: [String]
 }
@@ -18,10 +19,12 @@ enum SeenrImportService {
         let progress = try context.fetch(FetchDescriptor<EpisodeProgress>())
         let episodeHistory = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
         let movieHistory = try context.fetch(FetchDescriptor<MovieWatchEvent>())
+        let importedRatings = try context.fetch(FetchDescriptor<ImportedWorkRating>())
         let existingTitles = Set(library.map(\.stableID))
         let existingProgress = Set(progress.map(\.stableID))
         let existingEpisodeEvents = Set(episodeHistory.map(\.id))
         let existingMovieEvents = Set(movieHistory.map(\.id))
+        let existingRatingIDs = Set(importedRatings.map(\.stableID))
 
         let incomingTitles = (payload.shows + payload.movies).filter { mappedStatus($0.status) != nil }
         let titleIDs = incomingTitles.map { "\($0.kind)-\($0.tmdbID)" }
@@ -39,6 +42,7 @@ enum SeenrImportService {
             }.count,
             newEpisodeHistory: episodeEvents.filter { !existingEpisodeEvents.contains($0.id) }.count,
             newMovieHistory: movieEvents.filter { !existingMovieEvents.contains($0.id) }.count,
+            newImportedRatings: ratingCandidates(payload).filter { !existingRatingIDs.contains($0.stableID) }.count,
             skippedTitles: payload.shows.count + payload.movies.count - incomingTitles.count,
             warnings: payload.warnings + unknownStatusWarnings(payload)
         )
@@ -52,10 +56,12 @@ enum SeenrImportService {
             let progress = try context.fetch(FetchDescriptor<EpisodeProgress>())
             let episodeHistory = try context.fetch(FetchDescriptor<EpisodeWatchEvent>())
             let movieHistory = try context.fetch(FetchDescriptor<MovieWatchEvent>())
+            let importedRatings = try context.fetch(FetchDescriptor<ImportedWorkRating>())
             var titleIDs = Set(library.map(\.stableID))
             var progressIDs = Set(progress.map(\.stableID))
             var episodeEventIDs = Set(episodeHistory.map(\.id))
             var movieEventIDs = Set(movieHistory.map(\.id))
+            var ratingIDs = Set(importedRatings.map(\.stableID))
 
             for record in payload.shows + payload.movies {
                 guard let status = mappedStatus(record.status) else { continue }
@@ -109,8 +115,45 @@ enum SeenrImportService {
                     posterPath: nil, watchedAt: record.watchedAt, source: "seenr-import"
                 ))
             }
+            for rating in ratingCandidates(payload) {
+                guard ratingIDs.insert(rating.stableID).inserted else { continue }
+                context.insert(ImportedWorkRating(
+                    stableID: rating.stableID, kind: rating.kind, tmdbID: rating.tmdbID,
+                    seriesID: rating.seriesID, seasonNumber: rating.season,
+                    episodeNumber: rating.episode, title: rating.title, score: rating.score,
+                    review: rating.review, isSpoiler: rating.isSpoiler, createdAt: rating.createdAt
+                ))
+            }
+
         }
         return summary
+    }
+
+    private struct RatingCandidate {
+        let stableID: String
+        let kind: String
+        let tmdbID: Int
+        let seriesID: Int?
+        let season: Int?
+        let episode: Int?
+        let title: String
+        let score: Double
+        let review: String?
+        let isSpoiler: Bool
+        let createdAt: Date?
+    }
+
+    private static func ratingCandidates(_ payload: SeenrImportPayload) -> [RatingCandidate] {
+        payload.ratings.filter { ["season", "episode"].contains($0.kind) && (0...10).contains($0.score) }
+            .map { rating in
+                let identity = "\(rating.kind)|\(rating.tmdbID)|\(rating.seriesID ?? 0)|\(rating.season ?? 0)|\(rating.episode ?? 0)|\(rating.createdAt?.timeIntervalSince1970 ?? 0)"
+                return RatingCandidate(
+                    stableID: identity, kind: rating.kind, tmdbID: rating.tmdbID,
+                    seriesID: rating.seriesID, season: rating.season, episode: rating.episode,
+                    title: rating.title, score: rating.score, review: rating.review,
+                    isSpoiler: rating.isSpoiler, createdAt: rating.createdAt
+                )
+            }
     }
 
     private struct EpisodeProgressCandidate {
