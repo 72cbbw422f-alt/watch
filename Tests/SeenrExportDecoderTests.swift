@@ -92,7 +92,7 @@ final class SeenrExportDecoderTests: XCTestCase {
         {
           "format": "seenr-export/2",
           "shows": [{"tmdb_id":125988,"title":"Silo","year":2023,"status":"watching","rating":8,"favorite":true}],
-          "movies": [{"tmdb_id":13,"title":"Forrest Gump","year":1994,"status":"completed","rating":10,"dates":["1994-06-23T00:00:00Z","2000-01-01T00:00:00Z"]}],
+          "movies": [{"tmdb_id":13,"title":"Forrest Gump","year":1994,"status":"completed","rating":10,"watch_count":4,"dates":["1994-06-23T00:00:00Z","2000-01-01T00:00:00Z"]}],
           "episode_watches": [{
             "show_tmdb_id":125988,"show_title":"Silo","season":1,"episode":1,
             "episode_title":"Freedom Day","episode_tmdb_id":2964686,
@@ -124,6 +124,9 @@ final class SeenrExportDecoderTests: XCTestCase {
             configurations: configuration
         )
         let context = ModelContext(container)
+
+        let preview = try SeenrImportService.preview(payload, in: context)
+        XCTAssertTrue(preview.warnings.contains { $0.contains("antal visningar") })
 
         let first = try SeenrImportService.merge(payload, into: context)
         XCTAssertEqual(first.newTitles, 2)
