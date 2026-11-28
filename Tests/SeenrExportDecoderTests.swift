@@ -150,6 +150,43 @@ final class SeenrExportDecoderTests: XCTestCase {
     }
 
     @MainActor
+    func testSeasonAndEpisodeRatingsWithoutDatesRemainDistinctAndIdempotent() throws {
+        let json = """
+        {
+          "format": "seenr-export/2",
+          "shows": [{"tmdb_id":125988,"title":"Silo","year":2023,"status":"watching"}],
+          "movies": [],
+          "episode_watches": [],
+          "viewings": [],
+          "ratings": [
+            {"type":"season","work":{"tmdb_id":125988,"show_tmdb_id":125988,"season":1,"title":"Silo"},"score":8},
+            {"type":"episode","work":{"tmdb_id":2964686,"show_tmdb_id":125988,"season":1,"episode":1,"title":"Freedom Day"},"score":9},
+            {"type":"episode","work":{"tmdb_id":2964687,"show_tmdb_id":125988,"season":1,"episode":2,"title":"The Janitor's Boy"},"score":7}
+          ]
+        }
+        """
+        let payload = try SeenrExportDecoder.decode(Data(json.utf8))
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
+            MovieWatchEvent.self, ImportedWorkRating.self, CustomList.self,
+            CustomListItem.self, PremiereReminder.self,
+            configurations: configuration
+        )
+        let context = ModelContext(container)
+
+        let first = try SeenrImportService.merge(payload, into: context)
+        XCTAssertEqual(first.newImportedRatings, 3)
+        let second = try SeenrImportService.merge(payload, into: context)
+        XCTAssertEqual(second.newImportedRatings, 0)
+
+        let ratings = try context.fetch(FetchDescriptor<ImportedWorkRating>())
+        XCTAssertEqual(ratings.count, 3)
+        XCTAssertEqual(Set(ratings.map(\.stableID)).count, 3)
+        XCTAssertTrue(ratings.allSatisfy { $0.seriesID == 125988 })
+    }
+
+    @MainActor
     func testAddingImportedRatingModelOpensExistingLibraryStore() throws {
         let storeURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("watchlist-seenr-migration-\(UUID().uuidString).store")
