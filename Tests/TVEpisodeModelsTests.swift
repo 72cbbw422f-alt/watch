@@ -69,4 +69,51 @@ final class TVEpisodeModelsTests: XCTestCase {
         XCTAssertEqual(episode.runtime, 58)
         XCTAssertEqual(episode.airDate, "2008-01-20")
     }
+
+    func testNextUnwatchedEpisodeSkipsWatchedEpisodesAndSpecials() throws {
+        let json = """
+        [
+          {"id": 10, "name": "Special", "overview": "", "episode_number": 1, "season_number": 0, "air_date": null, "runtime": null, "still_path": null, "vote_average": 0},
+          {"id": 11, "name": "Pilot", "overview": "", "episode_number": 1, "season_number": 1, "air_date": "2024-01-01", "runtime": 45, "still_path": null, "vote_average": 8},
+          {"id": 12, "name": "The Next One", "overview": "", "episode_number": 2, "season_number": 1, "air_date": "2024-01-08", "runtime": 45, "still_path": null, "vote_average": 8},
+          {"id": 13, "name": "Season Two", "overview": "", "episode_number": 1, "season_number": 2, "air_date": "2025-01-01", "runtime": 45, "still_path": null, "vote_average": 8}
+        ]
+        """.data(using: .utf8)!
+
+        let episodes = try JSONDecoder().decode([TVEpisode].self, from: json)
+        let watched = Set([
+            EpisodeProgress.makeStableID(seriesID: 1396, seasonNumber: 1, episodeNumber: 1)
+        ])
+
+        let next = TVEpisodeSelection.nextUnwatchedEpisode(
+            in: episodes,
+            seriesID: 1396,
+            watchedKeys: watched
+        )
+
+        XCTAssertEqual(next?.id, 12)
+        XCTAssertEqual(next?.name, "The Next One")
+        XCTAssertEqual(next?.displayCode, "S01:E02")
+    }
+
+    func testNextUnwatchedEpisodeReturnsNilWhenAllRegularEpisodesAreWatched() throws {
+        let json = """
+        [
+          {"id": 11, "name": "Pilot", "overview": "", "episode_number": 1, "season_number": 1, "air_date": null, "runtime": null, "still_path": null, "vote_average": 0}
+        ]
+        """.data(using: .utf8)!
+        let episodes = try JSONDecoder().decode([TVEpisode].self, from: json)
+        let watched = Set([
+            EpisodeProgress.makeStableID(seriesID: 1396, seasonNumber: 1, episodeNumber: 1)
+        ])
+
+        XCTAssertNil(
+            TVEpisodeSelection.nextUnwatchedEpisode(
+                in: episodes,
+                seriesID: 1396,
+                watchedKeys: watched
+            )
+        )
+    }
+
 }
