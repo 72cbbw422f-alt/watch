@@ -34,6 +34,19 @@ struct SeenrImportPayload: Sendable {
         let dates: [Date]
     }
 
+    struct Rating: Sendable {
+        let kind: String
+        let tmdbID: Int
+        let seriesID: Int?
+        let season: Int?
+        let episode: Int?
+        let title: String
+        let score: Double
+        let review: String?
+        let isSpoiler: Bool
+        let createdAt: Date?
+    }
+
     struct Viewing: Sendable {
         let kind: String
         let tmdbID: Int
@@ -52,6 +65,7 @@ struct SeenrImportPayload: Sendable {
     let movies: [Title]
     let episodes: [Episode]
     let viewings: [Viewing]
+    let ratings: [Rating]
     let warnings: [String]
 
     var totalTitles: Int { shows.count + movies.count }
@@ -87,17 +101,19 @@ enum SeenrExportDecoder {
         let movies = (root["movies"] as? [[String: Any]] ?? []).compactMap { title($0, kind: "movie") }
         let episodes = (root["episode_watches"] as? [[String: Any]] ?? []).compactMap(episode)
         let viewings = (root["viewings"] as? [[String: Any]] ?? []).compactMap(viewing)
+        let ratings = (root["ratings"] as? [[String: Any]] ?? []).compactMap(rating)
         var warnings: [String] = []
         if root["shows"] == nil { warnings.append("Exporten saknar serien-listan.") }
         if root["movies"] == nil { warnings.append("Exporten saknar film-listan.") }
         if root["episode_watches"] == nil { warnings.append("Exporten saknar episode_watches; avsnittsprogress kan inte återskapas.") }
         if root["viewings"] == nil { warnings.append("Exporten saknar viewings; separat visningshistorik kan inte återskapas.") }
+        if root["ratings"] == nil { warnings.append("Exporten saknar ratings; betyg på säsonger och avsnitt kan inte återskapas.") }
         let malformedEpisodes = (root["episode_watches"] as? [[String: Any]] ?? []).count - episodes.count
         let malformedViewings = (root["viewings"] as? [[String: Any]] ?? []).count - viewings.count
         if malformedEpisodes > 0 { warnings.append("\(malformedEpisodes) avsnittsposter kunde inte läsas och hoppas över.") }
         if malformedViewings > 0 { warnings.append("\(malformedViewings) visningshändelser kunde inte läsas och hoppas över.") }
 
-        return SeenrImportPayload(shows: shows, movies: movies, episodes: episodes, viewings: viewings, warnings: warnings)
+        return SeenrImportPayload(shows: shows, movies: movies, episodes: episodes, viewings: viewings, ratings: ratings, warnings: warnings)
     }
 
     private static func title(_ value: [String: Any], kind: String) -> SeenrImportPayload.Title? {
@@ -128,6 +144,22 @@ enum SeenrExportDecoder {
             tmdbID: integer(value["episode_tmdb_id"]), airDate: value["air_date"] as? String,
             watchedAt: date(value["watched_at"]) ?? dates.last,
             watchCount: max(1, integer(value["watch_count"]) ?? 1), dates: dates
+        )
+    }
+
+    private static func rating(_ value: [String: Any]) -> SeenrImportPayload.Rating? {
+        guard let kind = value["type"] as? String,
+              let work = value["work"] as? [String: Any],
+              let id = integer(work["tmdb_id"]), id > 0,
+              let score = (value["score"] as? NSNumber)?.doubleValue else { return nil }
+        return .init(
+            kind: kind, tmdbID: id,
+            seriesID: integer(work["show_tmdb_id"]),
+            season: integer(work["season"]), episode: integer(work["episode"]),
+            title: work["title"] as? String ?? work["show_title"] as? String ?? "",
+            score: score, review: value["review"] as? String,
+            isSpoiler: value["is_spoiler"] as? Bool ?? false,
+            createdAt: date(value["created_at"])
         )
     }
 
