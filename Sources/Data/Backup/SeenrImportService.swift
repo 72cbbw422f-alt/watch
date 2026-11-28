@@ -44,7 +44,7 @@ enum SeenrImportService {
             newMovieHistory: movieEvents.filter { !existingMovieEvents.contains($0.id) }.count,
             newImportedRatings: ratingCandidates(payload).filter { !existingRatingIDs.contains($0.stableID) }.count,
             skippedTitles: payload.shows.count + payload.movies.count - incomingTitles.count,
-            warnings: payload.warnings + unknownStatusWarnings(payload)
+            warnings: payload.warnings + unknownStatusWarnings(payload) + incompleteWatchHistoryWarnings(payload)
         )
     }
 
@@ -270,6 +270,20 @@ enum SeenrImportService {
     private static func unknownStatusWarnings(_ payload: SeenrImportPayload) -> [String] {
         let unknown = Set((payload.shows + payload.movies).map(\.status).filter { mappedStatus($0) == nil })
         return unknown.sorted().map { "Statusen '\($0)' känns inte igen och titlar med den statusen hoppas över." }
+    }
+
+    private static func incompleteWatchHistoryWarnings(_ payload: SeenrImportPayload) -> [String] {
+        let titlesWithMissingDates = (payload.shows + payload.movies).filter { record in
+            let knownDates = Set(record.dates + (record.watchedAt.map { [$0] } ?? []))
+            return record.watchCount > knownDates.count
+        }.count
+        let episodesWithMissingDates = payload.episodes.filter { record in
+            let knownDates = Set(record.dates + (record.watchedAt.map { [$0] } ?? []))
+            return record.watchCount > knownDates.count
+        }.count
+
+        guard titlesWithMissingDates > 0 || episodesWithMissingDates > 0 else { return [] }
+        return ["Seenr anger antal visningar som överstiger antalet sparade datum för \(titlesWithMissingDates) titlar och \(episodesWithMissingDates) avsnitt. Extra visningar utan datum kan inte återskapas som separata historikhändelser."]
     }
 
     /// Stable UUID derived from the source event identity so importing the same export twice is safe.
