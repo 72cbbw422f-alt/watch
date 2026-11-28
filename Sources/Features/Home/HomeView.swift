@@ -14,7 +14,7 @@ struct HomeView: View {
     @State private var personalRecommendations: [MediaItem] = []
     @State private var isLoadingRecommendations = false
     @State private var recommendationRequestID = UUID()
-        @State private var continueWatchingNextEpisodes: [String: TVEpisode] = [:]
+    @State private var continueWatchingNextEpisodes: [String: TVEpisode] = [:]
     @State private var continueWatchingRequestID = UUID()
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
@@ -385,21 +385,20 @@ struct HomeView: View {
                 group.addTask {
                     do {
                         let details = try await client.televisionDetails(id: seed.tmdbID)
+                        var episodes: [TVEpisode] = []
                         for season in details.regularSeasons {
                             let seasonDetails = try await client.televisionSeason(
                                 id: seed.tmdbID,
                                 seasonNumber: season.seasonNumber
                             )
-                            let next = seasonDetails.episodes
-                                .sorted { $0.episodeNumber < $1.episodeNumber }
-                                .first {
-                                    !watchedKeys.contains(
-                                        "\(seed.tmdbID):\($0.seasonNumber):\($0.episodeNumber)"
-                                    )
-                                }
-                            if let next { return (seed.stableID, next) }
+                            episodes.append(contentsOf: seasonDetails.episodes)
                         }
-                        return (seed.stableID, nil)
+                        let next = TVEpisodeSelection.nextUnwatchedEpisode(
+                            in: episodes,
+                            seriesID: seed.tmdbID,
+                            watchedKeys: watchedKeys
+                        )
+                        return (seed.stableID, next)
                     } catch {
                         return (seed.stableID, nil)
                     }
