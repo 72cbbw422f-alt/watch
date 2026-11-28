@@ -190,4 +190,38 @@ final class SeenrExportDecoderTests: XCTestCase {
         XCTAssertTrue(try currentContext.fetch(FetchDescriptor<ImportedWorkRating>()).isEmpty)
     }
 
+    @MainActor
+    func testViewingDatesCountTowardWatchHistoryWarning() throws {
+        let json = """
+        {
+          "format": "seenr-export/2",
+          "shows": [],
+          "movies": [{
+            "tmdb_id": 13, "title": "Forrest Gump", "year": 1994,
+            "status": "completed", "watch_count": 2,
+            "dates": ["1994-06-23T00:00:00Z"]
+          }],
+          "episode_watches": [],
+          "viewings": [{
+            "type": "movie",
+            "work": {"type": "movie", "tmdb_id": 13, "title": "Forrest Gump"},
+            "watched_at": "2000-01-01T00:00:00Z"
+          }],
+          "ratings": []
+        }
+        """
+        let payload = try SeenrExportDecoder.decode(Data(json.utf8))
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
+            MovieWatchEvent.self, ImportedWorkRating.self, CustomList.self,
+            CustomListItem.self, PremiereReminder.self,
+            configurations: configuration
+        )
+        let preview = try SeenrImportService.preview(payload, in: ModelContext(container))
+
+        XCTAssertFalse(preview.warnings.contains { $0.contains("antal visningar") })
+    }
+
+
 }
