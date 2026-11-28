@@ -126,7 +126,7 @@ enum SeenrExportDecoder {
             rating: integer(value["rating"]), review: value["review"] as? String,
             favorite: value["favorite"] as? Bool ?? false,
             addedAt: date(value["added_at"]), startedAt: date(value["started_at"]),
-            completedAt: date(value["completed_at"]), watchedAt: date(value["watched_at"]),
+            completedAt: date(value["completed_at"]), watchedAt: date(value["watched_at"]) ?? date(value["first_watched_at"]),
             dates: (value["dates"] as? [String] ?? []).compactMap(date),
             watchCount: max(0, integer(value["watch_count"]) ?? integer(value["plays"]) ?? 0)
         )
