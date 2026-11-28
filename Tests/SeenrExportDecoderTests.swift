@@ -146,4 +146,45 @@ final class SeenrExportDecoderTests: XCTestCase {
         XCTAssertEqual(try context.fetch(FetchDescriptor<ImportedWorkRating>()).count, 1)
     }
 
+    @MainActor
+    func testAddingImportedRatingModelOpensExistingLibraryStore() throws {
+        let storeURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("watchlist-seenr-migration-\\(UUID().uuidString).store")
+        defer {
+            try? FileManager.default.removeItem(at: storeURL)
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + "-shm"))
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + "-wal"))
+        }
+
+        let legacySchema = Schema([
+            LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
+            MovieWatchEvent.self, PremiereReminder.self, CustomList.self, CustomListItem.self
+        ])
+        let legacyConfiguration = ModelConfiguration(
+            "LegacyWatchlist", schema: legacySchema, url: storeURL,
+            allowsSave: true, cloudKitDatabase: .none
+        )
+        do {
+            let legacyContainer = try ModelContainer(for: legacySchema, configurations: [legacyConfiguration])
+            let context = ModelContext(legacyContainer)
+            let item = MediaItem(id: 13, kind: .movie, title: "Forrest Gump", overview: "")
+            context.insert(LibraryEntry(item: item, status: .watched))
+            try context.save()
+        }
+
+        let currentSchema = Schema([
+            LibraryEntry.self, EpisodeProgress.self, EpisodeWatchEvent.self,
+            MovieWatchEvent.self, ImportedWorkRating.self,
+            PremiereReminder.self, CustomList.self, CustomListItem.self
+        ])
+        let currentConfiguration = ModelConfiguration(
+            "CurrentWatchlist", schema: currentSchema, url: storeURL,
+            allowsSave: true, cloudKitDatabase: .none
+        )
+        let currentContainer = try ModelContainer(for: currentSchema, configurations: [currentConfiguration])
+        let currentContext = ModelContext(currentContainer)
+        XCTAssertEqual(try currentContext.fetch(FetchDescriptor<LibraryEntry>()).count, 1)
+        XCTAssertTrue(try currentContext.fetch(FetchDescriptor<ImportedWorkRating>()).isEmpty)
+    }
+
 }
