@@ -167,84 +167,39 @@ struct HomeView: View {
         .padding(.horizontal, 20)
     }
 
+    private var featuredItems: [MediaItem] {
+        guard let first = trendingItems.first else { return [] }
+        var result = [first]
+        var remaining = Array(trendingItems.dropFirst())
+        while result.count < 5, !remaining.isEmpty {
+            let preferredKind: MediaKind = result.last?.kind == .movie ? .television : .movie
+            let nextIndex = remaining.firstIndex { $0.kind == preferredKind } ?? 0
+            result.append(remaining.remove(at: nextIndex))
+        }
+        return result
+    }
+
     private var featured: some View {
         Group {
-            if let item = trendingItems.first {
-                NavigationLink(value: item) {
-                    ZStack(alignment: .bottomLeading) {
-                        Rectangle()
-                            .fill(WatchlistColor.surfaceElevated)
-                        GeometryReader { proxy in
-                            Group {
-                                if let url = item.backdropURL {
-                                    AsyncImage(url: url) { phase in
-                                        if let image = phase.image {
-                                            image.resizable()
-                                                .scaledToFill()
-                                                .frame(width: proxy.size.width, height: proxy.size.height)
-                                                .clipped()
-                                        } else {
-                                            heroFallback
-                                        }
-                                    }
-                                } else {
-                                    heroFallback
-                                }
-                            }
-                            .frame(width: proxy.size.width, height: proxy.size.height)
-                            .clipped()
+            if !featuredItems.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(featuredItems, id: \\.stableID) { item in
+                            featuredCard(for: item)
+                                .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
                         }
-                        .frame(height: 265)
-                        LinearGradient(
-                            stops: [
-                                .init(color: .black.opacity(0.02), location: 0),
-                                .init(color: .black.opacity(0.18), location: 0.38),
-                                .init(color: .black.opacity(0.88), location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        VStack(alignment: .leading, spacing: 9) {
-                            Text("VECKANS UTVALDA")
-                                .font(.system(size: 9, weight: .bold))
-                                .tracking(1.8)
-                                .foregroundStyle(WatchlistColor.accent)
-                            Text(item.title)
-                                .font(.system(size: 27, weight: .semibold, design: .serif))
-                                .tracking(-0.5)
-                                .foregroundStyle(.white)
-                                .lineLimit(2)
-                            HStack(spacing: 10) {
-                                Text(item.kind.displayName.uppercased())
-                                if let year = item.releaseDate?.prefix(4), !year.isEmpty {
-                                    Text("·")
-                                    Text(String(year))
-                                }
-                                if item.voteAverage > 0 {
-                                    Label(String(format: "%.1f", item.voteAverage), systemImage: "star.fill")
-                                }
-                            }
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.82))
-                            Label("Visa titel", systemImage: "arrow.up.right")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(WatchlistColor.accent)
-                                .padding(.top, 2)
-                        }
-                        .padding(20)
                     }
-                    .frame(height: 265)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+                    .scrollTargetLayout()
                 }
-                .buttonStyle(.plain)
+                .contentMargins(.horizontal, 20, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("ETT BIBLIOTEK FÖR BERÄTTELSER")
                         .font(.system(size: 9, weight: .semibold))
                         .tracking(1.7)
                         .foregroundStyle(WatchlistColor.accent)
-                    Text("Hitta något\nminnesvärt.")
+                    Text("Hitta något\\nminnesvärt.")
                         .font(.system(size: 35, weight: .regular, design: .serif))
                         .tracking(-0.8)
                         .foregroundStyle(WatchlistColor.primaryText)
@@ -259,10 +214,80 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 20)
                 .padding(.vertical, 8)
             }
         }
-        .padding(.horizontal, 20)
+    }
+
+    private func featuredCard(for item: MediaItem) -> some View {
+        NavigationLink(value: item) {
+            ZStack(alignment: .bottomLeading) {
+                Rectangle()
+                    .fill(WatchlistColor.surfaceElevated)
+                GeometryReader { proxy in
+                    Group {
+                        if let url = item.backdropURL {
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable()
+                                        .scaledToFill()
+                                        .frame(width: proxy.size.width, height: proxy.size.height)
+                                        .clipped()
+                                } else {
+                                    heroFallback
+                                }
+                            }
+                        } else {
+                            heroFallback
+                        }
+                    }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+                }
+                LinearGradient(
+                    stops: [
+                        .init(color: .black.opacity(0.02), location: 0),
+                        .init(color: .black.opacity(0.18), location: 0.38),
+                        .init(color: .black.opacity(0.88), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                VStack(alignment: .leading, spacing: 9) {
+                    Text("UTVALT FÖR DIG")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.8)
+                        .foregroundStyle(WatchlistColor.accent)
+                    Text(item.title)
+                        .font(.system(size: 27, weight: .semibold, design: .serif))
+                        .tracking(-0.5)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                    HStack(spacing: 10) {
+                        Text(item.kind.displayName.uppercased())
+                        if let year = item.releaseDate?.prefix(4), !year.isEmpty {
+                            Text("·")
+                            Text(String(year))
+                        }
+                        if item.voteAverage > 0 {
+                            Label(String(format: "%.1f", item.voteAverage), systemImage: "star.fill")
+                        }
+                    }
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    Label("Visa titel", systemImage: "arrow.up.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WatchlistColor.accent)
+                        .padding(.top, 2)
+                }
+                .padding(20)
+            }
+            .frame(height: 265)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(WatchlistColor.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private var heroFallback: some View {
