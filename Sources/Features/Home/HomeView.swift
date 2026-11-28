@@ -300,7 +300,7 @@ struct HomeView: View {
         let savedTitles = savedForLaterEntries.map(\.mediaItem)
         return posterCarousel(
             title: "Up Next",
-            eyebrow: "OSedda TITLAR I DIN LISTA",
+            eyebrow: "OSEDDA FILMER & SERIER",
             trailing: "\(savedTitles.count) SPARADE",
             items: savedTitles
         )
