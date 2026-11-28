@@ -7,6 +7,7 @@ struct BackupSettingsView: View {
     @State private var document: WatchlistBackupDocument?
     @State private var isExporting = false
     @State private var isImporting = false
+    @State private var isAnalyzingImport = false
     @State private var pendingImport: WatchlistBackup?
     @State private var importPreview: WatchlistImportPreview?
     @State private var pendingSeenr: SeenrImportPayload?
@@ -78,6 +79,23 @@ struct BackupSettingsView: View {
                             .background(WatchlistColor.accent, in: RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
+
+                    if isAnalyzingImport {
+                        HStack(spacing: 10) {
+                            ProgressView().tint(WatchlistColor.accent)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Analyserar exporten")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(WatchlistColor.primaryText)
+                                Text("Stora Seenr-filer kan ta en liten stund.")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(WatchlistColor.secondaryText)
+                            }
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14))
+                    }
 
                     Button { isImporting = true } label: {
                         Label("Importera säkerhetskopia", systemImage: "square.and.arrow.down")
@@ -177,14 +195,25 @@ struct BackupSettingsView: View {
             let hasAccess = url.startAccessingSecurityScopedResource()
             defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
             let data = try Data(contentsOf: url)
-            if let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               root["format"] as? String == "seenr-export/2" {
-                let payload = try SeenrExportDecoder.decode(data)
-                let preview = try SeenrImportService.preview(payload, in: modelContext)
-                pendingSeenr = payload
-                seenrPreview = preview
-                pendingImport = nil
-                importPreview = nil
+
+            if String(data: data.prefix(2_000), encoding: .utf8)?.contains("seenr-export/2") == true {
+                isAnalyzingImport = true
+                Task {
+                    do {
+                        let payload = try await Task.detached(priority: .userInitiated) {
+                            try SeenrExportDecoder.decode(data)
+                        }.value
+                        let preview = try SeenrImportService.preview(payload, in: modelContext)
+                        pendingSeenr = payload
+                        seenrPreview = preview
+                        pendingImport = nil
+                        importPreview = nil
+                        isConfirmingImport = true
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                    isAnalyzingImport = false
+                }
             } else {
                 let backup = try WatchlistBackupService.decode(data)
                 let preview = try WatchlistImportService.preview(backup, in: modelContext)
@@ -192,8 +221,8 @@ struct BackupSettingsView: View {
                 importPreview = preview
                 pendingSeenr = nil
                 seenrPreview = nil
+                isConfirmingImport = true
             }
-            isConfirmingImport = true
         } catch { errorMessage = error.localizedDescription }
     }
 
