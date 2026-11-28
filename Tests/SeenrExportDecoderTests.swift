@@ -149,7 +149,7 @@ final class SeenrExportDecoderTests: XCTestCase {
     @MainActor
     func testAddingImportedRatingModelOpensExistingLibraryStore() throws {
         let storeURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("watchlist-seenr-migration-\\(UUID().uuidString).store")
+            .appendingPathComponent("watchlist-seenr-migration-\(UUID().uuidString).store")
         defer {
             try? FileManager.default.removeItem(at: storeURL)
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + "-shm"))
