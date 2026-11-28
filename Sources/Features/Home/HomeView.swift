@@ -331,13 +331,36 @@ struct HomeView: View {
     }
 
     private var homeUpNext: some View {
-        let savedTitles = savedForLaterEntries.map(\.mediaItem)
-        return posterCarousel(
-            title: "Up Next",
-            eyebrow: "OSEDDA FILMER & SERIER",
-            trailing: "\(savedTitles.count) SPARADE",
-            items: savedTitles
-        )
+        let entries = inProgressEntries.filter {
+            $0.mediaKind == MediaKind.television.rawValue &&
+            continueWatchingNextEpisodes[$0.stableID] != nil
+        }
+
+        return Group {
+            if !entries.isEmpty {
+                VStack(alignment: .leading, spacing: 14) {
+                    sectionHeading(
+                        "Up Next",
+                        eyebrow: "NÄSTA AVSNITT I DINA SERIER",
+                        trailing: "\(entries.count) SERIER"
+                    )
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(entries.prefix(10)) { entry in
+                                NavigationLink(value: entry.mediaItem) {
+                                    UpNextEpisodeCard(
+                                        entry: entry,
+                                        episode: continueWatchingNextEpisodes[entry.stableID]
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+            }
+        }
     }
 
     @MainActor
