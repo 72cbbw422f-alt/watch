@@ -14,10 +14,7 @@ struct HomeView: View {
     @State private var personalRecommendations: [MediaItem] = []
     @State private var isLoadingRecommendations = false
     @State private var recommendationRequestID = UUID()
-    @State private var homeUpNextItems: [HomeUpNextItem] = []
-    @State private var isLoadingHomeUpNext = false
-    @State private var homeUpNextRequestID = UUID()
-    @State private var continueWatchingNextEpisodes: [String: TVEpisode] = [:]
+        @State private var continueWatchingNextEpisodes: [String: TVEpisode] = [:]
     @State private var continueWatchingRequestID = UUID()
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
@@ -30,20 +27,8 @@ struct HomeView: View {
             .sorted { $0.dateAdded > $1.dateAdded }
     }
 
-    private var followedSeries: [LibraryEntry] {
-        libraryEntries.filter {
-            $0.mediaKind == MediaKind.television.rawValue &&
-            ($0.status == .watching || $0.status == .monitoring)
-        }
-    }
-
     private var continueWatchingSeedKey: String {
         inProgressEntries.filter { $0.mediaKind == MediaKind.television.rawValue }.map(\.stableID).sorted().joined(separator: "|")
-    }
-
-    private var upNextSeedKey: String {
-        followedSeries.map(\.stableID).sorted().joined(separator: "|") + "#" +
-        episodeProgressEntries.map { "\($0.stableID):\($0.isWatched)" }.sorted().joined(separator: "|")
     }
 
     private var recommendationSeedKey: String {
@@ -134,8 +119,7 @@ struct HomeView: View {
                 .refreshable {
                     await loadTrending()
                     await loadPersonalRecommendations()
-                    await loadHomeUpNext()
-                }
+                        }
                 .scrollClipDisabled(false)
             }
         }
@@ -148,9 +132,6 @@ struct HomeView: View {
         }
         .task(id: recommendationSeedKey) {
             await loadPersonalRecommendations()
-        }
-        .task(id: upNextSeedKey) {
-            await loadHomeUpNext()
         }
         .task(id: continueWatchingSeedKey) {
             await loadContinueWatchingEpisodes()
@@ -316,190 +297,13 @@ struct HomeView: View {
     }
 
     private var homeUpNext: some View {
-        Group {
-            if !followedSeries.isEmpty {
-                VStack(alignment: .leading, spacing: 13) {
-                    sectionHeading("Up Next", eyebrow: "NÄSTA AVSNITT I DINA SERIER", trailing: "\(homeUpNextItems.count) KOMMANDE")
-                    if isLoadingHomeUpNext && homeUpNextItems.isEmpty {
-                        ProgressView()
-                            .tint(WatchlistColor.accent)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                    } else if homeUpNextItems.isEmpty {
-                        HStack(spacing: 10) {
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(WatchlistColor.accent)
-                            Text(TMDBConfiguration.isConfigured ? "Inga nya avsnitt är schemalagda just nu. Vi håller koll på dina serier." : "Anslut TMDB för att visa kommande avsnitt i dina serier.")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(WatchlistColor.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(14)
-                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
-                        .padding(.horizontal, 20)
-                    } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(alignment: .top, spacing: 10) {
-                                ForEach(homeUpNextItems) { upcoming in
-                                    NavigationLink(value: upcoming.series) {
-                                        HStack(spacing: 10) {
-                                            LibraryHomePoster(entry: upcoming.entry)
-                                                .frame(width: 48, height: 66)
-                                            VStack(alignment: .leading, spacing: 5) {
-                                                Text(upcoming.entry.title)
-                                                    .font(.system(size: 11, weight: .bold))
-                                                    .foregroundStyle(WatchlistColor.primaryText)
-                                                    .lineLimit(1)
-                                                Text(upcoming.episode.displayCode)
-                                                    .font(.system(size: 9, weight: .bold))
-                                                    .tracking(0.6)
-                                                    .foregroundStyle(WatchlistColor.accent)
-                                                Text(upcoming.episode.name)
-                                                    .font(.system(size: 10, weight: .medium))
-                                                    .foregroundStyle(WatchlistColor.secondaryText)
-                                                    .lineLimit(2)
-                                                Text(upcoming.airDate.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.abbreviated)).capitalized)
-                                                    .font(.system(size: 9, weight: .semibold))
-                                                    .foregroundStyle(WatchlistColor.accent)
-                                                    .lineLimit(1)
-                                            }
-                                            Spacer(minLength: 0)
-                                        }
-                                        .padding(10)
-                                        .frame(width: 225, height: 88, alignment: .leading)
-                                        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(WatchlistColor.hairline, lineWidth: 1))
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @MainActor
-    private func loadHomeUpNext() async {
-        let series = followedSeries
-        guard TMDBConfiguration.isConfigured, !series.isEmpty else {
-            homeUpNextItems = []
-            isLoadingHomeUpNext = false
-            return
-        }
-
-        let requestID = UUID()
-        homeUpNextRequestID = requestID
-        isLoadingHomeUpNext = true
-        defer {
-            if homeUpNextRequestID == requestID {
-                isLoadingHomeUpNext = false
-            }
-        }
-
-        let client = TMDBConfiguration.makeClient()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-        let today = calendar.startOfDay(for: .now)
-        let seeds = series.prefix(40).map {
-            HomeUpNextSeed(stableID: $0.stableID, tmdbID: $0.tmdbID)
-        }
-        let watchedEpisodeKeys = Set(episodeProgressEntries.compactMap { progress -> String? in
-            guard progress.isWatched else { return nil }
-            return "\(progress.seriesID):\(progress.seasonNumber):\(progress.episodeNumber)"
-        })
-
-        var candidates: [HomeUpNextCandidate] = []
-        let concurrencyLimit = min(6, seeds.count)
-
-        await withTaskGroup(of: HomeUpNextCandidate?.self) { group in
-            var nextSeedIndex = 0
-
-            for _ in 0..<concurrencyLimit {
-                let seed = seeds[nextSeedIndex]
-                nextSeedIndex += 1
-                group.addTask {
-                    await Self.fetchHomeUpNextCandidate(
-                        for: seed,
-                        client: client,
-                        watchedEpisodeKeys: watchedEpisodeKeys,
-                        today: today
-                    )
-                }
-            }
-
-            while let candidate = await group.next() {
-                if let candidate {
-                    candidates.append(candidate)
-                }
-
-                guard nextSeedIndex < seeds.count else { continue }
-                let seed = seeds[nextSeedIndex]
-                nextSeedIndex += 1
-                group.addTask {
-                    await Self.fetchHomeUpNextCandidate(
-                        for: seed,
-                        client: client,
-                        watchedEpisodeKeys: watchedEpisodeKeys,
-                        today: today
-                    )
-                }
-            }
-        }
-
-        guard !Task.isCancelled, homeUpNextRequestID == requestID else { return }
-        let entriesByID = Dictionary(uniqueKeysWithValues: series.map { ($0.stableID, $0) })
-        homeUpNextItems = candidates.compactMap { candidate in
-            guard let entry = entriesByID[candidate.stableID] else { return nil }
-            return HomeUpNextItem(
-                entry: entry,
-                series: entry.mediaItem,
-                episode: candidate.episode,
-                airDate: candidate.airDate
-            )
-        }.sorted { $0.airDate < $1.airDate }
-    }
-
-    private static func fetchHomeUpNextCandidate(
-        for seed: HomeUpNextSeed,
-        client: TMDBClient,
-        watchedEpisodeKeys: Set<String>,
-        today: Date
-    ) async -> HomeUpNextCandidate? {
-        do {
-            let details = try await client.televisionDetails(id: seed.tmdbID)
-            guard let last = details.lastEpisodeToAir,
-                  let next = details.nextEpisodeToAir,
-                  let date = homePremiereDate(from: next.airDate),
-                  date >= today else { return nil }
-
-            let watchedKey = "\(seed.tmdbID):\(last.seasonNumber):\(last.episodeNumber)"
-            guard watchedEpisodeKeys.contains(watchedKey) else { return nil }
-
-            return HomeUpNextCandidate(
-                stableID: seed.stableID,
-                episode: next,
-                airDate: date
-            )
-        } catch {
-            // A single unavailable series must not prevent the rest from loading.
-            return nil
-        }
-    }
-
-    private static func homePremiereDate(from value: String?) -> Date? {
-        guard let value else { return nil }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: value)
+        let savedTitles = savedForLaterEntries.map(\.mediaItem)
+        return posterCarousel(
+            title: "Up Next",
+            eyebrow: "OSedda TITLAR I DIN LISTA",
+            trailing: "\(savedTitles.count) SPARADE",
+            items: savedTitles
+        )
     }
 
     @MainActor
@@ -956,7 +760,7 @@ struct HomeView: View {
 
 private struct ContinueWatchingCard: View {
     let entry: LibraryEntry
-    let nextEpisode: TVNextEpisode?
+    let nextEpisode: TVEpisode?
 
     var body: some View {
         HStack(spacing: 13) {
@@ -980,7 +784,7 @@ private struct ContinueWatchingCard: View {
             Spacer(minLength: 0)
         }
         .padding(13)
-        .frame(width: 310, minHeight: 124, alignment: .leading)
+        .frame(width: 310, height: 136, alignment: .leading)
         .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 17).stroke(WatchlistColor.hairline, lineWidth: 1))
     }
@@ -1212,24 +1016,4 @@ private struct PremiereRow: View {
         }
         .padding(.vertical, 14)
     }
-}
-
-private struct HomeUpNextSeed: Sendable {
-    let stableID: String
-    let tmdbID: Int
-}
-
-private struct HomeUpNextCandidate: Sendable {
-    let stableID: String
-    let episode: TVNextEpisode
-    let airDate: Date
-}
-
-private struct HomeUpNextItem: Identifiable {
-    let entry: LibraryEntry
-    let series: MediaItem
-    let episode: TVNextEpisode
-    let airDate: Date
-
-    var id: String { "\(entry.stableID)-\(episode.id)" }
 }
