@@ -200,3 +200,10 @@ Målet är en separat Seenr-importör som konverterar exportformatet `seenr-expo
 - Added a fixture assertion for this fallback.
 - Added a SwiftData store-opening test that creates a store using the pre-rating model set, then opens it using the current model set with `ImportedWorkRating`. CI must confirm whether this additive schema change opens cleanly.
 - The current importer remains in validation; no IPA should be produced for user testing until the latest full test run passes.
+
+
+### Senaste importskydd – 2026-11-28
+
+- Förhandsgranskningen visar importvarningar innan användaren bekräftar sammanslagningen.
+- Importen räknar felaktiga titel- och betygsposter och redovisar att de har hoppats över.
+- Om Seenrs antal visningar överstiger antalet faktiska sparade datum visas en varning. Importören skapar inte påhittade historikhändelser för visningar utan datum.
