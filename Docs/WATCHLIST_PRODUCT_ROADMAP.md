@@ -192,3 +192,11 @@ Målet är en separat Seenr-importör som konverterar exportformatet `seenr-expo
 - The import preview and completion summary now include the count of imported season/episode ratings.
 - File reading and Seenr decoding now run in a detached background task. Security-scoped access is held until the task completes, and the existing WATCHLIST backup import remains supported.
 - Latest iOS Build/test runs are queued for the new changes. Do not mark the importer release-ready until the newest accumulated commit passes CI and a migration/startup check is completed.
+
+
+### Seenr-import validation additions – 2026-11-28
+
+- Movie history now includes the Seenr `first_watched_at` field when the `dates` array is empty or does not contain that date.
+- Added a fixture assertion for this fallback.
+- Added a SwiftData store-opening test that creates a store using the pre-rating model set, then opens it using the current model set with `ImportedWorkRating`. CI must confirm whether this additive schema change opens cleanly.
+- The current importer remains in validation; no IPA should be produced for user testing until the latest full test run passes.
