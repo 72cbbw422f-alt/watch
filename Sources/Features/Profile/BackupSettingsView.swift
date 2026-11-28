@@ -188,42 +188,58 @@ struct BackupSettingsView: View {
         } catch { errorMessage = error.localizedDescription }
     }
 
+    private enum ImportFileAnalysis: Sendable {
+        case seenr(SeenrImportPayload)
+        case watchlistBackup(Data)
+    }
+
     private func handleImportSelection(_ result: Result<[URL], Error>) {
         do {
             let urls = try result.get()
             guard let url = urls.first else { return }
             let hasAccess = url.startAccessingSecurityScopedResource()
-            defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-            let data = try Data(contentsOf: url)
+            isAnalyzingImport = true
 
-            if String(data: data.prefix(2_000), encoding: .utf8)?.contains("seenr-export/2") == true {
-                isAnalyzingImport = true
-                Task {
-                    do {
-                        let payload = try await Task.detached(priority: .userInitiated) {
-                            try SeenrExportDecoder.decode(data)
-                        }.value
+            Task {
+                defer {
+                    if hasAccess { url.stopAccessingSecurityScopedResource() }
+                    isAnalyzingImport = false
+                }
+
+                do {
+                    let analysis = try await Task.detached(priority: .userInitiated) {
+                        let data = try Data(contentsOf: url)
+                        let isSeenr = String(data: data.prefix(2_000), encoding: .utf8)?
+                            .contains("seenr-export/2") == true
+                        if isSeenr {
+                            return ImportFileAnalysis.seenr(try SeenrExportDecoder.decode(data))
+                        }
+                        return ImportFileAnalysis.watchlistBackup(data)
+                    }.value
+
+                    switch analysis {
+                    case .seenr(let payload):
                         let preview = try SeenrImportService.preview(payload, in: modelContext)
                         pendingSeenr = payload
                         seenrPreview = preview
                         pendingImport = nil
                         importPreview = nil
-                        isConfirmingImport = true
-                    } catch {
-                        errorMessage = error.localizedDescription
+                    case .watchlistBackup(let data):
+                        let backup = try WatchlistBackupService.decode(data)
+                        let preview = try WatchlistImportService.preview(backup, in: modelContext)
+                        pendingImport = backup
+                        importPreview = preview
+                        pendingSeenr = nil
+                        seenrPreview = nil
                     }
-                    isAnalyzingImport = false
+                    isConfirmingImport = true
+                } catch {
+                    errorMessage = error.localizedDescription
                 }
-            } else {
-                let backup = try WatchlistBackupService.decode(data)
-                let preview = try WatchlistImportService.preview(backup, in: modelContext)
-                pendingImport = backup
-                importPreview = preview
-                pendingSeenr = nil
-                seenrPreview = nil
-                isConfirmingImport = true
             }
-        } catch { errorMessage = error.localizedDescription }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func performImport() {
