@@ -273,13 +273,29 @@ enum SeenrImportService {
     }
 
     private static func incompleteWatchHistoryWarnings(_ payload: SeenrImportPayload) -> [String] {
+        let movieViewingDates = Dictionary(
+            grouping: payload.viewings.filter { $0.kind == "movie" },
+            by: \.tmdbID
+        ).mapValues { Set($0.map(\.watchedAt)) }
+        let episodeViewingDates = Dictionary(
+            grouping: payload.viewings.filter {
+                $0.kind == "episode" && $0.seriesID != nil && $0.season != nil && $0.episode != nil
+            },
+            by: { "\($0.seriesID!)|\($0.season!)|\($0.episode!)" }
+        ).mapValues { Set($0.map(\.watchedAt)) }
+
         let titlesWithMissingDates = (payload.shows + payload.movies).filter { record in
-            let knownDates = Set(record.dates + (record.watchedAt.map { [$0] } ?? []))
-            return record.watchCount > knownDates.count
+            var dates = record.dates + (record.watchedAt.map { [$0] } ?? [])
+            if record.kind == "movie" {
+                dates += Array(movieViewingDates[record.tmdbID] ?? [])
+            }
+            return record.watchCount > Set(dates).count
         }.count
         let episodesWithMissingDates = payload.episodes.filter { record in
-            let knownDates = Set(record.dates + (record.watchedAt.map { [$0] } ?? []))
-            return record.watchCount > knownDates.count
+            let key = "\(record.seriesID)|\(record.season)|\(record.number)"
+            let dates = record.dates + (record.watchedAt.map { [$0] } ?? [])
+                + Array(episodeViewingDates[key] ?? [])
+            return record.watchCount > Set(dates).count
         }.count
 
         guard titlesWithMissingDates > 0 || episodesWithMissingDates > 0 else { return [] }
