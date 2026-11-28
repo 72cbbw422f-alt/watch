@@ -3,8 +3,8 @@ import Foundation
 /// Decoder for Seenr's public `seenr-export/2` JSON format.
 /// This layer is intentionally independent from SwiftData so files can be validated
 /// and previewed before any local library records are changed.
-struct SeenrImportPayload {
-    struct Title {
+struct SeenrImportPayload: Sendable {
+    struct Title: Sendable {
         let tmdbID: Int
         let kind: String
         let title: String
@@ -21,7 +21,7 @@ struct SeenrImportPayload {
         let watchCount: Int
     }
 
-    struct Episode {
+    struct Episode: Sendable {
         let seriesID: Int
         let seriesTitle: String
         let season: Int
@@ -34,7 +34,7 @@ struct SeenrImportPayload {
         let dates: [Date]
     }
 
-    struct Viewing {
+    struct Viewing: Sendable {
         let kind: String
         let tmdbID: Int
         let title: String
