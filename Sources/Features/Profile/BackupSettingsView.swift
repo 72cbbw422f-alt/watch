@@ -115,7 +115,7 @@ struct BackupSettingsView: View {
                         Text(importedSummary).font(.system(size: 11)).foregroundStyle(WatchlistColor.accent)
                     }
 
-                    Text("Format: JSON · Schema v1. Importen visar en sammanfattning innan den genomförs. Befintliga lokala poster skrivs inte över eller tas bort.")
+                    Text("Watchlist-säkerhetskopia: JSON · schema v1. Seenr-export: seenr-export/2. Importen visar en sammanfattning innan den genomförs. Befintliga lokala poster skrivs inte över eller tas bort.")
                         .font(.system(size: 10))
                         .foregroundStyle(WatchlistColor.mutedText)
                 }
@@ -147,7 +147,7 @@ struct BackupSettingsView: View {
             isPresented: $isConfirmingImport,
             titleVisibility: .visible
         ) {
-            Button(pendingSeenr == nil ? "Slå samman med mitt bibliotek" : "Importera Seenr-data", role: .destructive) {
+            Button(pendingSeenr == nil ? "Slå samman med mitt bibliotek" : "Importera Seenr-data") {
                 if pendingSeenr != nil { performSeenrImport() } else { performImport() }
             }
             Button("Avbryt", role: .cancel) {
