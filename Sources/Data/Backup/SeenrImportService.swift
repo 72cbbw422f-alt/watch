@@ -27,7 +27,7 @@ enum SeenrImportService {
         let titleIDs = incomingTitles.map { "\($0.kind)-\($0.tmdbID)" }
         let episodes = payload.episodes.filter { $0.seriesID > 0 && $0.season >= 0 && $0.number > 0 }
         let episodeEvents = episodeEventCandidates(payload)
-        let movieEvents = payload.viewings.filter { $0.kind == "movie" && $0.tmdbID > 0 }
+        let movieEvents = movieEventCandidates(payload)
 
         return SeenrImportPreview(
             newTitles: Set(titleIDs).subtracting(existingTitles).count,
@@ -38,9 +38,7 @@ enum SeenrImportService {
                 ))
             }.count,
             newEpisodeHistory: episodeEvents.filter { !existingEpisodeEvents.contains($0.id) }.count,
-            newMovieHistory: movieEvents.filter {
-                !existingMovieEvents.contains(eventID("movie|\($0.tmdbID)|\($0.watchedAt.timeIntervalSince1970)"))
-            }.count,
+            newMovieHistory: movieEvents.filter { !existingMovieEvents.contains($0.id) }.count,
             skippedTitles: payload.shows.count + payload.movies.count - incomingTitles.count,
             warnings: payload.warnings + unknownStatusWarnings(payload)
         )
@@ -104,11 +102,10 @@ enum SeenrImportService {
                 ))
             }
 
-            for record in payload.viewings where record.kind == "movie" {
-                let id = eventID("movie|\(record.tmdbID)|\(record.watchedAt.timeIntervalSince1970)")
-                guard movieEventIDs.insert(id).inserted else { continue }
+            for record in movieEventCandidates(payload) {
+                guard movieEventIDs.insert(record.id).inserted else { continue }
                 context.insert(MovieWatchEvent(
-                    id: id, tmdbID: record.tmdbID, title: record.title,
+                    id: record.id, tmdbID: record.tmdbID, title: record.title,
                     posterPath: nil, watchedAt: record.watchedAt, source: "seenr-import"
                 ))
             }
@@ -126,31 +123,57 @@ enum SeenrImportService {
         let watchedAt: Date
     }
 
+    private struct MovieEvent {
+        let id: UUID
+        let tmdbID: Int
+        let title: String
+        let watchedAt: Date
+    }
+
+    /// Merge both history sources. Their deterministic identities collapse duplicate
+    /// representations of the same watch while retaining distinct rewatch dates.
     private static func episodeEventCandidates(_ payload: SeenrImportPayload) -> [EpisodeEvent] {
-        let fromViewings = payload.viewings.compactMap { viewing -> EpisodeEvent? in
-            guard viewing.kind == "episode",
-                  let seriesID = viewing.seriesID, let season = viewing.season,
-                  let number = viewing.episode, seriesID > 0, season >= 0, number > 0 else { return nil }
+        var events: [UUID: EpisodeEvent] = [:]
+        for viewing in payload.viewings where viewing.kind == "episode" {
+            guard let seriesID = viewing.seriesID, let season = viewing.season,
+                  let number = viewing.episode, seriesID > 0, season >= 0, number > 0 else { continue }
             let key = "episode|\(seriesID)|\(season)|\(number)|\(viewing.watchedAt.timeIntervalSince1970)"
-            return EpisodeEvent(
-                id: eventID(key), seriesID: seriesID, episodeID: viewing.tmdbID,
+            let id = eventID(key)
+            events[id] = EpisodeEvent(
+                id: id, seriesID: seriesID, episodeID: viewing.tmdbID,
                 season: season, number: number, title: viewing.title, watchedAt: viewing.watchedAt
             )
         }
-        if !fromViewings.isEmpty { return fromViewings }
-
-        return payload.episodes.flatMap { episode in
+        for episode in payload.episodes {
             let dates = episode.dates.isEmpty ? [episode.watchedAt].compactMap { $0 } : episode.dates
-            return dates.map { watchedAt in
+            for watchedAt in dates {
                 let key = "episode|\(episode.seriesID)|\(episode.season)|\(episode.number)|\(watchedAt.timeIntervalSince1970)"
-                return EpisodeEvent(
-                    id: eventID(key), seriesID: episode.seriesID,
+                let id = eventID(key)
+                events[id] = events[id] ?? EpisodeEvent(
+                    id: id, seriesID: episode.seriesID,
                     episodeID: episode.tmdbID ?? episode.number,
                     season: episode.season, number: episode.number,
                     title: episode.title, watchedAt: watchedAt
                 )
             }
         }
+        return Array(events.values)
+    }
+
+    private static func movieEventCandidates(_ payload: SeenrImportPayload) -> [MovieEvent] {
+        var events: [UUID: MovieEvent] = [:]
+        for viewing in payload.viewings where viewing.kind == "movie" {
+            let id = eventID("movie|\(viewing.tmdbID)|\(viewing.watchedAt.timeIntervalSince1970)")
+            events[id] = MovieEvent(id: id, tmdbID: viewing.tmdbID, title: viewing.title, watchedAt: viewing.watchedAt)
+        }
+        for movie in payload.movies {
+            let dates = movie.dates
+            for watchedAt in dates {
+                let id = eventID("movie|\(movie.tmdbID)|\(watchedAt.timeIntervalSince1970)")
+                events[id] = events[id] ?? MovieEvent(id: id, tmdbID: movie.tmdbID, title: movie.title, watchedAt: watchedAt)
+            }
+        }
+        return Array(events.values)
     }
 
     private static func mappedStatus(_ raw: String) -> LibraryStatus? {
