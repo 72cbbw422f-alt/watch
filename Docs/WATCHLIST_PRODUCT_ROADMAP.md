@@ -133,3 +133,39 @@ Bygg en rik men tydligt strukturerad detaljsida. Undvik en enda oändlig vy; anv
 - Simulatorbygge och enhetstester ska verifieras i CI innan ändringen betraktas som tekniskt godkänd. Ingen IPA-testning planeras för denna ändring.
 
 ## Startsida – förtydligande 2026-11-28\n\n- `Fortsätt titta` är användarens aktiva pågående titlar (`Tittar på`). För serier visas första avsnittet som ännu inte markerats som sett.\n- `Up Next` är en horisontell posterhylla med osedda filmer och serier sparade som `Vill se` eller `Bevakar`. Den ska inte vara en lista över kommande TV-sändningar.\n
+
+## Import från Seenr – krav och verifierat källformat 2026-11-28
+
+Målet är en separat Seenr-importör som konverterar exportformatet `seenr-export/2` till WATCHLISTs befintliga backup-/importmodell. Den ska inte ändra eller ersätta den generella JSON-backupimporten.
+
+### Verifierat i användarens export
+- Exportfilen är JSON, cirka 11,3 MB, med formatidentifieraren `seenr-export/2`.
+- Biblioteket innehåller separata `shows` och `movies`-arrayer. Titelposter har bland annat `tmdb_id`, `title`, `year`, `status`, `rating`, `review`, `favorite`, `added_at`, samt för serier `episodes_watched` och `plays`.
+- `episode_watches` innehåller avsnittsprogress med `show_tmdb_id`, säsong, avsnittsnummer, avsnitts-ID, visningsdatum, antal visningar och datumlista.
+- `viewings` innehåller individuella film- och avsnittsvisningar. Avsnitt har `work.tmdb_id`, `work.show_tmdb_id`, `work.season`, `work.episode`, titel och `watched_at`.
+- Exporten innehåller också andra Seenr-moduler och metadata. De ska inte importeras som om de vore film-/seriedata.
+
+### Importregler
+- Kontrollera formatversion och obligatoriska fält innan någon ändring i SwiftData.
+- Mappa Seenr-statusar uttryckligen; okända statusvärden ska redovisas och inte gissas.
+- Bevara TMDB-ID, titel, år, personligt betyg, recension, favorit och datum när målfälten stöder dem.
+- Skapa avsnittsprogress från `episode_watches`; använd inte enbart summeringen `episodes_watched` för att hitta på avsnittsidentiteter.
+- Skapa separata historikhändelser från `viewings`. Omtittningar måste förbli separata händelser och stabila identiteter måste förhindra dubbelimport.
+- Om en visning saknar datum eller obligatorisk identitet ska den räknas som ej importerbar och visas i rapporten.
+- Förhandsgranskning ska visa bibliotekstitlar, avsnittsprogress, filmvisningar, avsnittsvisningar, dubbletter, okända statusar och poster som inte kan mappas.
+- Importen ska vara additiv och transaktionell: lokala poster får inte skrivas över eller raderas. Samma export ska kunna importeras två gånger utan att skapa dubbletter.
+- Stora filer ska läsas effektivt och UI får inte blockeras under analysen.
+
+### Testplan
+1. Fixture-tester för ett minimalt Seenr-exempel med film, serie, avsnittsprogress, flera visningar av samma film/avsnitt, betyg, recension och favorit.
+2. Test för verklig exportstruktur och formatidentifierare.
+3. Idempotens: importera samma fixture två gånger och verifiera oförändrat antal poster efter första importen.
+4. Testa okänd status, saknade datum, felaktiga TMDB-ID:n och korrupt JSON.
+5. Testa stor export och verifiera att förhandsgranskningen inte låser gränssnittet.
+6. Kör full CI innan en IPA lämnas ut för fysisk testning.
+
+### Nästa implementation
+- Lägg till `SeenrExportDecoder` / `SeenrImportService` som ett fristående lager.
+- Utöka förhandsgranskningen med Seenr-specifika räknare och importvarningar.
+- Koppla importörens resultat till befintlig additiv merge först efter validering.
+- Behåll den befintliga WATCHLIST-backupimporten oförändrad.
