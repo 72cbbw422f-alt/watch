@@ -536,6 +536,38 @@ struct HomeView: View {
         continueWatchingNextEpisodes = results
     }
 
+    @MainActor
+    private func loadContinueWatchingEpisodes() async {
+        let series = inProgressEntries.filter { $0.mediaKind == MediaKind.television.rawValue }
+        let requestID = UUID()
+        continueWatchingRequestID = requestID
+        guard TMDBConfiguration.isConfigured, !series.isEmpty else {
+            continueWatchingNextEpisodes = [:]
+            return
+        }
+
+        let client = TMDBConfiguration.makeClient()
+        let seeds = series.map { (stableID: $0.stableID, tmdbID: $0.tmdbID) }
+        var results: [String: TVNextEpisode] = [:]
+        await withTaskGroup(of: (String, TVNextEpisode?).self) { group in
+            for seed in seeds {
+                group.addTask {
+                    let details = try? await client.televisionDetails(id: seed.tmdbID)
+                    return (seed.stableID, details?.nextEpisodeToAir)
+                }
+            }
+            for await (stableID, episode) in group {
+                guard !Task.isCancelled, continueWatchingRequestID == requestID else {
+                    group.cancelAll()
+                    return
+                }
+                if let episode { results[stableID] = episode }
+            }
+        }
+        guard !Task.isCancelled, continueWatchingRequestID == requestID else { return }
+        continueWatchingNextEpisodes = results
+    }
+
     private var continueWatching: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionHeading("Fortsätt titta", eyebrow: "DIN RESA", trailing: "\(inProgressEntries.count) PÅGÅR")
@@ -565,55 +597,10 @@ struct HomeView: View {
                     HStack(spacing: 12) {
                         ForEach(inProgressEntries.prefix(8)) { entry in
                             NavigationLink(value: entry.mediaItem) {
-                                HStack(spacing: 13) {
-                                    LibraryHomePoster(entry: entry, width: 70, height: 98)
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        Text(entry.title)
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundStyle(WatchlistColor.primaryText)
-                                            .lineLimit(2)
-                                            .multilineTextAlignment(.leading)
-                                        Text(entry.mediaKind == "movie" ? "FILM" : "SERIE")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .tracking(1.1)
-                                            .foregroundStyle(WatchlistColor.mutedText)
-                                        Label("Tittar på", systemImage: "play.circle.fill")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundStyle(WatchlistColor.accent)
-                                        if entry.mediaKind == MediaKind.television.rawValue {
-                                            let episode = continueWatchingNextEpisodes[entry.stableID]
-                                            if let episode {
-                                                VStack(alignment: .leading, spacing: 3) {
-                                                    Text("NÄSTA AVSNITT")
-                                                        .font(.system(size: 8, weight: .bold))
-                                                        .tracking(1.1)
-                                                        .foregroundStyle(WatchlistColor.mutedText)
-                                                    Text("\(episode.displayCode) · \(episode.name)")
-                                                        .font(.system(size: 10, weight: .semibold))
-                                                        .foregroundStyle(WatchlistColor.primaryText)
-                                                        .lineLimit(2)
-                                                }
-                                                .padding(.top, 1)
-                                            } else if let code = entry.nextEpisodeCode, !code.isEmpty {
-                                                VStack(alignment: .leading, spacing: 3) {
-                                                    Text("NÄSTA AVSNITT")
-                                                        .font(.system(size: 8, weight: .bold))
-                                                        .tracking(1.1)
-                                                        .foregroundStyle(WatchlistColor.mutedText)
-                                                    Text([code, entry.nextEpisodeTitle].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                                                        .font(.system(size: 10, weight: .semibold))
-                                                        .foregroundStyle(WatchlistColor.primaryText)
-                                                        .lineLimit(2)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(13)
-                                .frame(width: 310, minHeight: 124, alignment: .leading)
-                                .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 17).stroke(WatchlistColor.hairline, lineWidth: 1))
+                                ContinueWatchingCard(
+                                    entry: entry,
+                                    nextEpisode: continueWatchingNextEpisodes[entry.stableID]
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -976,6 +963,61 @@ struct HomeView: View {
     }
 }
 
+
+private struct ContinueWatchingCard: View {
+    let entry: LibraryEntry
+    let nextEpisode: TVNextEpisode?
+
+    var body: some View {
+        HStack(spacing: 13) {
+            LibraryHomePoster(entry: entry, width: 70, height: 98)
+            VStack(alignment: .leading, spacing: 7) {
+                Text(entry.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(WatchlistColor.primaryText)
+                    .lineLimit(2)
+                Text(entry.mediaKind == "movie" ? "FILM" : "SERIE")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.1)
+                    .foregroundStyle(WatchlistColor.mutedText)
+                Label("Tittar på", systemImage: "play.circle.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(WatchlistColor.accent)
+                if entry.mediaKind == MediaKind.television.rawValue {
+                    nextEpisodeInformation
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(13)
+        .frame(width: 310, minHeight: 124, alignment: .leading)
+        .background(WatchlistColor.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 17).stroke(WatchlistColor.hairline, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var nextEpisodeInformation: some View {
+        if let nextEpisode {
+            episodeLabel("\(nextEpisode.displayCode) · \(nextEpisode.name)")
+        } else if let code = entry.nextEpisodeCode, !code.isEmpty {
+            episodeLabel([code, entry.nextEpisodeTitle ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+        }
+    }
+
+    private func episodeLabel(_ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("NÄSTA AVSNITT")
+                .font(.system(size: 8, weight: .bold))
+                .tracking(1.1)
+                .foregroundStyle(WatchlistColor.mutedText)
+            Text(value)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(WatchlistColor.primaryText)
+                .lineLimit(2)
+        }
+        .padding(.top, 1)
+    }
+}
 
 private struct LibraryHomePoster: View {
     let entry: LibraryEntry
