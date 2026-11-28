@@ -156,7 +156,7 @@ struct BackupSettingsView: View {
             }
         } message: {
             if let seenrPreview {
-                Text("Seenr-export · \(pendingSeenr?.totalTitles ?? 0) titlar. Nya titlar: \(seenrPreview.newTitles). Befintliga titlar lämnas orörda: \(seenrPreview.matchingTitles). Nya avsnittsstatusar: \(seenrPreview.newEpisodeStates). Avsnittshändelser: \(seenrPreview.newEpisodeHistory). Säsongs- och avsnittsbetyg: \(seenrPreview.newImportedRatings). Filmvisningar: \(seenrPreview.newMovieHistory). Överhoppade titlar: \(seenrPreview.skippedTitles).")
+                Text("Seenr-export · \(pendingSeenr?.totalTitles ?? 0) titlar. Nya titlar: \(seenrPreview.newTitles). Befintliga titlar lämnas orörda: \(seenrPreview.matchingTitles). Nya avsnittsstatusar: \(seenrPreview.newEpisodeStates). Avsnittshändelser: \(seenrPreview.newEpisodeHistory). Säsongs- och avsnittsbetyg: \(seenrPreview.newImportedRatings). Filmvisningar: \(seenrPreview.newMovieHistory). Överhoppade titlar: \(seenrPreview.skippedTitles). \(seenrPreview.warnings.isEmpty ? "" : "Varningar: " + seenrPreview.warnings.prefix(3).joined(separator: " "))")
             } else if let importPreview {
                 Text("Nya titlar: \(importPreview.newLibraryItems). Matchande titlar lämnas orörda: \(importPreview.matchingLibraryItems). Lokala titlar som bara finns på den här enheten bevaras: \(importPreview.localOnlyLibraryItems). Nya avsnittstillstånd: \(importPreview.newEpisodeStates). Seriehändelser: \(importPreview.newHistoryEvents). Filmhändelser: \(importPreview.newMovieHistoryEvents). Egna listor: \(importPreview.newCustomLists). Listposter: \(importPreview.newCustomListItems). Påminnelser: \(importPreview.newReminders).")
             }
