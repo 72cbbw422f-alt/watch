@@ -17,7 +17,7 @@ struct HomeView: View {
     @State private var homeUpNextItems: [HomeUpNextItem] = []
     @State private var isLoadingHomeUpNext = false
     @State private var homeUpNextRequestID = UUID()
-    @State private var continueWatchingNextEpisodes: [String: TVNextEpisode] = [:]
+    @State private var continueWatchingNextEpisodes: [String: TVEpisode] = [:]
     @State private var continueWatchingRequestID = UUID()
     @Query(sort: \LibraryEntry.dateUpdated, order: .reverse) private var libraryEntries: [LibraryEntry]
     @Query private var episodeProgressEntries: [EpisodeProgress]
@@ -514,14 +514,37 @@ struct HomeView: View {
 
         let client = TMDBConfiguration.makeClient()
         let seeds = series.map { (stableID: $0.stableID, tmdbID: $0.tmdbID) }
-        var results: [String: TVNextEpisode] = [:]
-        await withTaskGroup(of: (String, TVNextEpisode?).self) { group in
+        let watchedKeys = Set(episodeProgressEntries.filter(\.isWatched).map {
+            "\($0.seriesID):\($0.seasonNumber):\($0.episodeNumber)"
+        })
+        var results: [String: TVEpisode] = [:]
+
+        await withTaskGroup(of: (String, TVEpisode?).self) { group in
             for seed in seeds {
                 group.addTask {
-                    let details = try? await client.televisionDetails(id: seed.tmdbID)
-                    return (seed.stableID, details?.nextEpisodeToAir)
+                    do {
+                        let details = try await client.televisionDetails(id: seed.tmdbID)
+                        for season in details.regularSeasons {
+                            let seasonDetails = try await client.televisionSeason(
+                                id: seed.tmdbID,
+                                seasonNumber: season.seasonNumber
+                            )
+                            let next = seasonDetails.episodes
+                                .sorted { $0.episodeNumber < $1.episodeNumber }
+                                .first {
+                                    !watchedKeys.contains(
+                                        "\(seed.tmdbID):\($0.seasonNumber):\($0.episodeNumber)"
+                                    )
+                                }
+                            if let next { return (seed.stableID, next) }
+                        }
+                        return (seed.stableID, nil)
+                    } catch {
+                        return (seed.stableID, nil)
+                    }
                 }
             }
+
             for await (stableID, episode) in group {
                 guard !Task.isCancelled, continueWatchingRequestID == requestID else {
                     group.cancelAll()
@@ -530,6 +553,7 @@ struct HomeView: View {
                 if let episode { results[stableID] = episode }
             }
         }
+
         guard !Task.isCancelled, continueWatchingRequestID == requestID else { return }
         continueWatchingNextEpisodes = results
     }
