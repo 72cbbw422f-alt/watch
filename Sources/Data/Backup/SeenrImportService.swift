@@ -242,7 +242,10 @@ enum SeenrImportService {
             events[id] = MovieEvent(id: id, tmdbID: viewing.tmdbID, title: viewing.title, watchedAt: viewing.watchedAt)
         }
         for movie in payload.movies {
-            let dates = movie.dates
+            var dates = movie.dates
+            if let firstWatch = movie.watchedAt, !dates.contains(firstWatch) {
+                dates.append(firstWatch)
+            }
             for watchedAt in dates {
                 let id = eventID("movie|\(movie.tmdbID)|\(watchedAt.timeIntervalSince1970)")
                 events[id] = events[id] ?? MovieEvent(id: id, tmdbID: movie.tmdbID, title: movie.title, watchedAt: watchedAt)
