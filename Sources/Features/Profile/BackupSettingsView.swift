@@ -249,7 +249,7 @@ struct BackupSettingsView: View {
             let summary = try SeenrImportService.merge(pendingSeenr, into: modelContext)
             self.pendingSeenr = nil
             seenrPreview = nil
-            importedSummary = "Seenr-import klar. \(summary.newTitles) nya titlar, \(summary.newEpisodeStates) avsnittsstatusar och \(summary.newEpisodeHistory + summary.newMovieHistory) visningshändelser och \\(summary.newImportedRatings) säsongs-/avsnittsbetyg har lagts till. Befintliga poster behölls."
+            importedSummary = "Seenr-import klar. \(summary.newTitles) nya titlar, \(summary.newEpisodeStates) avsnittsstatusar och \(summary.newEpisodeHistory + summary.newMovieHistory) visningshändelser och \(summary.newImportedRatings) säsongs-/avsnittsbetyg har lagts till. Befintliga poster behölls."
             if !summary.warnings.isEmpty {
                 importedSummary? += " Varningar: " + summary.warnings.joined(separator: " ")
             }
