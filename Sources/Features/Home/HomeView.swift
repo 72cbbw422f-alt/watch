@@ -29,7 +29,10 @@ struct HomeView: View {
     }
 
     private var followedSeries: [LibraryEntry] {
-        libraryEntries.filter {\n            $0.mediaKind == MediaKind.television.rawValue &&\n            ($0.status == .watching || $0.status == .monitoring)\n        }
+        libraryEntries.filter {
+            $0.mediaKind == MediaKind.television.rawValue &&
+            ($0.status == .watching || $0.status == .monitoring)
+        }
     }
 
     private var upNextSeedKey: String {
