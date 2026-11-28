@@ -10,8 +10,10 @@ on:
 permissions:
   contents: read
 
+# Only one IPA pipeline may run at a time. A newer successful CI run
+# cancels an older IPA build instead of allowing stale artifacts to publish.
 concurrency:
-  group: watchlist-ipa-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: watchlist-ipa-main
   cancel-in-progress: true
 
 jobs:
@@ -23,6 +25,23 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify commit is still latest main
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECKED_OUT_SHA="$(git rev-parse HEAD)"
+          MAIN_SHA="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [ -z "$MAIN_SHA" ]; then
+            echo "Could not resolve latest main commit."
+            exit 1
+          fi
+          if [ "$CHECKED_OUT_SHA" != "$MAIN_SHA" ]; then
+            echo "Refusing to publish an IPA from stale commit $CHECKED_OUT_SHA."
+            echo "Latest main is $MAIN_SHA."
+            exit 1
+          fi
+          echo "Verified: $CHECKED_OUT_SHA is the latest main commit."
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
