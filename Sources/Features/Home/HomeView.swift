@@ -515,40 +515,6 @@ struct HomeView: View {
         let client = TMDBConfiguration.makeClient()
         let seeds = series.map { (stableID: $0.stableID, tmdbID: $0.tmdbID) }
         var results: [String: TVNextEpisode] = [:]
-
-        await withTaskGroup(of: (String, TVNextEpisode?).self) { group in
-            for seed in seeds {
-                group.addTask {
-                    let details = try? await client.televisionDetails(id: seed.tmdbID)
-                    return (seed.stableID, details?.nextEpisodeToAir)
-                }
-            }
-            for await (stableID, episode) in group {
-                guard !Task.isCancelled, continueWatchingRequestID == requestID else {
-                    group.cancelAll()
-                    return
-                }
-                if let episode { results[stableID] = episode }
-            }
-        }
-
-        guard !Task.isCancelled, continueWatchingRequestID == requestID else { return }
-        continueWatchingNextEpisodes = results
-    }
-
-    @MainActor
-    private func loadContinueWatchingEpisodes() async {
-        let series = inProgressEntries.filter { $0.mediaKind == MediaKind.television.rawValue }
-        let requestID = UUID()
-        continueWatchingRequestID = requestID
-        guard TMDBConfiguration.isConfigured, !series.isEmpty else {
-            continueWatchingNextEpisodes = [:]
-            return
-        }
-
-        let client = TMDBConfiguration.makeClient()
-        let seeds = series.map { (stableID: $0.stableID, tmdbID: $0.tmdbID) }
-        var results: [String: TVNextEpisode] = [:]
         await withTaskGroup(of: (String, TVNextEpisode?).self) { group in
             for seed in seeds {
                 group.addTask {
